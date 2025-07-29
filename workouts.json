@@ -1,0 +1,41 @@
+{
+    "day": "Monday",
+    "exercises": [
+      {
+        "machine": "Chest Press",
+        "sets": 3,
+        "reps": 10,
+        "weight": 100,
+        "video": "https://www.bodybuilding.com/exercises/machine-bench-press"
+      },
+      {
+        "machine": "Lat Pulldown",
+        "sets": 3,
+        "reps": 10,
+        "weight": 90,
+        "video": "https://www.bodybuilding.com/exercises/lat-pulldown"
+      },
+      {
+        "machine": "Leg Press",
+        "sets": 3,
+        "reps": 10,
+        "weight": 180,
+        "video": "https://www.bodybuilding.com/exercises/leg-press"
+      },
+      {
+        "machine": "Seated Row",
+        "sets": 3,
+        "reps": 10,
+        "weight": 100,
+        "video": "https://www.bodybuilding.com/exercises/seated-cable-rows"
+      },
+      {
+        "machine": "Shoulder Press",
+        "sets": 3,
+        "reps": 10,
+        "weight": 70,
+        "video": "https://www.bodybuilding.com/exercises/machine-shoulder-press"
+      }
+    ]
+  }
+  
