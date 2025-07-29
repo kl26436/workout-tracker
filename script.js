@@ -1,98 +1,131 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAbzL4bGY026Z-oWiWcYLfDgkmmgAfUY3k",
+  authDomain: "workout-tracker-b94b6.firebaseapp.com",
+  projectId: "workout-tracker-b94b6",
+  storageBucket: "workout-tracker-b94b6.firebasestorage.app",
+  messagingSenderId: "111958991290",
+  appId: "1:111958991290:web:23e1014ab2ba27df6ebd83",
+  measurementId: "G-WX999ZQKEM"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
 let workouts = [];
-const workoutList = document.getElementById('workout-list');
-const daySelect = document.getElementById('daySelect');
+let currentUserId = null;
 
-const todayDate = new Date().toISOString().split("T")[0];
-const currentWeekday = new Date().toLocaleString("en-US", { weekday: "long" });
-daySelect.value = currentWeekday;
+const workoutList = document.getElementById("workout-list");
+const daySelect = document.getElementById("daySelect");
 
-fetch('workouts.json')
-  .then(res => res.json())
-  .then(data => {
-    workouts = data;
-    loadWorkoutForDay(currentWeekday);
-  });
+// 📅 Create + insert date picker
+const dateInput = document.createElement("input");
+dateInput.type = "date";
+dateInput.id = "datePicker";
+dateInput.value = new Date().toISOString().split("T")[0];
+daySelect.insertAdjacentElement("afterend", dateInput);
 
-daySelect.addEventListener('change', () => {
-  const selectedDay = daySelect.value;
-  loadWorkoutForDay(selectedDay);
+const todayDate = () => dateInput.value;
+const weekdayName = (dateStr) =>
+  new Date(dateStr).toLocaleString("en-US", { weekday: "long" });
+
+dateInput.addEventListener("change", () => {
+  const day = weekdayName(todayDate());
+  daySelect.value = day;
+  loadWorkoutForDay(day);
 });
 
-function loadWorkoutForDay(day) {
-  workoutList.innerHTML = "";
-  const storageKey = `workout_${todayDate}_${day}`;
-  const savedData = JSON.parse(localStorage.getItem(storageKey) || "{}");
+daySelect.addEventListener("change", () => {
+  loadWorkoutForDay(daySelect.value);
+});
 
-  const workout = workouts.find(w => w.day === day);
+signInAnonymously(auth).catch((error) =>
+  console.error("Firebase auth error:", error)
+);
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    currentUserId = user.uid;
+    fetch("workouts.json")
+      .then((res) => res.json())
+      .then((data) => {
+        workouts = data;
+        daySelect.value = weekdayName(todayDate());
+        loadWorkoutForDay(daySelect.value);
+      });
+  }
+});
+
+async function loadWorkoutForDay(day) {
+  workoutList.innerHTML = "";
+  const workout = workouts.find((w) => w.day === day);
   if (!workout) {
     workoutList.innerHTML = `<p>No workout scheduled for ${day}.</p>`;
     return;
   }
 
-  workout.exercises.forEach((exercise) => {
-    const card = document.createElement('div');
-    card.className = 'exercise-card';
+  const docId = `${todayDate()}_${day}`;
+  const docRef = doc(db, "users", currentUserId, "workouts", docId);
+  const docSnap = await getDoc(docRef);
+  const savedData = docSnap.exists() ? docSnap.data() : {};
 
-    const header = document.createElement('h3');
+  workout.exercises.forEach((exercise) => {
+    const card = document.createElement("div");
+    card.className = "exercise-card";
+
+    const header = document.createElement("h3");
     header.textContent = exercise.machine;
 
-    const videoLink = document.createElement('a');
+    const videoLink = document.createElement("a");
     videoLink.href = exercise.video;
-    videoLink.target = '_blank';
-    videoLink.textContent = 'Watch Form Video';
+    videoLink.target = "_blank";
+    videoLink.textContent = "Watch Form Video";
 
-    const table = document.createElement('table');
-    const headerRow = document.createElement('tr');
-    headerRow.innerHTML = "<th>Set</th><th>Reps</th><th>Weight (lbs)</th><th>Timer</th>";
+    const table = document.createElement("table");
+    const headerRow = document.createElement("tr");
+    headerRow.innerHTML =
+      "<th>Set</th><th>Reps</th><th>Weight (lbs)</th><th>Timer</th>";
     table.appendChild(headerRow);
 
     const inputRows = [];
     const savedSets = savedData[exercise.machine] || [];
 
     for (let i = 1; i <= exercise.sets; i++) {
-      const row = document.createElement('tr');
+      const row = document.createElement("tr");
 
-      const setCell = document.createElement('td');
+      const setCell = document.createElement("td");
       setCell.textContent = `Set ${i}`;
 
-      const repsInput = document.createElement('input');
-      repsInput.type = 'number';
-      repsInput.min = 0;
+      const repsInput = document.createElement("input");
+      repsInput.type = "number";
       repsInput.placeholder = exercise.reps;
-      if (savedSets[i - 1]?.reps) repsInput.value = savedSets[i - 1].reps;
+      repsInput.value = savedSets[i - 1]?.reps || "";
 
-      const weightInput = document.createElement('input');
-      weightInput.type = 'number';
-      weightInput.min = 0;
+      const weightInput = document.createElement("input");
+      weightInput.type = "number";
       weightInput.placeholder = exercise.weight;
-      if (savedSets[i - 1]?.weight) weightInput.value = savedSets[i - 1].weight;
+      weightInput.value = savedSets[i - 1]?.weight || "";
 
-      const timerCell = document.createElement('td');
-      const timerDiv = document.createElement('div');
-      timerCell.appendChild(timerDiv);
-
-      function saveAndStartTimer() {
-        const currentLog = JSON.parse(localStorage.getItem(storageKey) || "{}");
-        const setsData = currentLog[exercise.machine] || [];
-
-        setsData[i - 1] = {
-          reps: repsInput.value,
-          weight: weightInput.value
-        };
-        currentLog[exercise.machine] = setsData;
-        localStorage.setItem(storageKey, JSON.stringify(currentLog));
-
-        startTimer(timerDiv, 30); // 30 second rest
-      }
-
-      repsInput.addEventListener('change', saveAndStartTimer);
-      weightInput.addEventListener('change', saveAndStartTimer);
-
-      const repsCell = document.createElement('td');
-      const weightCell = document.createElement('td');
-
+      const repsCell = document.createElement("td");
+      const weightCell = document.createElement("td");
       repsCell.appendChild(repsInput);
       weightCell.appendChild(weightInput);
+
+      const timerCell = document.createElement("td");
+      const timerDiv = document.createElement("div");
+      timerCell.appendChild(timerDiv);
+
+      const saveAndStartTimer = () => {
+        saveSet(docRef, exercise.machine, i - 1, repsInput.value, weightInput.value);
+        startTimer(timerDiv, 30);
+      };
+
+      repsInput.addEventListener("change", saveAndStartTimer);
+      weightInput.addEventListener("change", saveAndStartTimer);
 
       row.appendChild(setCell);
       row.appendChild(repsCell);
@@ -103,13 +136,11 @@ function loadWorkoutForDay(day) {
       inputRows.push({ repsInput, weightInput });
     }
 
-    const notes = document.createElement('textarea');
-    notes.placeholder = 'Notes...';
+    const notes = document.createElement("textarea");
+    notes.placeholder = "Notes...";
     notes.value = savedData[`${exercise.machine}_notes`] || "";
-    notes.addEventListener('input', () => {
-      const currentLog = JSON.parse(localStorage.getItem(storageKey) || "{}");
-      currentLog[`${exercise.machine}_notes`] = notes.value;
-      localStorage.setItem(storageKey, JSON.stringify(currentLog));
+    notes.addEventListener("input", () => {
+      saveNote(docRef, `${exercise.machine}_notes`, notes.value);
     });
 
     card.appendChild(header);
@@ -121,7 +152,7 @@ function loadWorkoutForDay(day) {
 }
 
 function startTimer(container, seconds) {
-  clearInterval(container._interval); // cancel previous
+  clearInterval(container._interval);
   let timeLeft = seconds;
   container.textContent = `Rest: ${timeLeft}s`;
 
@@ -134,4 +165,21 @@ function startTimer(container, seconds) {
       clearInterval(container._interval);
     }
   }, 1000);
+}
+
+async function saveSet(docRef, exerciseName, index, reps, weight) {
+  const docSnap = await getDoc(docRef);
+  const data = docSnap.exists() ? docSnap.data() : {};
+  const sets = data[exerciseName] || [];
+
+  sets[index] = { reps, weight };
+  data[exerciseName] = sets;
+  await setDoc(docRef, data);
+}
+
+async function saveNote(docRef, key, value) {
+  const docSnap = await getDoc(docRef);
+  const data = docSnap.exists() ? docSnap.data() : {};
+  data[key] = value;
+  await setDoc(docRef, data);
 }
