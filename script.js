@@ -26,7 +26,7 @@ const daySelect = document.getElementById("daySelect");
 const dateInput = document.createElement("input");
 dateInput.type = "date";
 dateInput.id = "datePicker";
-dateInput.value = new Date().toISOString().split("T")[0];
+dateInput.value = new Date(new Date().setHours(0, 0, 0, 0)).toISOString().split("T")[0];
 daySelect.insertAdjacentElement("afterend", dateInput);
 
 const todayDate = () => dateInput.value;
