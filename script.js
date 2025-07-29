@@ -35,8 +35,17 @@ const weekdayName = (dateStr) =>
 
 dateInput.addEventListener("change", () => {
   const day = weekdayName(todayDate());
-  daySelect.value = day;
-  loadWorkoutForDay(day);
+ const defaultDay = weekdayName(todayDate());
+const matchingOption = Array.from(daySelect.options).find(opt =>
+  opt.value.toLowerCase().trim() === defaultDay.toLowerCase().trim()
+);
+if (matchingOption) {
+  daySelect.value = matchingOption.value;
+  loadWorkoutForDay(matchingOption.value);
+} else {
+  loadWorkoutForDay("Monday"); // fallback
+}
+
 });
 
 daySelect.addEventListener("change", () => {
