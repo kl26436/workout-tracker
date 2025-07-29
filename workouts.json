@@ -3,32 +3,39 @@
       "day": "Monday",
       "exercises": [
         {
-          "machine": "Chest Press",
-          "sets": 3,
+          "machine": "Seated Chest Press",
+          "sets": 4,
           "reps": 10,
           "weight": 100,
           "video": "https://www.bodybuilding.com/exercises/machine-bench-press"
         },
         {
-          "machine": "Shoulder Press",
+          "machine": "Pec Deck (Chest Fly)",
           "sets": 3,
+          "reps": 12,
+          "weight": 80,
+          "video": "https://www.bodybuilding.com/exercises/machine-fly"
+        },
+        {
+          "machine": "Shoulder Press Machine",
+          "sets": 4,
           "reps": 10,
           "weight": 70,
           "video": "https://www.bodybuilding.com/exercises/machine-shoulder-press"
         },
         {
-          "machine": "Triceps Pushdown",
+          "machine": "Lateral Raise Machine",
           "sets": 3,
-          "reps": 12,
-          "weight": 50,
-          "video": "https://www.bodybuilding.com/exercises/triceps-pushdown"
+          "reps": 15,
+          "weight": 30,
+          "video": "https://www.bodybuilding.com/exercises/side-lateral-raise"
         },
         {
-          "machine": "Leg Press",
+          "machine": "Triceps Pushdown",
           "sets": 3,
-          "reps": 12,
-          "weight": 180,
-          "video": "https://www.bodybuilding.com/exercises/leg-press"
+          "reps": 15,
+          "weight": 50,
+          "video": "https://www.bodybuilding.com/exercises/triceps-pushdown"
         }
       ]
     },
@@ -36,32 +43,39 @@
       "day": "Tuesday",
       "exercises": [
         {
-          "machine": "Lat Pulldown",
-          "sets": 3,
+          "machine": "Leg Press",
+          "sets": 4,
           "reps": 10,
-          "weight": 90,
-          "video": "https://www.bodybuilding.com/exercises/lat-pulldown"
+          "weight": 200,
+          "video": "https://www.bodybuilding.com/exercises/leg-press"
         },
         {
-          "machine": "Seated Row",
-          "sets": 3,
-          "reps": 10,
-          "weight": 100,
-          "video": "https://www.bodybuilding.com/exercises/seated-cable-rows"
-        },
-        {
-          "machine": "Biceps Curl (Cable or Machine)",
-          "sets": 3,
+          "machine": "Leg Curl Machine",
+          "sets": 4,
           "reps": 12,
-          "weight": 40,
-          "video": "https://www.bodybuilding.com/exercises/cable-biceps-curl"
+          "weight": 90,
+          "video": "https://www.bodybuilding.com/exercises/seated-leg-curl"
         },
         {
-          "machine": "Leg Curl",
+          "machine": "Leg Extension",
           "sets": 3,
           "reps": 12,
           "weight": 80,
-          "video": "https://www.bodybuilding.com/exercises/seated-leg-curl"
+          "video": "https://www.bodybuilding.com/exercises/leg-extensions"
+        },
+        {
+          "machine": "Glute Kickback Machine",
+          "sets": 3,
+          "reps": 15,
+          "weight": 40,
+          "video": "https://www.bodybuilding.com/exercises/cable-glute-kickback"
+        },
+        {
+          "machine": "Calf Raise Machine",
+          "sets": 3,
+          "reps": 20,
+          "weight": 90,
+          "video": "https://www.bodybuilding.com/exercises/standing-calf-raises"
         }
       ]
     },
@@ -69,25 +83,25 @@
       "day": "Wednesday",
       "exercises": [
         {
-          "machine": "Cable Crunch",
+          "machine": "Machine Crunch",
           "sets": 3,
           "reps": 15,
           "weight": 50,
-          "video": "https://www.bodybuilding.com/exercises/cable-crunch"
+          "video": "https://www.bodybuilding.com/exercises/machine-crunch"
         },
         {
-          "machine": "Russian Twist (on floor)",
+          "machine": "Hanging Leg Raise / Cable Knee Tuck",
+          "sets": 3,
+          "reps": 12,
+          "weight": 0,
+          "video": "https://www.bodybuilding.com/exercises/cable-knee-raise"
+        },
+        {
+          "machine": "Russian Twists",
           "sets": 3,
           "reps": 20,
           "weight": 0,
           "video": "https://www.bodybuilding.com/exercises/russian-twist"
-        },
-        {
-          "machine": "Plank",
-          "sets": 3,
-          "reps": 1,
-          "weight": 0,
-          "video": "https://www.bodybuilding.com/exercises/plank"
         }
       ]
     },
@@ -95,32 +109,39 @@
       "day": "Thursday",
       "exercises": [
         {
-          "machine": "Incline Chest Press",
-          "sets": 3,
+          "machine": "Lat Pulldown",
+          "sets": 4,
           "reps": 10,
           "weight": 90,
-          "video": "https://www.bodybuilding.com/exercises/machine-incline-bench-press"
+          "video": "https://www.bodybuilding.com/exercises/lat-pulldown"
         },
         {
-          "machine": "Shoulder Press",
-          "sets": 3,
+          "machine": "Seated Row Machine",
+          "sets": 4,
           "reps": 10,
-          "weight": 75,
-          "video": "https://www.bodybuilding.com/exercises/machine-shoulder-press"
+          "weight": 100,
+          "video": "https://www.bodybuilding.com/exercises/seated-cable-rows"
         },
         {
-          "machine": "Leg Press",
+          "machine": "Reverse Pec Deck",
           "sets": 3,
           "reps": 12,
-          "weight": 190,
-          "video": "https://www.bodybuilding.com/exercises/leg-press"
+          "weight": 60,
+          "video": "https://www.bodybuilding.com/exercises/reverse-machine-flyes"
         },
         {
-          "machine": "Overhead Triceps Extension",
+          "machine": "Cable or Machine Bicep Curl",
           "sets": 3,
-          "reps": 12,
+          "reps": 15,
           "weight": 40,
-          "video": "https://www.bodybuilding.com/exercises/standing-dumbbell-triceps-extension"
+          "video": "https://www.bodybuilding.com/exercises/cable-biceps-curl"
+        },
+        {
+          "machine": "Rope Face Pulls or Cable Pullovers",
+          "sets": 3,
+          "reps": 12,
+          "weight": 35,
+          "video": "https://www.bodybuilding.com/exercises/face-pull"
         }
       ]
     },
@@ -128,35 +149,66 @@
       "day": "Friday",
       "exercises": [
         {
-          "machine": "Lat Pulldown",
-          "sets": 3,
+          "machine": "Romanian Deadlift (Cable or Machine)",
+          "sets": 4,
           "reps": 10,
           "weight": 95,
-          "video": "https://www.bodybuilding.com/exercises/lat-pulldown"
+          "video": "https://www.bodybuilding.com/exercises/cable-deadlift"
         },
         {
-          "machine": "Seated Row",
-          "sets": 3,
-          "reps": 10,
-          "weight": 105,
-          "video": "https://www.bodybuilding.com/exercises/seated-cable-rows"
-        },
-        {
-          "machine": "Back Extension",
+          "machine": "Hip Abduction Machine",
           "sets": 3,
           "reps": 15,
-          "weight": 0,
-          "video": "https://www.bodybuilding.com/exercises/back-extension"
+          "weight": 60,
+          "video": "https://www.bodybuilding.com/exercises/hip-abduction"
         },
         {
-          "machine": "Preacher Curl (or EZ Bar Curl)",
+          "machine": "Glute Kickbacks",
+          "sets": 3,
+          "reps": 15,
+          "weight": 40,
+          "video": "https://www.bodybuilding.com/exercises/cable-glute-kickback"
+        },
+        {
+          "machine": "Leg Curl Machine",
+          "sets": 3,
+          "reps": 10,
+          "weight": 90,
+          "video": "https://www.bodybuilding.com/exercises/seated-leg-curl"
+        },
+        {
+          "machine": "Machine Crunch",
+          "sets": 3,
+          "reps": 15,
+          "weight": 50,
+          "video": "https://www.bodybuilding.com/exercises/machine-crunch"
+        }
+      ]
+    },
+    {
+      "day": "Saturday",
+      "exercises": [
+        {
+          "machine": "Cable Woodchoppers",
           "sets": 3,
           "reps": 12,
-          "weight": 45,
-          "video": "https://www.bodybuilding.com/exercises/machine-preacher-curls"
+          "weight": 30,
+          "video": "https://www.bodybuilding.com/exercises/wood-chop"
+        },
+        {
+          "machine": "Plank",
+          "sets": 3,
+          "reps": 1,
+          "weight": 0,
+          "video": "https://www.bodybuilding.com/exercises/plank"
+        },
+        {
+          "machine": "Side Planks",
+          "sets": 3,
+          "reps": 1,
+          "weight": 0,
+          "video": "https://www.bodybuilding.com/exercises/side-bridge"
         }
       ]
     }
   ]
-  
-  
