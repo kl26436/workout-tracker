@@ -86,6 +86,20 @@ signInAnonymously(auth).catch((error) =>
 onAuthStateChanged(auth, (user) => {
   if (user) {
     currentUserId = user.uid;
+console.log("📦 Fetching workouts.json...");
+
+fetch("workouts.json")
+  .then((res) => {
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    return res.json();
+  })
+  .then((data) => {
+    console.log("✅ Loaded workout data:", data);
+    workouts = data;
+    loadWorkoutForDay(daySelect.value);
+  })
+  .catch((err) => console.error("❌ Failed to load workouts.json:", err));
+
     fetch("workouts.json")
       .then((res) => res.json())
       .then((data) => {
