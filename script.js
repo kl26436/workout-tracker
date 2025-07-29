@@ -30,8 +30,11 @@ dateInput.value = new Date().toISOString().split("T")[0];
 daySelect.insertAdjacentElement("afterend", dateInput);
 
 const todayDate = () => dateInput.value;
-const weekdayName = (dateStr) =>
-  new Date(dateStr).toLocaleString("en-US", { weekday: "long" });
+const weekdayName = (dateStr) => {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const localDate = new Date(year, month - 1, day); // forces local time
+  return localDate.toLocaleString("en-US", { weekday: "long" });
+};
 
 dateInput.addEventListener("change", () => {
   const day = weekdayName(todayDate());
