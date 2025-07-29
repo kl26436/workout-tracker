@@ -71,7 +71,17 @@ onAuthStateChanged(auth, (user) => {
 
 async function loadWorkoutForDay(day) {
   workoutList.innerHTML = "";
-  const workout = workouts.find((w) => w.day.toLowerCase().trim() === day.toLowerCase().trim());
+  console.log("🔍 Trying to load workout for:", day);
+console.log("📅 Available days:", workouts.map(w => w.day));
+
+const workout = workouts.find((w) =>
+  w.day.toLowerCase().trim() === day.toLowerCase().trim()
+);
+
+if (!workout) {
+  workoutList.innerHTML = `<p>No workout scheduled for ${day}.</p>`;
+  return;
+}
   if (!workout) {
     workoutList.innerHTML = `<p>No workout scheduled for ${day}.</p>`;
     return;
