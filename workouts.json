@@ -6,21 +6,21 @@
           "machine": "Seated Chest Press",
           "sets": 4,
           "reps": 10,
-          "weight": 100,
+          "weight": 110,
           "video": "https://www.youtube.com/watch?v=n8TOta_pfr4"
         },
         {
           "machine": "Pec Deck (Chest Fly)",
           "sets": 3,
           "reps": 12,
-          "weight": 80,
+          "weight": 70,
           "video": "https://www.youtube.com/watch?v=JJitfZKlKk4"
         },
         {
           "machine": "Shoulder Press Machine",
           "sets": 4,
           "reps": 10,
-          "weight": 70,
+          "weight": 100,
           "video": "https://www.youtube.com/watch?v=BAZkFGeUy5U"
         },
         {
@@ -34,7 +34,7 @@
           "machine": "Triceps Pushdown",
           "sets": 3,
           "reps": 15,
-          "weight": 50,
+          "weight": 60,
           "video": "https://www.youtube.com/watch?v=G0-qvTlUODk"
         }
       ]
@@ -46,36 +46,36 @@
           "machine": "Leg Press",
           "sets": 4,
           "reps": 10,
-          "weight": 200,
+          "weight": 300,
           "video": "https://www.youtube.com/watch?v=n1Dyy3De1Rc"
         },
         {
           "machine": "Leg Curl Machine",
           "sets": 4,
           "reps": 12,
-          "weight": 90,
-          "video": "https://www.youtube.com/watch?v=seated-leg-curl" 
+          "weight": 80,
+          "video": "https://www.youtube.com/watch?v=s1xJBgnXReU"
         },
         {
           "machine": "Leg Extension",
           "sets": 3,
           "reps": 12,
           "weight": 80,
-          "video": "https://www.youtube.com/watch?v=leg-extension-demonstration"
+          "video": "https://www.youtube.com/watch?v=yR3xzINo_yM"
         },
         {
           "machine": "Glute Kickback Machine",
           "sets": 3,
           "reps": 15,
-          "weight": 40,
-          "video": "https://www.youtube.com/watch?v=cable-glute-kickback"
+          "weight": 55,
+          "video": "https://www.youtube.com/watch?v=2vSRrEgHjkI"
         },
         {
           "machine": "Calf Raise Machine",
           "sets": 3,
           "reps": 20,
           "weight": 90,
-          "video": "https://www.youtube.com/watch?v=standing-calf-raises"
+          "video": "https://www.youtube.com/watch?v=-M4-G8p8fmc"
         }
       ]
     },
@@ -86,22 +86,22 @@
           "machine": "Machine Crunch",
           "sets": 3,
           "reps": 15,
-          "weight": 50,
-          "video": "https://www.youtube.com/watch?v=machine-crunch-demo"
+          "weight": 60,
+          "video": "https://www.youtube.com/watch?v=XHITnBrPZxU"
         },
         {
           "machine": "Hanging Leg Raise / Cable Knee Tuck",
           "sets": 3,
           "reps": 12,
           "weight": 0,
-          "video": "https://www.youtube.com/watch?v=cable-knee-raise"
+          "video": "https://www.youtube.com/watch?v=LScXfWeKj4k"
         },
         {
           "machine": "Russian Twists",
           "sets": 3,
           "reps": 20,
           "weight": 0,
-          "video": "https://www.youtube.com/watch?v=sqNwDkUU_Ps"
+          "video": "https://www.youtube.com/watch?v=wkD8rjkodUI"
         }
       ]
     },
@@ -112,36 +112,36 @@
           "machine": "Lat Pulldown",
           "sets": 4,
           "reps": 10,
-          "weight": 90,
-          "video": "https://www.youtube.com/watch?v=lat-pulldown-tutorial"
+          "weight": 130,
+          "video": "https://www.youtube.com/watch?v=CAwf7n6Luuc"
         },
         {
           "machine": "Seated Row Machine",
           "sets": 4,
           "reps": 10,
-          "weight": 100,
-          "video": "https://www.youtube.com/watch?v=seated-cable-rows"
+          "weight": 130,
+          "video": "https://www.youtube.com/watch?v=pYcpY20QaE8"
         },
         {
           "machine": "Reverse Pec Deck",
           "sets": 3,
           "reps": 12,
           "weight": 60,
-          "video": "https://www.youtube.com/watch?v=rear-delt-fly"
+          "video": "https://www.youtube.com/watch?v=nsHUfYxVlL4"
         },
         {
           "machine": "Cable or Machine Bicep Curl",
           "sets": 3,
           "reps": 15,
-          "weight": 40,
-          "video": "https://www.youtube.com/watch?v=cable-biceps-curl"
+          "weight": 75,
+          "video": "https://www.youtube.com/watch?v=av7-8igSXTs"
         },
         {
           "machine": "Rope Face Pulls or Cable Pullovers",
           "sets": 3,
           "reps": 12,
           "weight": 35,
-          "video": "https://www.youtube.com/watch?v=face-pull-tutorial"
+          "video": "https://www.youtube.com/watch?v=rep-qVOkqgk"
         }
       ]
     },
@@ -152,36 +152,36 @@
           "machine": "Romanian Deadlift (Cable or Machine)",
           "sets": 4,
           "reps": 10,
-          "weight": 95,
-          "video": "https://www.youtube.com/watch?v=cable-deadlift"
+          "weight": 75,
+          "video": "https://www.youtube.com/watch?v=2SHsk9AzdjA"
         },
         {
           "machine": "Hip Abduction Machine",
           "sets": 3,
           "reps": 15,
-          "weight": 60,
-          "video": "https://www.youtube.com/watch?v=hip-abduction-machine"
+          "weight": 55,
+          "video": "https://www.youtube.com/watch?v=sM6XU5WwLUE"
         },
         {
           "machine": "Glute Kickbacks",
           "sets": 3,
           "reps": 15,
-          "weight": 40,
-          "video": "https://www.youtube.com/watch?v=cable-glute-kickback"
+          "weight": 55,
+          "video": "https://www.youtube.com/watch?v=2vSRrEgHjkI"
         },
         {
           "machine": "Leg Curl Machine",
           "sets": 3,
-          **reps**: 10,
-          **weight**: 90,
-          "video": "https://www.youtube.com/watch?v=seated-leg-curl"
+          "reps": 10,
+          "weight": 80,
+          "video": "https://www.youtube.com/watch?v=s1xJBgnXReU"
         },
         {
           "machine": "Machine Crunch",
           "sets": 3,
           "reps": 15,
-          "weight": 50,
-          "video": "https://www.youtube.com/watch?v=machine-crunch-demo"
+          "weight": 60,
+          "video": "https://www.youtube.com/watch?v=XHITnBrPZxU"
         }
       ]
     },
@@ -193,21 +193,21 @@
           "sets": 3,
           "reps": 12,
           "weight": 30,
-          "video": "https://www.youtube.com/watch?v=wood-chop"
+          "video": "https://www.youtube.com/watch?v=Rk3WkJX1aUQ"
         },
         {
           "machine": "Plank",
           "sets": 3,
           "reps": 1,
           "weight": 0,
-          "video": "https://www.youtube.com/watch?v=plank-tutorial"
+          "video": "https://www.youtube.com/watch?v=pSHjTRCQxIw"
         },
         {
           "machine": "Side Planks",
           "sets": 3,
           "reps": 1,
           "weight": 0,
-          "video": "https://www.youtube.com/watch?v=side-plank-demo"
+          "video": "https://www.youtube.com/watch?v=K2VljzCC16g"
         }
       ]
     }
