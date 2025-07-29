@@ -22,40 +22,39 @@ let currentUserId = null;
 const workoutList = document.getElementById("workout-list");
 const daySelect = document.getElementById("daySelect");
 
-// 📅 Create + insert date picker
+// 📅 Create and insert date picker
 const dateInput = document.createElement("input");
 dateInput.type = "date";
 dateInput.id = "datePicker";
-dateInput.value = new Date(new Date().setHours(0, 0, 0, 0)).toISOString().split("T")[0];
-daySelect.insertAdjacentElement("afterend", dateInput);
+document.getElementById("daySelect").after(dateInput);
 
-const todayDate = () => dateInput.value;
-const weekdayName = (dateStr) => {
-  const [year, month, day] = dateStr.split("-").map(Number);
-  const localDate = new Date(year, month - 1, day); // forces local time
-  return localDate.toLocaleString("en-US", { weekday: "long" });
-};
-
-dateInput.addEventListener("change", () => {
-  const day = weekdayName(todayDate());
- const defaultDay = weekdayName(todayDate());
-const matchingOption = Array.from(daySelect.options).find(opt =>
-  opt.value.toLowerCase().trim() === defaultDay.toLowerCase().trim()
-);
-if (matchingOption) {
-  daySelect.value = matchingOption.value;
-  loadWorkoutForDay(matchingOption.value);
-} else {
-  loadWorkoutForDay("Monday"); // fallback
+// ⏱️ Helpers
+function getLocalISODateString() {
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); // Adjust for local time
+  return now.toISOString().split("T")[0];
 }
 
+function weekdayName(dateStr) {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const localDate = new Date(year, month - 1, day);
+  return localDate.toLocaleString("en-US", { weekday: "long" });
+}
+
+// Set today's date + day
+dateInput.value = getLocalISODateString();
+daySelect.value = weekdayName(dateInput.value);
+
+// ⬅️ Date changes → update day and load workout
+dateInput.addEventListener("change", () => {
+  const newDay = weekdayName(dateInput.value);
+  daySelect.value = newDay;
+  loadWorkoutForDay(newDay);
 });
 
+// ⬆️ Day changes → update date to this week’s selected day
 daySelect.addEventListener("change", () => {
   const selectedDay = daySelect.value;
-  const current = new Date(dateInput.value);
-  const currentWeekday = current.getDay(); // Sunday = 0
-
   const dayMap = {
     Sunday: 0,
     Monday: 1,
@@ -65,24 +64,25 @@ daySelect.addEventListener("change", () => {
     Friday: 5,
     Saturday: 6,
   };
-
+  const current = new Date(dateInput.value);
+  const currentWeekday = current.getDay();
   const targetWeekday = dayMap[selectedDay];
   const diff = targetWeekday - currentWeekday;
 
   const newDate = new Date(current);
   newDate.setDate(current.getDate() + diff);
-
+  newDate.setMinutes(newDate.getMinutes() - newDate.getTimezoneOffset());
   dateInput.value = newDate.toISOString().split("T")[0];
 
   loadWorkoutForDay(selectedDay);
 });
 
-});
-
+// 🔐 Firebase login
 signInAnonymously(auth).catch((error) =>
   console.error("Firebase auth error:", error)
 );
 
+// 🔄 On login, fetch workouts and load today
 onAuthStateChanged(auth, (user) => {
   if (user) {
     currentUserId = user.uid;
@@ -90,7 +90,6 @@ onAuthStateChanged(auth, (user) => {
       .then((res) => res.json())
       .then((data) => {
         workouts = data;
-        daySelect.value = weekdayName(todayDate());
         loadWorkoutForDay(daySelect.value);
       });
   }
@@ -99,22 +98,17 @@ onAuthStateChanged(auth, (user) => {
 async function loadWorkoutForDay(day) {
   workoutList.innerHTML = "";
   console.log("🔍 Trying to load workout for:", day);
-console.log("📅 Available days:", workouts.map(w => w.day));
 
-const workout = workouts.find((w) =>
-  w.day.toLowerCase().trim() === day.toLowerCase().trim()
-);
+  const workout = workouts.find((w) =>
+    w.day.toLowerCase().trim() === day.toLowerCase().trim()
+  );
 
-if (!workout) {
-  workoutList.innerHTML = `<p>No workout scheduled for ${day}.</p>`;
-  return;
-}
   if (!workout) {
     workoutList.innerHTML = `<p>No workout scheduled for ${day}.</p>`;
     return;
   }
 
-  const docId = `${todayDate()}_${day}`;
+  const docId = `${dateInput.value}_${day}`;
   const docRef = doc(db, "users", currentUserId, "workouts", docId);
   const docSnap = await getDoc(docRef);
   const savedData = docSnap.exists() ? docSnap.data() : {};
