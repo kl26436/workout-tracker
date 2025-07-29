@@ -172,8 +172,8 @@
         {
           "machine": "Leg Curl Machine",
           "sets": 3,
-          **reps**: 10,
-          **weight**: 90,
+          "reps": 10,
+          "weight": 90,
           "video": "https://www.youtube.com/watch?v=seated-leg-curl"
         },
         {
