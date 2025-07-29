@@ -52,7 +52,31 @@ if (matchingOption) {
 });
 
 daySelect.addEventListener("change", () => {
-  loadWorkoutForDay(daySelect.value);
+  const selectedDay = daySelect.value;
+  const current = new Date(dateInput.value);
+  const currentWeekday = current.getDay(); // Sunday = 0
+
+  const dayMap = {
+    Sunday: 0,
+    Monday: 1,
+    Tuesday: 2,
+    Wednesday: 3,
+    Thursday: 4,
+    Friday: 5,
+    Saturday: 6,
+  };
+
+  const targetWeekday = dayMap[selectedDay];
+  const diff = targetWeekday - currentWeekday;
+
+  const newDate = new Date(current);
+  newDate.setDate(current.getDate() + diff);
+
+  dateInput.value = newDate.toISOString().split("T")[0];
+
+  loadWorkoutForDay(selectedDay);
+});
+
 });
 
 signInAnonymously(auth).catch((error) =>
