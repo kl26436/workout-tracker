@@ -27,7 +27,13 @@ const auth = getAuth(app);
 
 let workouts = [];
 let currentUserId = null;
+let allExercises = []; // List of all available exercises
+let overrides = {}; // Local cache of user swaps for the day
 
+const swapModal = document.getElementById("swapModal");
+const searchInput = document.getElementById("exerciseSearch");
+const optionsContainer = document.getElementById("exerciseOptions");
+const closeModalBtn = document.getElementById("closeSwapModal");
 const workoutList = document.getElementById("workout-list");
 const workoutTypeSelect = document.getElementById("workoutTypeSelect");
 const dateInput = document.createElement("input");
@@ -114,13 +120,16 @@ onAuthStateChanged(auth, (user) => {
 });
 
 function fetchWorkoutData() {
-  fetch("workouts.json")
-    .then((res) => res.json())
-    .then((data) => {
-      workouts = data;
-      loadWorkoutForDay(workoutTypeSelect.value);
-    })
-    .catch((err) => console.error("❌ Failed to load workouts.json:", err));
+  Promise.all([
+    fetch("workouts.json").then(res => res.json()),
+    fetch("exercises.json").then(res => res.json())
+  ])
+  .then(([workoutData, allEx]) => {
+    workouts = workoutData;
+    allExercises = allEx;
+    loadWorkoutForDay(workoutTypeSelect.value);
+  })
+  .catch(err => console.error("❌ Failed to load workout data:", err));
 }
 
 async function loadWorkoutForDay(type) {
@@ -139,81 +148,88 @@ async function loadWorkoutForDay(type) {
   const docRef = doc(db, "users", currentUserId, "workouts", docId);
   const docSnap = await getDoc(docRef);
   const savedData = docSnap.exists() ? docSnap.data() : {};
+  const overrideRef = doc(db, "users", currentUserId, "overrides", `${dateInput.value}_${type}`);
+  const overrideSnap = await getDoc(overrideRef);
+  overrides = overrideSnap.exists() ? overrideSnap.data() : {};
+
 
   workout.exercises.forEach((exercise) => {
-    const card = document.createElement("div");
-    card.className = "exercise-card";
+  const override = overrides[exercise.machine];
+  const effectiveExercise = override || exercise;
 
-    const header = document.createElement("h3");
-    header.textContent = exercise.machine;
+  const card = document.createElement("div");
+  card.className = "exercise-card";
 
-    const videoLink = document.createElement("a");
-    videoLink.href = exercise.video;
-    videoLink.target = "_blank";
-    videoLink.textContent = "Watch Form Video";
+  const header = document.createElement("h3");
+  header.textContent = effectiveExercise.machine;
 
-    const table = document.createElement("table");
-    const headerRow = document.createElement("tr");
-    headerRow.innerHTML =
-      "<th>Set</th><th>Reps</th><th>Weight (lbs)</th><th>Timer</th>";
-    table.appendChild(headerRow);
+  const videoLink = document.createElement("a");
+  videoLink.href = effectiveExercise.video;
+  videoLink.target = "_blank";
+  videoLink.textContent = "Watch Form Video";
 
-    const savedSets = savedData[exercise.machine] || [];
+  const table = document.createElement("table");
+  const headerRow = document.createElement("tr");
+  headerRow.innerHTML =
+    "<th>Set</th><th>Reps</th><th>Weight (lbs)</th><th>Timer</th>";
+  table.appendChild(headerRow);
 
-    for (let i = 0; i < exercise.sets; i++) {
-      const row = document.createElement("tr");
+  const savedSets = savedData[exercise.machine] || [];
 
-      const setCell = document.createElement("td");
-      setCell.textContent = `Set ${i + 1}`;
+  for (let i = 0; i < effectiveExercise.sets; i++) {
+    const row = document.createElement("tr");
 
-      const repsInput = document.createElement("input");
-      repsInput.type = "number";
-      repsInput.placeholder = exercise.reps;
-      repsInput.value = savedSets[i]?.reps || "";
+    const setCell = document.createElement("td");
+    setCell.textContent = `Set ${i + 1}`;
 
-      const weightInput = document.createElement("input");
-      weightInput.type = "number";
-      weightInput.placeholder = exercise.weight;
-      weightInput.value = savedSets[i]?.weight || "";
+    const repsInput = document.createElement("input");
+    repsInput.type = "number";
+    repsInput.placeholder = effectiveExercise.reps;
+    repsInput.value = savedSets[i]?.reps || "";
 
-      const repsCell = document.createElement("td");
-      repsCell.appendChild(repsInput);
+    const weightInput = document.createElement("input");
+    weightInput.type = "number";
+    weightInput.placeholder = effectiveExercise.weight;
+    weightInput.value = savedSets[i]?.weight || "";
 
-      const weightCell = document.createElement("td");
-      weightCell.appendChild(weightInput);
+    const repsCell = document.createElement("td");
+    repsCell.appendChild(repsInput);
 
-      const timerCell = document.createElement("td");
-      const timerDiv = document.createElement("div");
-      timerCell.appendChild(timerDiv);
+    const weightCell = document.createElement("td");
+    weightCell.appendChild(weightInput);
 
-      const saveAndStartTimer = () => {
-        saveSet(docRef, exercise.machine, i, repsInput.value, weightInput.value);
-        startTimer(timerDiv, 30);
-      };
+    const timerCell = document.createElement("td");
+    const timerDiv = document.createElement("div");
+    timerCell.appendChild(timerDiv);
 
-      repsInput.addEventListener("change", saveAndStartTimer);
-      weightInput.addEventListener("change", saveAndStartTimer);
+    const saveAndStartTimer = () => {
+      saveSet(docRef, exercise.machine, i, repsInput.value, weightInput.value);
+      startTimer(timerDiv, 30);
+    };
 
-      row.appendChild(setCell);
-      row.appendChild(repsCell);
-      row.appendChild(weightCell);
-      row.appendChild(timerCell);
-      table.appendChild(row);
-    }
+    repsInput.addEventListener("change", saveAndStartTimer);
+    weightInput.addEventListener("change", saveAndStartTimer);
 
-    const notes = document.createElement("textarea");
-    notes.placeholder = "Notes...";
-    notes.value = savedData[`${exercise.machine}_notes`] || "";
-    notes.addEventListener("input", () => {
-      saveNote(docRef, `${exercise.machine}_notes`, notes.value);
-    });
+    row.appendChild(setCell);
+    row.appendChild(repsCell);
+    row.appendChild(weightCell);
+    row.appendChild(timerCell);
+    table.appendChild(row);
+  }
 
-    card.appendChild(header);
-    card.appendChild(videoLink);
-    card.appendChild(table);
-    card.appendChild(notes);
-    workoutList.appendChild(card);
+  const notes = document.createElement("textarea");
+  notes.placeholder = "Notes...";
+  notes.value = savedData[`${exercise.machine}_notes`] || "";
+  notes.addEventListener("input", () => {
+    saveNote(docRef, `${exercise.machine}_notes`, notes.value);
   });
+
+  card.appendChild(header);
+  card.appendChild(videoLink);
+  card.appendChild(table);
+  card.appendChild(notes);
+  workoutList.appendChild(card);
+});
 }
 
 function startTimer(container, seconds) {
@@ -243,4 +259,37 @@ async function saveNote(docRef, key, value) {
   const data = docSnap.exists() ? docSnap.data() : {};
   data[key] = value;
   await setDoc(docRef, data);
+
+  closeModalBtn.addEventListener("click", () => {
+  swapModal.style.display = "none";
+});
+
+searchInput.addEventListener("input", () => {
+  renderExerciseOptions(searchInput.value);
+});
+
+function renderExerciseOptions(query) {
+  optionsContainer.innerHTML = "";
+  const q = query.toLowerCase();
+
+  const filtered = allExercises.filter(ex =>
+    ex.machine.toLowerCase().includes(q) ||
+    (ex.bodyPart && ex.bodyPart.toLowerCase().includes(q)) ||
+    (ex.tags && ex.tags.some(tag => tag.toLowerCase().includes(q)))
+  );
+
+  filtered.forEach((ex, idx) => {
+    const div = document.createElement("div");
+    div.style.padding = "0.5rem";
+    div.style.borderBottom = "1px solid #30363d";
+    div.style.cursor = "pointer";
+    div.innerHTML = `<strong>${ex.machine}</strong><br/><small>${ex.sets} x ${ex.reps} @ ${ex.weight} lbs</small><br/><a href="${ex.video}" target="_blank">Form Video</a>`;
+    div.addEventListener("click", () => {
+      applyExerciseSwap(currentSwapTarget, ex);
+      swapModal.style.display = "none";
+    });
+    optionsContainer.appendChild(div);
+  });
+}
+
 }

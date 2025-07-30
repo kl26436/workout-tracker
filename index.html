@@ -88,5 +88,14 @@
     </footer>
 
     <script type="module" src="script.js"></script>
+
+    <div id="swapModal" class="modal" style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%); z-index:1000; background:#161b22; padding:1rem; border-radius:8px; border:1px solid #30363d; width:90%; max-width:500px;">
+      <h3>Swap Exercise</h3>
+      <input type="text" id="exerciseSearch" placeholder="Search by name, body part, tag..." style="width:100%; margin-bottom:1rem;" />
+      <div id="exerciseOptions" style="max-height:300px; overflow-y:auto;"></div>
+      <button id="closeSwapModal">Cancel</button>
+    </div>
+
+
   </body>
 </html>

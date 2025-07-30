@@ -37,5 +37,17 @@ body {
   button {
     padding: 0.5rem 1rem;
     margin-top: 0.5rem;
+
+.exercise-card button.swap-btn {
+  margin-top: 0.5rem;
+}
+.modal h3 {
+  margin-top: 0;
+}
+.modal button {
+  margin-top: 1rem;
+}
+
+
   }
   
