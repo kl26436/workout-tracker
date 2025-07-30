@@ -1,8 +1,16 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
-import { GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
-
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup
+} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAbzL4bGY026Z-oWiWcYLfDgkmmgAfUY3k",
@@ -10,8 +18,7 @@ const firebaseConfig = {
   projectId: "workout-tracker-b94b6",
   storageBucket: "workout-tracker-b94b6.firebasestorage.app",
   messagingSenderId: "111958991290",
-  appId: "1:111958991290:web:23e1014ab2ba27df6ebd83",
-  measurementId: "G-WX999ZQKEM"
+  appId: "1:111958991290:web:23e1014ab2ba27df6ebd83"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -22,104 +29,87 @@ let workouts = [];
 let currentUserId = null;
 
 const workoutList = document.getElementById("workout-list");
-const daySelect = document.getElementById("daySelect");
-
-// 📅 Create and insert date picker
+const workoutTypeSelect = document.getElementById("workoutTypeSelect");
 const dateInput = document.createElement("input");
 dateInput.type = "date";
 dateInput.id = "datePicker";
-document.getElementById("daySelect").after(dateInput);
+workoutTypeSelect.after(dateInput);
 
-// ⏱️ Helpers
+// Sign-in button
+const loginButton = document.createElement("button");
+loginButton.textContent = "Sign In with Google";
+loginButton.id = "googleSignInBtn";
+document.body.prepend(loginButton);
+
+// Helper: Today’s ISO date
 function getLocalISODateString() {
   const now = new Date();
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); // Adjust for local time
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
   return now.toISOString().split("T")[0];
 }
 
+dateInput.value = getLocalISODateString();
+
+// Sync workout type to current date on load
+workoutTypeSelect.value = weekdayName(dateInput.value);
+
+// Map weekdays to workout types
+const dayToWorkoutType = {
+  Sunday: "Optional – Cardio / Abs",
+  Monday: "Chest – Push",
+  Tuesday: "Legs – Quad Focus",
+  Wednesday: "Cardio + Core",
+  Thursday: "Back – Pull",
+  Friday: "Legs – Posterior Focus",
+  Saturday: "Optional – Cardio / Abs"
+};
+
 function weekdayName(dateStr) {
   const [year, month, day] = dateStr.split("-").map(Number);
-  const localDate = new Date(year, month - 1, day);
-  return localDate.toLocaleString("en-US", { weekday: "long" });
+  return new Date(year, month - 1, day).toLocaleString("en-US", {
+    weekday: "long"
+  });
 }
 
-// Set today's date + day
-dateInput.value = getLocalISODateString();
-daySelect.value = weekdayName(dateInput.value);
-
-// ⬅️ Date changes → update day and load workout
+// When date changes → sync workout type
 dateInput.addEventListener("change", () => {
   const newDay = weekdayName(dateInput.value);
-  daySelect.value = newDay;
-  loadWorkoutForDay(newDay);
+  const newWorkoutType = dayToWorkoutType[newDay] || "Cardio + Core";
+  workoutTypeSelect.value = newWorkoutType;
+  loadWorkoutForDay(newWorkoutType);
 });
 
-// ⬆️ Day changes → update date to this week’s selected day
-daySelect.addEventListener("change", () => {
-  const selectedDay = daySelect.value;
-  const dayMap = {
-    Sunday: 0,
-    Monday: 1,
-    Tuesday: 2,
-    Wednesday: 3,
-    Thursday: 4,
-    Friday: 5,
-    Saturday: 6,
-  };
-  const current = new Date(dateInput.value);
-  const currentWeekday = current.getDay();
-  const targetWeekday = dayMap[selectedDay];
-  const diff = targetWeekday - currentWeekday;
-
-  const newDate = new Date(current);
-  newDate.setDate(current.getDate() + diff);
-  newDate.setMinutes(newDate.getMinutes() - newDate.getTimezoneOffset());
-  dateInput.value = newDate.toISOString().split("T")[0];
-
-  loadWorkoutForDay(selectedDay);
+// When workout type changes → do not touch date, just load workout
+workoutTypeSelect.addEventListener("change", () => {
+  loadWorkoutForDay(workoutTypeSelect.value);
 });
 
-// 🔐 Set up Google Auth with a button
-const loginButton = document.createElement("button");
-loginButton.textContent = "Sign In with Google";
-document.body.prepend(loginButton);
-
+// Firebase auth
 const provider = new GoogleAuthProvider();
 
 loginButton.addEventListener("click", () => {
   signInWithPopup(auth, provider)
     .then((result) => {
       currentUserId = result.user.uid;
-      console.log("✅ Logged in as:", result.user.email);
+      console.log("✅ Signed in as:", result.user.email);
+      loginButton.style.display = "none";
       fetchWorkoutData();
-      loginButton.style.display = "none"; // hide after login
     })
     .catch((error) => {
       console.error("❌ Google sign-in failed:", error);
     });
 });
 
+// On login
 onAuthStateChanged(auth, (user) => {
-  const userInfo = document.getElementById("user-info");
-  const signInBtn = document.getElementById("googleSignInBtn");
-
   if (user) {
     currentUserId = user.uid;
-
-    // 👤 Show user info
-    if (user.email) {
-      userInfo.textContent = `Logged in as ${user.email}`;
-    } else {
-      userInfo.textContent = `Logged in (UID: ${user.uid})`;
-    }
-
-    // ✅ Hide sign-in button
-    if (signInBtn) signInBtn.style.display = "none";
-
+    document.getElementById("user-info").textContent =
+      user.email || `UID: ${user.uid}`;
+    loginButton.style.display = "none";
     fetchWorkoutData();
   } else {
-    // 🔓 Show sign-in button if not signed in
-    if (signInBtn) signInBtn.style.display = "inline-block";
+    loginButton.style.display = "inline-block";
   }
 });
 
@@ -128,24 +118,24 @@ function fetchWorkoutData() {
     .then((res) => res.json())
     .then((data) => {
       workouts = data;
-      loadWorkoutForDay(daySelect.value);
-    });
-};
+      loadWorkoutForDay(workoutTypeSelect.value);
+    })
+    .catch((err) => console.error("❌ Failed to load workouts.json:", err));
+}
 
-async function loadWorkoutForDay(day) {
+async function loadWorkoutForDay(type) {
   workoutList.innerHTML = "";
-  console.log("🔍 Trying to load workout for:", day);
+  console.log("🔍 Loading workout:", type);
 
-  const workout = workouts.find((w) =>
-    w.day.toLowerCase().trim() === day.toLowerCase().trim()
+  const workout = workouts.find(
+    (w) => w.day.toLowerCase().trim() === type.toLowerCase().trim()
   );
-
   if (!workout) {
-    workoutList.innerHTML = `<p>No workout scheduled for ${day}.</p>`;
+    workoutList.innerHTML = `<p>No workout scheduled for ${type}.</p>`;
     return;
   }
 
-  const docId = `${dateInput.value}_${day}`;
+  const docId = `${dateInput.value}_${type}`;
   const docRef = doc(db, "users", currentUserId, "workouts", docId);
   const docSnap = await getDoc(docRef);
   const savedData = docSnap.exists() ? docSnap.data() : {};
@@ -168,28 +158,28 @@ async function loadWorkoutForDay(day) {
       "<th>Set</th><th>Reps</th><th>Weight (lbs)</th><th>Timer</th>";
     table.appendChild(headerRow);
 
-    const inputRows = [];
     const savedSets = savedData[exercise.machine] || [];
 
-    for (let i = 1; i <= exercise.sets; i++) {
+    for (let i = 0; i < exercise.sets; i++) {
       const row = document.createElement("tr");
 
       const setCell = document.createElement("td");
-      setCell.textContent = `Set ${i}`;
+      setCell.textContent = `Set ${i + 1}`;
 
       const repsInput = document.createElement("input");
       repsInput.type = "number";
       repsInput.placeholder = exercise.reps;
-      repsInput.value = savedSets[i - 1]?.reps || "";
+      repsInput.value = savedSets[i]?.reps || "";
 
       const weightInput = document.createElement("input");
       weightInput.type = "number";
       weightInput.placeholder = exercise.weight;
-      weightInput.value = savedSets[i - 1]?.weight || "";
+      weightInput.value = savedSets[i]?.weight || "";
 
       const repsCell = document.createElement("td");
-      const weightCell = document.createElement("td");
       repsCell.appendChild(repsInput);
+
+      const weightCell = document.createElement("td");
       weightCell.appendChild(weightInput);
 
       const timerCell = document.createElement("td");
@@ -197,7 +187,7 @@ async function loadWorkoutForDay(day) {
       timerCell.appendChild(timerDiv);
 
       const saveAndStartTimer = () => {
-        saveSet(docRef, exercise.machine, i - 1, repsInput.value, weightInput.value);
+        saveSet(docRef, exercise.machine, i, repsInput.value, weightInput.value);
         startTimer(timerDiv, 30);
       };
 
@@ -209,8 +199,6 @@ async function loadWorkoutForDay(day) {
       row.appendChild(weightCell);
       row.appendChild(timerCell);
       table.appendChild(row);
-
-      inputRows.push({ repsInput, weightInput });
     }
 
     const notes = document.createElement("textarea");
@@ -235,12 +223,9 @@ function startTimer(container, seconds) {
 
   container._interval = setInterval(() => {
     timeLeft--;
-    if (timeLeft > 0) {
-      container.textContent = `Rest: ${timeLeft}s`;
-    } else {
-      container.textContent = "Rest Over!";
-      clearInterval(container._interval);
-    }
+    container.textContent =
+      timeLeft > 0 ? `Rest: ${timeLeft}s` : "Rest Over!";
+    if (timeLeft <= 0) clearInterval(container._interval);
   }, 1000);
 }
 
@@ -248,7 +233,6 @@ async function saveSet(docRef, exerciseName, index, reps, weight) {
   const docSnap = await getDoc(docRef);
   const data = docSnap.exists() ? docSnap.data() : {};
   const sets = data[exerciseName] || [];
-
   sets[index] = { reps, weight };
   data[exerciseName] = sets;
   await setDoc(docRef, data);
