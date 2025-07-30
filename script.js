@@ -106,8 +106,8 @@ onAuthStateChanged(auth, (user) => {
 // Load workouts & all exercises
 function fetchWorkoutData() {
   Promise.all([
-    fetch("workouts.json").then(res => res.json()),
-    fetch("exercises.json").then(res => res.json())
+    fetch("/workouts.json").then(res => res.json()),
+    fetch("/exercises.json").then(res => res.json())
   ])
     .then(([w, e]) => {
       workouts = w;
