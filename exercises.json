@@ -1,163 +1,282 @@
-[
-  {
+ [
+ {
     "name": "Seated Chest Press",
-    "video": "https://www.youtube.com/watch?v=n8TOta_pfr4",
-    "equipmentType": "Machine",
-    "bodyPart": "Chest",
-    "intensity": "Moderate"
+    "machine": "Seated Chest Press",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
   },
   {
-    "name": "Pec Deck (Chest Fly)",
-    "video": "https://www.youtube.com/watch?v=JJitfZKlKk4",
-    "equipmentType": "Machine",
-    "bodyPart": "Chest",
-    "intensity": "Moderate"
+    "name": "Pec Deck",
+    "machine": "Pec Deck",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
   },
   {
     "name": "Shoulder Press Machine",
-    "video": "https://www.youtube.com/watch?v=BAZkFGeUy5U",
-    "equipmentType": "Machine",
-    "bodyPart": "Shoulders",
-    "intensity": "Moderate"
+    "machine": "Shoulder Press Machine",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
   },
   {
     "name": "Lateral Raise Machine",
-    "video": "https://www.youtube.com/watch?v=QcxbeuDutNc",
-    "equipmentType": "Machine",
-    "bodyPart": "Shoulders",
-    "intensity": "Light"
+    "machine": "Lateral Raise Machine",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
   },
   {
     "name": "Triceps Pushdown",
-    "video": "https://www.youtube.com/watch?v=G0-qvTlUODk",
-    "equipmentType": "Cable",
-    "bodyPart": "Triceps",
-    "intensity": "Light"
-  },
-  {
-    "name": "Leg Press",
-    "video": "https://www.youtube.com/watch?v=n1Dyy3De1Rc",
-    "equipmentType": "Machine",
-    "bodyPart": "Quads",
-    "intensity": "Heavy"
-  },
-  {
-    "name": "Leg Curl Machine",
-    "video": "https://youtu.be/kmHL6zVRzW0?feature=shared",
-    "equipmentType": "Machine",
-    "bodyPart": "Hamstrings",
-    "intensity": "Moderate"
-  },
-  {
-    "name": "Leg Extension",
-    "video": "https://youtu.be/kmHL6zVRzW0?feature=shared",
-    "equipmentType": "Machine",
-    "bodyPart": "Quads",
-    "intensity": "Moderate"
-  },
-  {
-    "name": "Glute Kickback Machine",
-    "video": "https://www.youtube.com/watch?v=2vSRrEgHjkI",
-    "equipmentType": "Machine",
-    "bodyPart": "Glutes",
-    "intensity": "Moderate"
-  },
-  {
-    "name": "Calf Raise Machine",
-    "video": "https://www.youtube.com/watch?v=-M4-G8p8fmc",
-    "equipmentType": "Machine",
-    "bodyPart": "Calves",
-    "intensity": "Light"
-  },
-  {
-    "name": "Machine Crunch",
-    "video": "https://www.youtube.com/watch?v=XHITnBrPZxU",
-    "equipmentType": "Machine",
-    "bodyPart": "Abs",
-    "intensity": "Moderate"
-  },
-  {
-    "name": "Hanging Leg Raise / Cable Knee Tuck",
-    "video": "https://www.youtube.com/watch?v=LScXfWeKj4k",
-    "equipmentType": "Bodyweight",
-    "bodyPart": "Abs",
-    "intensity": "Moderate"
-  },
-  {
-    "name": "Russian Twists",
-    "video": "https://www.youtube.com/watch?v=wkD8rjkodUI",
-    "equipmentType": "Bodyweight",
-    "bodyPart": "Abs",
-    "intensity": "Light"
+    "machine": "Triceps Pushdown",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
   },
   {
     "name": "Lat Pulldown",
-    "video": "https://www.youtube.com/watch?v=CAwf7n6Luuc",
-    "equipmentType": "Machine",
-    "bodyPart": "Back",
-    "intensity": "Moderate"
+    "machine": "Lat Pulldown",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
   },
   {
     "name": "Seated Row Machine",
-    "video": "https://www.youtube.com/watch?v=pYcpY20QaE8",
-    "equipmentType": "Machine",
-    "bodyPart": "Back",
-    "intensity": "Moderate"
-  },
-  {
-    "name": "Reverse Pec Deck",
-    "video": "https://www.youtube.com/watch?v=nsHUfYxVlL4",
-    "equipmentType": "Machine",
-    "bodyPart": "Rear Delts",
-    "intensity": "Light"
+    "machine": "Seated Row Machine",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
   },
   {
     "name": "Cable or Machine Bicep Curl",
-    "video": "https://www.youtube.com/watch?v=av7-8igSXTs",
-    "equipmentType": "Cable",
-    "bodyPart": "Biceps",
-    "intensity": "Light"
+    "machine": "Cable or Machine Bicep Curl",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
   },
   {
-    "name": "Rope Face Pulls or Cable Pullovers",
-    "video": "https://www.youtube.com/watch?v=rep-qVOkqgk",
-    "equipmentType": "Cable",
-    "bodyPart": "Back",
-    "intensity": "Light"
+    "name": "Leg Press",
+    "machine": "Leg Press",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
   },
   {
-    "name": "Romanian Deadlift (Cable or Machine)",
-    "video": "https://www.youtube.com/watch?v=2SHsk9AzdjA",
-    "equipmentType": "Cable",
-    "bodyPart": "Hamstrings",
-    "intensity": "Moderate"
+    "name": "Leg Curl Machine",
+    "machine": "Leg Curl Machine",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
   },
   {
-    "name": "Hip Abduction Machine",
-    "video": "https://www.youtube.com/watch?v=sM6XU5WwLUE",
-    "equipmentType": "Machine",
-    "bodyPart": "Glutes",
-    "intensity": "Light"
+    "name": "5K Run",
+    "machine": "5K Run",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
+  },
+  {
+    "name": "Hanging Leg Raise",
+    "machine": "Hanging Leg Raise",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
+  },
+  {
+    "name": "Cable Knee Tuck",
+    "machine": "Cable Knee Tuck",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
+  },
+  {
+    "name": "Machine Crunch",
+    "machine": "Machine Crunch",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
+  },
+  {
+    "name": "Russian Twists",
+    "machine": "Russian Twists",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
   },
   {
     "name": "Cable Woodchoppers",
-    "video": "https://www.youtube.com/watch?v=Rk3WkJX1aUQ",
-    "equipmentType": "Cable",
-    "bodyPart": "Obliques",
-    "intensity": "Light"
+    "machine": "Cable Woodchoppers",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
   },
   {
     "name": "Plank",
-    "video": "https://www.youtube.com/watch?v=pSHjTRCQxIw",
-    "equipmentType": "Bodyweight",
-    "bodyPart": "Core",
-    "intensity": "Moderate"
+    "machine": "Plank",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
   },
   {
     "name": "Side Planks",
-    "video": "https://www.youtube.com/watch?v=K2VljzCC16g",
-    "equipmentType": "Bodyweight",
-    "bodyPart": "Core",
-    "intensity": "Moderate"
+    "machine": "Side Planks",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
+  },
+  {
+    "name": "Incline Walk",
+    "machine": "Incline Walk",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
+  },
+  {
+    "name": "Leg Extension",
+    "machine": "Leg Extension",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
+  },
+  {
+    "name": "Calf Raise Machine",
+    "machine": "Calf Raise Machine",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
+  },
+  {
+    "name": "Glute Kickback Machine",
+    "machine": "Glute Kickback Machine",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
+  },
+  {
+    "name": "Glute Kickbacks",
+    "machine": "Glute Kickbacks",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
+  },
+  {
+    "name": "Hip Abduction Machine",
+    "machine": "Hip Abduction Machine",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
+  },
+  {
+    "name": "Romanian Deadlift (Machine or Cable)",
+    "machine": "Romanian Deadlift (Machine or Cable)",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
+  },
+  {
+    "name": "Reverse Pec Deck",
+    "machine": "Reverse Pec Deck",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
+  },
+  {
+    "name": "Cable Pullovers",
+    "machine": "Cable Pullovers",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
+  },
+  {
+    "name": "Rope Face Pulls",
+    "machine": "Rope Face Pulls",
+    "bodyPart": "",
+    "equipmentType": "",
+    "tags": [],
+    "defaultReps": "",
+    "defaultSets": "",
+    "defaultWeightRange": ""
   }
 ]
