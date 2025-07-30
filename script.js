@@ -99,23 +99,29 @@ loginButton.addEventListener("click", () => {
     });
 });
 
-// 🔄 On login, fetch workouts and load today
 onAuthStateChanged(auth, (user) => {
+  const userInfo = document.getElementById("user-info");
+  const signInBtn = document.getElementById("googleSignInBtn");
+
   if (user) {
     currentUserId = user.uid;
 
-    // 👤 Show user info in the UI
-    const userInfo = document.getElementById("user-info");
+    // 👤 Show user info
     if (user.email) {
       userInfo.textContent = `Logged in as ${user.email}`;
     } else {
       userInfo.textContent = `Logged in (UID: ${user.uid})`;
     }
 
+    // ✅ Hide sign-in button
+    if (signInBtn) signInBtn.style.display = "none";
+
     fetchWorkoutData();
+  } else {
+    // 🔓 Show sign-in button if not signed in
+    if (signInBtn) signInBtn.style.display = "inline-block";
   }
 });
-
 
 function fetchWorkoutData() {
   fetch("workouts.json")
