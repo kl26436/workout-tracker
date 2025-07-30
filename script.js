@@ -1,6 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+import { GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyAbzL4bGY026Z-oWiWcYLfDgkmmgAfUY3k",
@@ -77,31 +79,42 @@ daySelect.addEventListener("change", () => {
   loadWorkoutForDay(selectedDay);
 });
 
-// 🔐 Firebase login
-signInAnonymously(auth).catch((error) =>
-  console.error("Firebase auth error:", error)
-);
+// 🔐 Set up Google Auth with a button
+const loginButton = document.createElement("button");
+loginButton.textContent = "Sign In with Google";
+document.body.prepend(loginButton);
+
+const provider = new GoogleAuthProvider();
+
+loginButton.addEventListener("click", () => {
+  signInWithPopup(auth, provider)
+    .then((result) => {
+      currentUserId = result.user.uid;
+      console.log("✅ Logged in as:", result.user.email);
+      fetchWorkoutData();
+      loginButton.style.display = "none"; // hide after login
+    })
+    .catch((error) => {
+      console.error("❌ Google sign-in failed:", error);
+    });
+});
 
 // 🔄 On login, fetch workouts and load today
 onAuthStateChanged(auth, (user) => {
   if (user) {
     currentUserId = user.uid;
-console.log("📦 Fetching workouts.json...");
-
-fetch("workouts.json")
-  .then((res) => {
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-    return res.json();
-  })
-  .then((data) => {
-    console.log("✅ Loaded workout data:", data);
-    workouts = data;
-    loadWorkoutForDay(daySelect.value);
-  })
-  .catch((err) => console.error("❌ Failed to load workouts.json:", err));
-
+    fetchWorkoutData();
   }
 });
+
+function fetchWorkoutData() {
+  fetch("workouts.json")
+    .then((res) => res.json())
+    .then((data) => {
+      workouts = data;
+      loadWorkoutForDay(daySelect.value);
+    });
+};
 
 async function loadWorkoutForDay(day) {
   workoutList.innerHTML = "";
