@@ -244,12 +244,14 @@ function startTimer(container, seconds) {
 function renderExerciseOptions(query = "") {
   optionsContainer.innerHTML = "";
   const q = query.toLowerCase();
+
   const filtered = allExercises.filter(e =>
-    e.machine.toLowerCase().includes(q) ||
+    (e.machine && e.machine.toLowerCase().includes(q)) ||
     (e.bodyPart && e.bodyPart.toLowerCase().includes(q)) ||
     (e.tags && e.tags.some(tag => tag.toLowerCase().includes(q)))
   );
 
+  // Continue rendering the options...
   filtered.forEach((ex) => {
     const div = document.createElement("div");
     div.style.padding = "0.5rem";
