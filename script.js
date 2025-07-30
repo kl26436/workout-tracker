@@ -100,12 +100,6 @@ fetch("workouts.json")
   })
   .catch((err) => console.error("❌ Failed to load workouts.json:", err));
 
-    fetch("workouts.json")
-      .then((res) => res.json())
-      .then((data) => {
-        workouts = data;
-        loadWorkoutForDay(daySelect.value);
-      });
   }
 });
 
