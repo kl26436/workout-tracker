@@ -1,6 +1,6 @@
 [
     {
-      "day": "Monday",
+      "day": "Chest - Push",
       "exercises": [
         {
           "machine": "Seated Chest Press",
@@ -40,7 +40,7 @@
       ]
     },
     {
-      "day": "Tuesday",
+      "day": "Legs - Quads",
       "exercises": [
         {
           "machine": "Leg Press",
@@ -80,7 +80,7 @@
       ]
     },
     {
-      "day": "Wednesday",
+      "day": "Cardio / Core",
       "exercises": [
         {
           "machine": "Machine Crunch",
@@ -106,7 +106,7 @@
       ]
     },
     {
-      "day": "Thursday",
+      "day": "Chest - Pull",
       "exercises": [
         {
           "machine": "Lat Pulldown",
@@ -146,7 +146,7 @@
       ]
     },
     {
-      "day": "Friday",
+      "day": "Legs - Posterior Forucs",
       "exercises": [
         {
           "machine": "Romanian Deadlift (Cable or Machine)",
@@ -186,7 +186,7 @@
       ]
     },
     {
-      "day": "Saturday",
+      "day": "Cardio / Abs",
       "exercises": [
         {
           "machine": "Cable Woodchoppers",
