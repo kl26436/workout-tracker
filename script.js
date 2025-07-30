@@ -12,30 +12,30 @@ import {
   signInWithPopup
 } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 
+// Firebase setup
 const firebaseConfig = {
   apiKey: "AIzaSyAbzL4bGY026Z-oWiWcYLfDgkmmgAfUY3k",
   authDomain: "workout-tracker-b94b6.firebaseapp.com",
   projectId: "workout-tracker-b94b6",
-  storageBucket: "workout-tracker-b94b6.firebasestorage.app",
-  messagingSenderId: "111958991290",
-  appId: "1:111958991290:web:23e1014ab2ba27df6ebd83"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
 let workouts = [];
 let currentUserId = null;
-let allExercises = []; // List of all available exercises
-let overrides = {}; // Local cache of user swaps for the day
+let allExercises = [];
+let overrides = {};
+let currentSwapTarget = null;
 
+const workoutList = document.getElementById("workout-list");
+const workoutTypeSelect = document.getElementById("workoutTypeSelect");
 const swapModal = document.getElementById("swapModal");
 const searchInput = document.getElementById("exerciseSearch");
 const optionsContainer = document.getElementById("exerciseOptions");
 const closeModalBtn = document.getElementById("closeSwapModal");
-const workoutList = document.getElementById("workout-list");
-const workoutTypeSelect = document.getElementById("workoutTypeSelect");
+
+// Date selector
 const dateInput = document.createElement("input");
 dateInput.type = "date";
 dateInput.id = "datePicker";
@@ -47,19 +47,14 @@ loginButton.textContent = "Sign In with Google";
 loginButton.id = "googleSignInBtn";
 document.body.prepend(loginButton);
 
-// Helper: Today’s ISO date
+// Local helpers
 function getLocalISODateString() {
   const now = new Date();
   now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
   return now.toISOString().split("T")[0];
 }
-
 dateInput.value = getLocalISODateString();
 
-// Sync workout type to current date on load
-workoutTypeSelect.value = weekdayName(dateInput.value);
-
-// Map weekdays to workout types
 const dayToWorkoutType = {
   Sunday: "Optional – Cardio / Abs",
   Monday: "Chest – Push",
@@ -72,46 +67,35 @@ const dayToWorkoutType = {
 
 function weekdayName(dateStr) {
   const [year, month, day] = dateStr.split("-").map(Number);
-  return new Date(year, month - 1, day).toLocaleString("en-US", {
-    weekday: "long"
-  });
+  return new Date(year, month - 1, day).toLocaleString("en-US", { weekday: "long" });
 }
 
-// When date changes → sync workout type
+// Sync workout on change
 dateInput.addEventListener("change", () => {
-  const newDay = weekdayName(dateInput.value);
-  const newWorkoutType = dayToWorkoutType[newDay] || "Cardio + Core";
-  workoutTypeSelect.value = newWorkoutType;
-  loadWorkoutForDay(newWorkoutType);
+  const day = weekdayName(dateInput.value);
+  workoutTypeSelect.value = dayToWorkoutType[day] || "Cardio + Core";
+  loadWorkoutForDay(workoutTypeSelect.value);
 });
-
-// When workout type changes → do not touch date, just load workout
+workoutTypeSelect.value = dayToWorkoutType[weekdayName(dateInput.value)] || "";
 workoutTypeSelect.addEventListener("change", () => {
   loadWorkoutForDay(workoutTypeSelect.value);
 });
 
-// Firebase auth
+// Firebase Auth
 const provider = new GoogleAuthProvider();
-
 loginButton.addEventListener("click", () => {
   signInWithPopup(auth, provider)
     .then((result) => {
       currentUserId = result.user.uid;
-      console.log("✅ Signed in as:", result.user.email);
       loginButton.style.display = "none";
       fetchWorkoutData();
     })
-    .catch((error) => {
-      console.error("❌ Google sign-in failed:", error);
-    });
+    .catch((err) => console.error("❌ Login failed:", err));
 });
-
-// On login
 onAuthStateChanged(auth, (user) => {
   if (user) {
     currentUserId = user.uid;
-    document.getElementById("user-info").textContent =
-      user.email || `UID: ${user.uid}`;
+    document.getElementById("user-info").textContent = user.email;
     loginButton.style.display = "none";
     fetchWorkoutData();
   } else {
@@ -119,177 +103,176 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
+// Load workouts & all exercises
 function fetchWorkoutData() {
   Promise.all([
     fetch("workouts.json").then(res => res.json()),
     fetch("exercises.json").then(res => res.json())
   ])
-  .then(([workoutData, allEx]) => {
-    workouts = workoutData;
-    allExercises = allEx;
-    loadWorkoutForDay(workoutTypeSelect.value);
-  })
-  .catch(err => console.error("❌ Failed to load workout data:", err));
+    .then(([w, e]) => {
+      workouts = w;
+      allExercises = e;
+      loadWorkoutForDay(workoutTypeSelect.value);
+    })
+    .catch((err) => console.error("❌ Load failed:", err));
 }
 
+// Render workout
 async function loadWorkoutForDay(type) {
   workoutList.innerHTML = "";
-  console.log("🔍 Loading workout:", type);
-
-  const workout = workouts.find(
-    (w) => w.day.toLowerCase().trim() === type.toLowerCase().trim()
-  );
-  if (!workout) {
-    workoutList.innerHTML = `<p>No workout scheduled for ${type}.</p>`;
-    return;
-  }
+  const workout = workouts.find(w => w.day.toLowerCase().trim() === type.toLowerCase().trim());
+  if (!workout) return (workoutList.innerHTML = `<p>No workout scheduled for ${type}</p>`);
 
   const docId = `${dateInput.value}_${type}`;
   const docRef = doc(db, "users", currentUserId, "workouts", docId);
   const docSnap = await getDoc(docRef);
   const savedData = docSnap.exists() ? docSnap.data() : {};
-  const overrideRef = doc(db, "users", currentUserId, "overrides", `${dateInput.value}_${type}`);
+
+  const overrideRef = doc(db, "users", currentUserId, "overrides", docId);
   const overrideSnap = await getDoc(overrideRef);
   overrides = overrideSnap.exists() ? overrideSnap.data() : {};
 
-
   workout.exercises.forEach((exercise) => {
-  const override = overrides[exercise.machine];
-  const effectiveExercise = override || exercise;
+    const override = overrides[exercise.machine];
+    const effectiveExercise = override || exercise;
 
-  const card = document.createElement("div");
-  card.className = "exercise-card";
+    const card = document.createElement("div");
+    card.className = "exercise-card";
 
-  const header = document.createElement("h3");
-  header.textContent = effectiveExercise.machine;
+    const header = document.createElement("h3");
+    header.textContent = effectiveExercise.machine;
 
-  const videoLink = document.createElement("a");
-  videoLink.href = effectiveExercise.video;
-  videoLink.target = "_blank";
-  videoLink.textContent = "Watch Form Video";
-
-  const table = document.createElement("table");
-  const headerRow = document.createElement("tr");
-  headerRow.innerHTML =
-    "<th>Set</th><th>Reps</th><th>Weight (lbs)</th><th>Timer</th>";
-  table.appendChild(headerRow);
-
-  const savedSets = savedData[exercise.machine] || [];
-
-  for (let i = 0; i < effectiveExercise.sets; i++) {
-    const row = document.createElement("tr");
-
-    const setCell = document.createElement("td");
-    setCell.textContent = `Set ${i + 1}`;
-
-    const repsInput = document.createElement("input");
-    repsInput.type = "number";
-    repsInput.placeholder = effectiveExercise.reps;
-    repsInput.value = savedSets[i]?.reps || "";
-
-    const weightInput = document.createElement("input");
-    weightInput.type = "number";
-    weightInput.placeholder = effectiveExercise.weight;
-    weightInput.value = savedSets[i]?.weight || "";
-
-    const repsCell = document.createElement("td");
-    repsCell.appendChild(repsInput);
-
-    const weightCell = document.createElement("td");
-    weightCell.appendChild(weightInput);
-
-    const timerCell = document.createElement("td");
-    const timerDiv = document.createElement("div");
-    timerCell.appendChild(timerDiv);
-
-    const saveAndStartTimer = () => {
-      saveSet(docRef, exercise.machine, i, repsInput.value, weightInput.value);
-      startTimer(timerDiv, 30);
+    const swapBtn = document.createElement("button");
+    swapBtn.textContent = "Swap";
+    swapBtn.style.marginLeft = "1rem";
+    swapBtn.onclick = () => {
+      currentSwapTarget = exercise.machine;
+      swapModal.style.display = "block";
+      renderExerciseOptions("");
     };
 
-    repsInput.addEventListener("change", saveAndStartTimer);
-    weightInput.addEventListener("change", saveAndStartTimer);
+    const videoLink = document.createElement("a");
+    videoLink.href = effectiveExercise.video;
+    videoLink.target = "_blank";
+    videoLink.textContent = "Watch Form Video";
 
-    row.appendChild(setCell);
-    row.appendChild(repsCell);
-    row.appendChild(weightCell);
-    row.appendChild(timerCell);
-    table.appendChild(row);
-  }
+    const headerWrapper = document.createElement("div");
+    headerWrapper.style.display = "flex";
+    headerWrapper.style.alignItems = "center";
+    headerWrapper.appendChild(header);
+    headerWrapper.appendChild(swapBtn);
 
-  const notes = document.createElement("textarea");
-  notes.placeholder = "Notes...";
-  notes.value = savedData[`${exercise.machine}_notes`] || "";
-  notes.addEventListener("input", () => {
-    saveNote(docRef, `${exercise.machine}_notes`, notes.value);
+    const table = document.createElement("table");
+    const headerRow = document.createElement("tr");
+    headerRow.innerHTML = "<th>Set</th><th>Reps</th><th>Weight</th><th>Timer</th>";
+    table.appendChild(headerRow);
+
+    const savedSets = savedData[exercise.machine] || [];
+    for (let i = 0; i < effectiveExercise.sets; i++) {
+      const row = document.createElement("tr");
+
+      const set = document.createElement("td");
+      set.textContent = `Set ${i + 1}`;
+
+      const reps = document.createElement("input");
+      reps.type = "number";
+      reps.placeholder = effectiveExercise.reps;
+      reps.value = savedSets[i]?.reps || "";
+
+      const weight = document.createElement("input");
+      weight.type = "number";
+      weight.placeholder = effectiveExercise.weight;
+      weight.value = savedSets[i]?.weight || "";
+
+      const repsCell = document.createElement("td");
+      repsCell.appendChild(reps);
+      const weightCell = document.createElement("td");
+      weightCell.appendChild(weight);
+
+      const timerCell = document.createElement("td");
+      const timerDiv = document.createElement("div");
+      timerCell.appendChild(timerDiv);
+
+      const saveAndStart = () => {
+        saveSet(docRef, exercise.machine, i, reps.value, weight.value);
+        startTimer(timerDiv, 30);
+      };
+      reps.onchange = saveAndStart;
+      weight.onchange = saveAndStart;
+
+      row.append(set, repsCell, weightCell, timerCell);
+      table.appendChild(row);
+    }
+
+    const notes = document.createElement("textarea");
+    notes.placeholder = "Notes...";
+    notes.value = savedData[`${exercise.machine}_notes`] || "";
+    notes.addEventListener("input", () =>
+      saveNote(docRef, `${exercise.machine}_notes`, notes.value)
+    );
+
+    card.append(headerWrapper, videoLink, table, notes);
+    workoutList.appendChild(card);
   });
-
-  card.appendChild(header);
-  card.appendChild(videoLink);
-  card.appendChild(table);
-  card.appendChild(notes);
-  workoutList.appendChild(card);
-});
 }
 
-function startTimer(container, seconds) {
-  clearInterval(container._interval);
-  let timeLeft = seconds;
-  container.textContent = `Rest: ${timeLeft}s`;
-
-  container._interval = setInterval(() => {
-    timeLeft--;
-    container.textContent =
-      timeLeft > 0 ? `Rest: ${timeLeft}s` : "Rest Over!";
-    if (timeLeft <= 0) clearInterval(container._interval);
+// Timer
+function startTimer(el, sec) {
+  clearInterval(el._interval);
+  let t = sec;
+  el.textContent = `Rest: ${t}s`;
+  el._interval = setInterval(() => {
+    t--;
+    el.textContent = t > 0 ? `Rest: ${t}s` : "Rest Over!";
+    if (t <= 0) clearInterval(el._interval);
   }, 1000);
 }
 
-async function saveSet(docRef, exerciseName, index, reps, weight) {
-  const docSnap = await getDoc(docRef);
-  const data = docSnap.exists() ? docSnap.data() : {};
-  const sets = data[exerciseName] || [];
-  sets[index] = { reps, weight };
-  data[exerciseName] = sets;
-  await setDoc(docRef, data);
+// Save set & notes
+async function saveSet(ref, name, i, reps, weight) {
+  const snap = await getDoc(ref);
+  const data = snap.exists() ? snap.data() : {};
+  const sets = data[name] || [];
+  sets[i] = { reps, weight };
+  data[name] = sets;
+  await setDoc(ref, data);
+}
+async function saveNote(ref, key, val) {
+  const snap = await getDoc(ref);
+  const data = snap.exists() ? snap.data() : {};
+  data[key] = val;
+  await setDoc(ref, data);
 }
 
-async function saveNote(docRef, key, value) {
-  const docSnap = await getDoc(docRef);
-  const data = docSnap.exists() ? docSnap.data() : {};
-  data[key] = value;
-  await setDoc(docRef, data);
-
-  closeModalBtn.addEventListener("click", () => {
-  swapModal.style.display = "none";
-});
-
-searchInput.addEventListener("input", () => {
-  renderExerciseOptions(searchInput.value);
-});
+// Swap modal logic
+closeModalBtn.onclick = () => (swapModal.style.display = "none");
+searchInput.oninput = () => renderExerciseOptions(searchInput.value);
 
 function renderExerciseOptions(query) {
   optionsContainer.innerHTML = "";
   const q = query.toLowerCase();
-
-  const filtered = allExercises.filter(ex =>
-    ex.machine.toLowerCase().includes(q) ||
-    (ex.bodyPart && ex.bodyPart.toLowerCase().includes(q)) ||
-    (ex.tags && ex.tags.some(tag => tag.toLowerCase().includes(q)))
+  const filtered = allExercises.filter(
+    (ex) =>
+      ex.machine.toLowerCase().includes(q) ||
+      (ex.bodyPart && ex.bodyPart.toLowerCase().includes(q)) ||
+      (ex.tags && ex.tags.some((tag) => tag.toLowerCase().includes(q)))
   );
-
-  filtered.forEach((ex, idx) => {
+  filtered.forEach((ex) => {
     const div = document.createElement("div");
+    div.innerHTML = `<strong>${ex.machine}</strong><br/><small>${ex.sets}x${ex.reps} @ ${ex.weight} lbs</small><br/><a href="${ex.video}" target="_blank">Form Video</a>`;
+    div.style.borderBottom = "1px solid #333";
     div.style.padding = "0.5rem";
-    div.style.borderBottom = "1px solid #30363d";
     div.style.cursor = "pointer";
-    div.innerHTML = `<strong>${ex.machine}</strong><br/><small>${ex.sets} x ${ex.reps} @ ${ex.weight} lbs</small><br/><a href="${ex.video}" target="_blank">Form Video</a>`;
-    div.addEventListener("click", () => {
-      applyExerciseSwap(currentSwapTarget, ex);
-      swapModal.style.display = "none";
-    });
+    div.onclick = () => applyExerciseSwap(currentSwapTarget, ex);
     optionsContainer.appendChild(div);
   });
 }
 
+async function applyExerciseSwap(originalMachine, newExercise) {
+  const docId = `${dateInput.value}_${workoutTypeSelect.value}`;
+  const overrideRef = doc(db, "users", currentUserId, "overrides", docId);
+  overrides[originalMachine] = newExercise;
+  await setDoc(overrideRef, overrides);
+  swapModal.style.display = "none";
+  loadWorkoutForDay(workoutTypeSelect.value);
 }
