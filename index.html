@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0d1117" />
     <title>Big Surf - Workout Tracker</title>
     <link
       rel="stylesheet"
@@ -33,6 +34,7 @@
       }
     </style>
   </head>
+
   <body>
     <nav class="container-fluid">
       <ul>
@@ -43,8 +45,8 @@
         <li><a href="#">Progress</a></li>
       </ul>
     </nav>
-<p id="user-info"></p>
-    <header class="container" style="text-align:center; margin-top: 2rem;">
+
+    <header class="container" style="text-align: center; margin-top: 2rem;">
       <img
         src="BigSurf.png"
         alt="Big Surf Logo"
@@ -53,33 +55,38 @@
     </header>
 
     <main class="container">
-      <div class="grid">
-        <section>
-          <hgroup>
-            <h2>Big Surf Tracker</h2>
-            <h3>Choose Your Day</h3>
-          </hgroup>
+      <section>
+        <hgroup>
+          <h2>Big Surf Tracker</h2>
+          <h3>Select Workout</h3>
+        </hgroup>
 
-          <label for="daySelect">Workout Day</label>
-          <select id="daySelect">
-            <option>Monday</option>
-            <option>Tuesday</option>
-            <option>Wednesday</option>
-            <option>Thursday</option>
-            <option>Friday</option>
-            <option>Saturday</option>
-          </select>
+        <div id="auth-section" style="text-align: center; margin-bottom: 1rem;">
+          <p id="user-info"></p>
+        </div>
 
-          <div id="workout-list"></div>
-        </section>
-      </div>
+        <label for="workoutTypeSelect">Workout Type</label>
+        <select id="workoutTypeSelect">
+          <option value="Chest – Push">Chest – Push</option>
+          <option value="Legs – Quad Focus">Legs – Quad Focus</option>
+          <option value="Cardio + Core">Cardio + Core</option>
+          <option value="Chest – Pull">Chest – Pull</option>
+          <option value="Legs – Posterior Focus">Legs – Posterior Focus</option>
+          <option value="Cardio / Abs / Mobility">Cardio / Abs / Mobility</option>
+        </select>
+
+        <!-- Date Picker will be injected below by script.js -->
+
+        <div id="workout-list" style="margin-top: 2rem;"></div>
+      </section>
     </main>
 
     <footer class="container">
-      <small><a href="#">Privacy</a> • <a href="#">Terms</a></small>
+      <small>
+        <a href="#">Privacy</a> • <a href="#">Terms</a>
+      </small>
     </footer>
 
     <script type="module" src="script.js"></script>
-
   </body>
 </html>
