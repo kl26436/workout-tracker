@@ -103,9 +103,19 @@ loginButton.addEventListener("click", () => {
 onAuthStateChanged(auth, (user) => {
   if (user) {
     currentUserId = user.uid;
+
+    // 👤 Show user info in the UI
+    const userInfo = document.getElementById("user-info");
+    if (user.email) {
+      userInfo.textContent = `Logged in as ${user.email}`;
+    } else {
+      userInfo.textContent = `Logged in (UID: ${user.uid})`;
+    }
+
     fetchWorkoutData();
   }
 });
+
 
 function fetchWorkoutData() {
   fetch("workouts.json")
