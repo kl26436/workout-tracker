@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Upload Exercises</title>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+      import {
+        getFirestore,
+        setDoc,
+        doc,
+      } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+      import {
+        getAuth,
+        GoogleAuthProvider,
+        signInWithPopup,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyAbzL4bGY026Z-oWiWcYLfDgkmmgAfUY3k",
+        authDomain: "workout-tracker-b94b6.firebaseapp.com",
+        projectId: "workout-tracker-b94b6",
+        storageBucket: "workout-tracker-b94b6.appspot.com",
+        messagingSenderId: "111958991290",
+        appId: "1:111958991290:web:23e1014ab2ba27df6ebd83",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      const auth = getAuth(app);
+      const provider = new GoogleAuthProvider();
+
+      document.getElementById("login").addEventListener("click", () => {
+        signInWithPopup(auth, provider)
+          .then(() => console.log("✅ Signed in"))
+          .catch((error) => console.error("❌ Sign-in failed", error));
+      });
+
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          document.getElementById("status").textContent =
+            "✅ Signed in as " + (user.email || user.uid);
+        }
+      });
+
+      document.getElementById("upload").addEventListener("click", async () => {
+        const fileInput = document.getElementById("file");
+        const file = fileInput.files[0];
+        if (!file) {
+          alert("Please select a file.");
+          return;
+        }
+
+        const text = await file.text();
+        let exercises;
+        try {
+          exercises = JSON.parse(text);
+        } catch (e) {
+          alert("Invalid JSON file.");
+          return;
+        }
+
+        for (const ex of exercises) {
+          const ref = doc(db, "exercises", ex.name);
+          await setDoc(ref, ex);
+        }
+
+        alert("✅ Upload complete!");
+      });
+    </script>
+  </head>
+  <body>
+    <h1>Upload exercises.json to Firestore</h1>
+    <p id="status">Not signed in</p>
+    <button id="login">Sign in with Google</button>
+    <br /><br />
+    <input type="file" id="file" accept=".json" />
+    <button id="upload">Upload</button>
+  </body>
+</html>
