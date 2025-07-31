@@ -1,101 +1,513 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0d1117" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0d1117">
     <title>Big Surf - Workout Tracker</title>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"
-    />
-    <style>
-      body {
-        background-color: #0d1117;
-        color: #c9d1d9;
-      }
-      .exercise-card {
-        padding: 1rem;
-        margin-bottom: 2rem;
-        border: 1px solid #30363d;
-        border-radius: 8px;
-        background-color: #161b22;
-      }
-      .completed {
-        border-color: #238636;
-      }
-      textarea {
-        width: 100%;
-        margin-top: 0.5rem;
-        resize: vertical;
-      }
-      table input {
-        width: 4rem;
-      }
-    </style>
-  </head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <img src="BigSurf.png" alt="Big Surf Logo" class="header-logo" 
+                 onerror="this.style.display='none'; document.querySelector('.logo').style.display='flex'">
+            <div class="logo" style="display: none;">BS</div>
+            <h1 class="app-title">Big Surf</h1>
+            <p style="margin: 0; color: var(--text-secondary);">Workout Tracker</p>
+        </header>
 
-  <body>
-    <nav class="container-fluid">
-      <ul>
-        <li><strong>Big Surf</strong></li>
-      </ul>
-      <ul>
-        <li><a href="#">Log Workout</a></li>
-        <li><a href="#">Progress</a></li>
-      </ul>
-    </nav>
-
-    <header class="container" style="text-align: center; margin-top: 2rem;">
-      <img
-        src="BigSurf.png"
-        alt="Big Surf Logo"
-        style="max-width: 100%; height: auto;"
-      />
-    </header>
-
-    <main class="container">
-      <section>
-        <hgroup>
-          <h2>Big Surf Tracker</h2>
-          <h3>Select Workout</h3>
-        </hgroup>
-
-        <div id="auth-section" style="text-align: center; margin-bottom: 1rem;">
-          <p id="user-info"></p>
+        <!-- Auth Section -->
+        <div id="auth-section" class="workout-controls">
+            <button id="google-signin-btn" class="btn btn-primary">
+                <i class="fab fa-google"></i> Sign In with Google
+            </button>
+            <div id="user-info" class="hidden"></div>
         </div>
 
-        <label for="workoutTypeSelect">Workout Type</label>
-        <select id="workoutTypeSelect">
-          <option value="Chest – Push">Chest – Push</option>
-          <option value="Legs – Quad Focus">Legs – Quad Focus</option>
-          <option value="Cardio + Core">Cardio + Core</option>
-          <option value="Chest – Pull">Chest – Pull</option>
-          <option value="Legs – Posterior Focus">Legs – Posterior Focus</option>
-          <option value="Cardio / Abs / Mobility">Cardio / Abs / Mobility</option>
-        </select>
+        <!-- Navigation -->
+        <nav class="nav-tabs">
+            <button class="nav-tab active" data-tab="today">
+                <i class="fas fa-dumbbell"></i> Today's Workout
+            </button>
+            <button class="nav-tab" data-tab="history">
+                <i class="fas fa-history"></i> History
+            </button>
+            <button class="nav-tab" data-tab="plans">
+                <i class="fas fa-calendar-alt"></i> Plans
+            </button>
+        </nav>
 
-        <!-- Date Picker will be injected below by script.js -->
+        <!-- Today's Workout Tab -->
+        <div id="today-tab" class="tab-content">
+            <!-- Today's Date Display -->
+            <div class="today-header">
+                <h2 id="today-date-display">Today - Loading...</h2>
+                <p class="today-subtitle">Choose your workout and start tracking</p>
+            </div>
 
-        <div id="workout-list" style="margin-top: 2rem;"></div>
-      </section>
-    </main>
+            <!-- Workout Selector -->
+            <div id="workout-selector" class="workout-controls">
+                <h3 style="margin-top: 0;">What are you working out today?</h3>
+                <div class="workout-grid">
+                    <div class="workout-option" data-workout="Chest – Push">
+                        <i class="fas fa-hand-paper"></i>
+                        <span>Chest & Push</span>
+                    </div>
+                    <div class="workout-option" data-workout="Back – Pull">
+                        <i class="fas fa-hand-rock"></i>
+                        <span>Back & Pull</span>
+                    </div>
+                    <div class="workout-option" data-workout="Legs – Quad Focus">
+                        <i class="fas fa-walking"></i>
+                        <span>Legs (Quads)</span>
+                    </div>
+                    <div class="workout-option" data-workout="Legs – Posterior Focus">
+                        <i class="fas fa-running"></i>
+                        <span>Legs (Glutes/Hams)</span>
+                    </div>
+                    <div class="workout-option" data-workout="Cardio + Core">
+                        <i class="fas fa-heartbeat"></i>
+                        <span>Cardio & Core</span>
+                    </div>
+                    <div class="workout-option" data-workout="Cardio / Abs / Mobility">
+                        <i class="fas fa-spa"></i>
+                        <span>Recovery Day</span>
+                    </div>
+                </div>
+            </div>
 
-    <footer class="container">
-      <small>
-        <a href="#">Privacy</a> • <a href="#">Terms</a>
-      </small>
-    </footer>
+            <!-- Active Workout Display -->
+            <div id="active-workout" class="hidden">
+                <div class="workout-header">
+                    <div>
+                        <h3 id="current-workout-title">Current Workout</h3>
+                        <p id="current-workout-date" class="workout-subtitle"></p>
+                    </div>
+                    <div class="workout-actions">
+                        <button class="btn btn-secondary" id="change-workout-btn">
+                            <i class="fas fa-exchange-alt"></i> Change Workout
+                        </button>
+                        <button class="btn btn-primary" id="finish-workout-btn">
+                            <i class="fas fa-check"></i> Finish Workout
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Progress Overview -->
+                <div class="progress-overview">
+                    <div class="progress-stat">
+                        <span class="stat-number" id="completed-exercises">0</span>
+                        <span class="stat-label">Exercises Done</span>
+                    </div>
+                    <div class="progress-stat">
+                        <span class="stat-number" id="completed-sets">0</span>
+                        <span class="stat-label">Sets Completed</span>
+                    </div>
+                    <div class="progress-stat">
+                        <span class="stat-number" id="workout-duration">0:00</span>
+                        <span class="stat-label">Duration</span>
+                    </div>
+                </div>
+
+                <!-- Workout Exercises -->
+                <div id="workout-list"></div>
+                
+                <!-- Add Exercise Section - only shows during active workout -->
+                <div id="add-exercise-section" class="add-exercise-section hidden">
+                    <button class="btn btn-success btn-small" onclick="openAddExerciseModal()">
+                        <i class="fas fa-plus"></i> Add Custom Exercise
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Tab -->
+        <div id="history-tab" class="tab-content hidden">
+            <div class="history-header">
+                <h2>Workout History</h2>
+                <div class="history-controls">
+                    <input type="date" id="history-date-picker" class="btn btn-secondary">
+                    <button class="btn btn-primary" id="load-history-btn">
+                        <i class="fas fa-search"></i> View Workout
+                    </button>
+                    <button class="btn btn-success" id="add-missing-day-btn">
+                        <i class="fas fa-plus-circle"></i> Add Missing Day
+                    </button>
+                </div>
+            </div>
+
+            <!-- Recent Workouts -->
+            <div class="recent-workouts">
+                <h3>Recent Workouts</h3>
+                <div id="recent-workouts-list">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <span>Loading workout history...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Selected History Display -->
+            <div id="history-workout-display" class="hidden">
+                <div class="history-workout-header">
+                    <h3 id="history-workout-title">Workout Details</h3>
+                    <div class="history-actions">
+                        <button class="btn btn-secondary" id="edit-history-btn">
+                            <i class="fas fa-edit"></i> Edit This Workout
+                        </button>
+                        <button class="btn btn-primary" id="copy-to-today-btn">
+                            <i class="fas fa-copy"></i> Use This Workout Today
+                        </button>
+                    </div>
+                </div>
+                <div id="history-workout-content"></div>
+            </div>
+        </div>
+
+        <!-- Plans Tab -->
+        <div id="plans-tab" class="tab-content hidden">
+            <div class="plans-header">
+                <h2>Workout Plans</h2>
+                <button class="btn btn-primary" id="create-plan-btn">
+                    <i class="fas fa-plus"></i> Create New Plan
+                </button>
+            </div>
+            
+            <div class="plans-grid">
+                <div id="plans-list">
+                    <!-- Plans will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exercise Swap Modal -->
+    <div id="swap-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Swap Exercise</h3>
+                <button class="close-btn" id="close-swap-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <input type="text" id="exercise-search" class="search-input" 
+                   placeholder="Search exercises by name, muscle group, or equipment...">
+            
+            <div id="exercise-options">
+                <!-- Exercise options will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add New Exercise Modal -->
+    <div id="add-exercise-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add New Exercise</h3>
+                <button class="close-btn" id="close-add-exercise-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="add-exercise-form">
+                <div class="form-group">
+                    <label for="exercise-name">Exercise Name *</label>
+                    <input type="text" id="exercise-name" class="form-input" 
+                           placeholder="e.g., Cable Lateral Raises" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="exercise-body-part">Body Part</label>
+                        <select id="exercise-body-part" class="form-input">
+                            <option value="Chest">Chest</option>
+                            <option value="Back">Back</option>
+                            <option value="Shoulders">Shoulders</option>
+                            <option value="Arms">Arms</option>
+                            <option value="Legs">Legs</option>
+                            <option value="Core">Core</option>
+                            <option value="Cardio">Cardio</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="exercise-equipment">Equipment</label>
+                        <select id="exercise-equipment" class="form-input">
+                            <option value="Machine">Machine</option>
+                            <option value="Cable">Cable</option>
+                            <option value="Dumbbell">Dumbbell</option>
+                            <option value="Barbell">Barbell</option>
+                            <option value="Bodyweight">Bodyweight</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="exercise-sets">Default Sets</label>
+                        <input type="number" id="exercise-sets" class="form-input" 
+                               value="3" min="1" max="10">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="exercise-reps">Default Reps</label>
+                        <input type="number" id="exercise-reps" class="form-input" 
+                               value="10" min="1" max="50">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="exercise-weight">Starting Weight (lbs)</label>
+                        <input type="number" id="exercise-weight" class="form-input" 
+                               value="50" min="0" step="5">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="exercise-video">Form Video URL (optional)</label>
+                    <input type="url" id="exercise-video" class="form-input" 
+                           placeholder="https://www.youtube.com/watch?v=...">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddExerciseModal()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Exercise
+                    </button>
+                    <button type="button" class="btn btn-success" id="add-and-use-btn">
+                        <i class="fas fa-plus-circle"></i> Add & Use Now
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script type="module" src="script.js"></script>
 
-    <div id="swapModal" class="modal" style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%); z-index:1000; background:#161b22; padding:1rem; border-radius:8px; border:1px solid #30363d; width:90%; max-width:500px;">
-      <h3>Swap Exercise</h3>
-      <input type="text" id="exerciseSearch" placeholder="Search by name, body part, tag..." style="width:100%; margin-bottom:1rem;" />
-      <div id="exerciseOptions" style="max-height:300px; overflow-y:auto;"></div>
-      <button id="closeSwapModal">Cancel</button>
-    </div>
+    <style>
+        /* Additional styles for the improved UX */
+        .today-header {
+            text-align: center;
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+        }
 
+        .today-header h2 {
+            font-size: 1.75rem;
+            margin: 0;
+            color: var(--text-primary);
+        }
 
-  </body>
+        .today-subtitle {
+            color: var(--text-secondary);
+            margin: 0.5rem 0 0 0;
+        }
+
+        .workout-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .workout-option {
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .workout-option:hover {
+            border-color: var(--primary);
+            background: var(--bg-secondary);
+            transform: translateY(-2px);
+        }
+
+        .workout-option.selected {
+            border-color: var(--primary);
+            background: var(--bg-secondary);
+            box-shadow: 0 0 0 2px rgba(64, 224, 208, 0.2);
+        }
+
+        .workout-option i {
+            font-size: 2rem;
+            color: var(--primary);
+        }
+
+        .workout-option span {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .workout-header {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .workout-header h3 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .workout-subtitle {
+            color: var(--text-secondary);
+            margin: 0.25rem 0 0 0;
+        }
+
+        .workout-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .progress-overview {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .progress-stat {
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            flex: 1;
+            min-width: 120px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .history-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .recent-workouts {
+            margin-bottom: 2rem;
+        }
+
+        .recent-workouts h3 {
+            margin-bottom: 1rem;
+        }
+
+        .recent-workout-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .recent-workout-item:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--primary);
+        }
+
+        .recent-workout-info h4 {
+            margin: 0 0 0.25rem 0;
+            color: var(--text-primary);
+        }
+
+        .recent-workout-info p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .recent-workout-stats {
+            text-align: right;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .history-workout-header {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .history-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .workout-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+
+            .workout-header,
+            .history-header,
+            .history-workout-header {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+
+            .workout-actions,
+            .history-actions {
+                justify-content: center;
+            }
+
+            .progress-overview {
+                justify-content: center;
+            }
+        }
+    </style>
+</body>
 </html>
