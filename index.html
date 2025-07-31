@@ -95,26 +95,29 @@
             <!-- Active Workout Display -->
             <div id="active-workout" class="hidden">
                 <div class="workout-header">
-                    <div>
-                        <h3 id="current-workout-title">Current Workout</h3>
-                        <p id="current-workout-date" class="workout-subtitle"></p>
-                        <div id="workout-status" class="workout-status">Ready to Start</div>
-                    </div>
-                    <div class="workout-actions">
-                        <button class="btn btn-success" id="start-pause-btn">
-                            <i class="fas fa-play"></i> Start Workout
-                        </button>
-                        <button class="btn btn-primary hidden" id="complete-workout-btn">
-                            <i class="fas fa-check"></i> Complete Workout
-                        </button>
-                        <button class="btn btn-secondary" id="change-workout-btn">
-                            <i class="fas fa-exchange-alt"></i> Change Workout
-                        </button>
-                        <button class="btn btn-danger" id="cancel-workout-btn">
-                            <i class="fas fa-times"></i> Cancel Workout
-                        </button>
-                    </div>
-                </div>
+    <div>
+        <h3 id="current-workout-title">Current Workout</h3>
+        <p id="current-workout-date" class="workout-subtitle"></p>
+        <div id="workout-status" class="workout-status">Ready to Start</div>
+    </div>
+    <div class="workout-actions">
+        <!-- Pause/Resume button (hidden until workout starts) -->
+        <button class="btn btn-warning hidden" id="pause-workout-btn" onclick="toggleWorkoutPause()">
+            <i class="fas fa-pause"></i> Pause Workout
+        </button>
+        <!-- Complete button (hidden until workout starts) -->
+        <button class="btn btn-primary hidden" id="complete-workout-btn">
+            <i class="fas fa-check"></i> Complete Workout
+        </button>
+        <!-- Always visible controls -->
+        <button class="btn btn-secondary" id="change-workout-btn">
+            <i class="fas fa-exchange-alt"></i> Change Workout
+        </button>
+        <button class="btn btn-danger" id="cancel-workout-btn">
+            <i class="fas fa-times"></i> Cancel Workout
+        </button>
+    </div>
+</div>
 
                 <!-- Progress Overview -->
                 <div class="progress-overview">
