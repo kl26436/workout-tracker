@@ -1,7 +1,8 @@
 // Firebase imports
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+// We need to import deleteDoc for the delete functionality
 import {
-  getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, orderBy, limit
+  getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, orderBy, limit, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import {
   getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut
@@ -32,6 +33,9 @@ let exerciseDatabase = [];
 let timers = {};
 let workoutStartTime = null;
 let workoutDurationTimer = null;
+let workoutState = 'ready'; // 'ready', 'started', 'paused', 'completed'
+let totalPausedTime = 0;
+let lastPauseTime = null;
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
@@ -76,13 +80,21 @@ function setupEventListeners() {
 
     // Workout controls
     const changeWorkoutBtn = document.getElementById('change-workout-btn');
-    const finishWorkoutBtn = document.getElementById('finish-workout-btn');
+    const startPauseBtn = document.getElementById('start-pause-btn');
+    const completeWorkoutBtn = document.getElementById('complete-workout-btn');
+    const cancelWorkoutBtn = document.getElementById('cancel-workout-btn');
     
     if (changeWorkoutBtn) {
         changeWorkoutBtn.addEventListener('click', showWorkoutSelector);
     }
-    if (finishWorkoutBtn) {
-        finishWorkoutBtn.addEventListener('click', finishWorkout);
+    if (startPauseBtn) {
+        startPauseBtn.addEventListener('click', toggleWorkoutState);
+    }
+    if (completeWorkoutBtn) {
+        completeWorkoutBtn.addEventListener('click', completeWorkout);
+    }
+    if (cancelWorkoutBtn) {
+        cancelWorkoutBtn.addEventListener('click', cancelWorkout);
     }
 
     // History
@@ -90,6 +102,7 @@ function setupEventListeners() {
     const copyTodayBtn = document.getElementById('copy-to-today-btn');
     const editHistoryBtn = document.getElementById('edit-history-btn');
     const addMissingDayBtn = document.getElementById('add-missing-day-btn');
+    const deleteWorkoutBtn = document.getElementById('delete-workout-btn');
     
     if (loadHistoryBtn) {
         loadHistoryBtn.addEventListener('click', loadHistoryForDate);
@@ -102,6 +115,9 @@ function setupEventListeners() {
     }
     if (addMissingDayBtn) {
         addMissingDayBtn.addEventListener('click', addMissingDay);
+    }
+    if (deleteWorkoutBtn) {
+        deleteWorkoutBtn.addEventListener('click', deleteEntireWorkout);
     }
 
     // Add Exercise Modal
@@ -285,6 +301,10 @@ function switchTab(tabName) {
 async function loadTodaysWorkout() {
     if (!currentUser) return;
 
+    // Always show workout selector first - let user decide what to do
+    showWorkoutSelector();
+    
+    // You could optionally check if there's a saved workout and show a notification
     const today = getTodayDateString();
     try {
         const docRef = doc(db, "users", currentUser.uid, "workouts", today);
@@ -293,17 +313,12 @@ async function loadTodaysWorkout() {
         if (docSnap.exists()) {
             const data = docSnap.data();
             if (data.workoutType && data.workoutType !== 'none') {
-                // User has already selected a workout for today
-                selectWorkout(data.workoutType, data);
-            } else {
-                showWorkoutSelector();
+                // Just notify user they have a saved workout, don't auto-load it
+                showNotification(`You have a saved ${data.workoutType} workout from today`, 'info');
             }
-        } else {
-            showWorkoutSelector();
         }
     } catch (error) {
-        console.error('❌ Error loading today\'s workout:', error);
-        showWorkoutSelector();
+        console.error('❌ Error checking today\'s workout:', error);
     }
 }
 
@@ -325,6 +340,15 @@ function showWorkoutSelector() {
     if (window.addingForDate) {
         window.addingForDate = null;
         setTodayDisplay(); // Reset to today
+    }
+    
+    // Reset workout state
+    workoutState = 'ready';
+    totalPausedTime = 0;
+    lastPauseTime = null;
+    
+    if (workoutDurationTimer) {
+        clearInterval(workoutDurationTimer);
     }
 }
 
@@ -350,14 +374,20 @@ async function selectWorkout(workoutType, existingData = null) {
     if (existingData) {
         savedData = existingData;
         workoutStartTime = existingData.startTime ? new Date(existingData.startTime) : new Date();
+        workoutState = existingData.workoutState || 'ready';
+        totalPausedTime = existingData.totalPausedTime || 0;
     } else {
         savedData = {
             workoutType: workoutType,
             date: workoutDate,
             startTime: new Date().toISOString(),
-            exercises: {}
+            exercises: {},
+            workoutState: 'ready',
+            totalPausedTime: 0
         };
         workoutStartTime = new Date();
+        workoutState = 'ready';
+        totalPausedTime = 0;
     }
 
     // Save the workout selection
@@ -400,7 +430,161 @@ async function selectWorkout(workoutType, existingData = null) {
     renderWorkout();
     updateWorkoutStats();
 
-    showNotification(`${workoutType} workout started!`, 'success');
+    showNotification(`${workoutType} workout loaded!`, 'success');
+}
+
+// Workout State Management
+function updateWorkoutStateUI() {
+    const statusEl = document.getElementById('workout-status');
+    const startPauseBtn = document.getElementById('start-pause-btn');
+    const completeBtn = document.getElementById('complete-workout-btn');
+    
+    if (!statusEl || !startPauseBtn) return;
+    
+    // Update status display
+    statusEl.className = `workout-status ${workoutState}`;
+    
+    switch (workoutState) {
+        case 'ready':
+            statusEl.textContent = 'Ready to Start';
+            startPauseBtn.innerHTML = '<i class="fas fa-play"></i> Start Workout';
+            startPauseBtn.className = 'btn btn-success';
+            if (completeBtn) completeBtn.classList.add('hidden');
+            break;
+            
+        case 'started':
+            statusEl.textContent = 'Workout in Progress';
+            startPauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+            startPauseBtn.className = 'btn btn-warning';
+            if (completeBtn) completeBtn.classList.remove('hidden');
+            break;
+            
+        case 'paused':
+            statusEl.textContent = 'Workout Paused';
+            startPauseBtn.innerHTML = '<i class="fas fa-play"></i> Resume';
+            startPauseBtn.className = 'btn btn-success';
+            if (completeBtn) completeBtn.classList.remove('hidden');
+            break;
+            
+        case 'completed':
+            statusEl.textContent = 'Workout Completed';
+            startPauseBtn.innerHTML = '<i class="fas fa-check"></i> Completed';
+            startPauseBtn.className = 'btn btn-primary';
+            startPauseBtn.disabled = true;
+            if (completeBtn) completeBtn.classList.add('hidden');
+            break;
+    }
+}
+
+function toggleWorkoutState() {
+    if (workoutState === 'ready') {
+        startWorkout();
+    } else if (workoutState === 'started') {
+        pauseWorkout();
+    } else if (workoutState === 'paused') {
+        resumeWorkout();
+    }
+}
+
+function startWorkout() {
+    workoutState = 'started';
+    workoutStartTime = new Date();
+    savedData.workoutState = workoutState;
+    savedData.actualStartTime = workoutStartTime.toISOString();
+    
+    startWorkoutDurationTimer();
+    updateWorkoutStateUI();
+    saveWorkoutData();
+    
+    showNotification('Workout started! 💪', 'success');
+}
+
+function pauseWorkout() {
+    workoutState = 'paused';
+    lastPauseTime = new Date();
+    savedData.workoutState = workoutState;
+    
+    if (workoutDurationTimer) {
+        clearInterval(workoutDurationTimer);
+    }
+    
+    updateWorkoutStateUI();
+    saveWorkoutData();
+    
+    showNotification('Workout paused', 'info');
+}
+
+function resumeWorkout() {
+    if (lastPauseTime) {
+        const pauseDuration = new Date() - lastPauseTime;
+        totalPausedTime += pauseDuration;
+        savedData.totalPausedTime = totalPausedTime;
+    }
+    
+    workoutState = 'started';
+    savedData.workoutState = workoutState;
+    
+    startWorkoutDurationTimer();
+    updateWorkoutStateUI();
+    saveWorkoutData();
+    
+    showNotification('Workout resumed', 'success');
+}
+
+async function completeWorkout() {
+    const confirmComplete = window.confirm('Complete this workout? This will mark it as finished.');
+    if (!confirmComplete) return;
+    
+    workoutState = 'completed';
+    
+    // Stop duration timer
+    if (workoutDurationTimer) {
+        clearInterval(workoutDurationTimer);
+    }
+
+    // Calculate final duration
+    const now = new Date();
+    const totalDuration = Math.floor((now - workoutStartTime - totalPausedTime) / 1000);
+    
+    // Update saved data with completion info
+    savedData.completedAt = now.toISOString();
+    savedData.totalDuration = totalDuration;
+    savedData.workoutState = workoutState;
+    
+    // Save final data
+    await saveWorkoutData();
+    
+    updateWorkoutStateUI();
+    showNotification('Workout completed! Great job! 🎉', 'success');
+}
+
+async function cancelWorkout() {
+    const confirmCancel = window.confirm('Cancel this workout? This will delete it completely and it will not be saved in your history.');
+    if (!confirmCancel) return;
+    
+    try {
+        // Delete from Firebase
+        if (currentUser && savedData.date) {
+            const docRef = doc(db, "users", currentUser.uid, "workouts", savedData.date);
+            await deleteDoc(docRef);
+            console.log('Workout deleted from Firebase');
+        }
+        
+        showNotification('Workout cancelled and deleted', 'info');
+        showWorkoutSelector();
+        
+        // Reset state
+        currentWorkout = null;
+        savedData = {};
+        workoutStartTime = null;
+        workoutState = 'ready';
+        totalPausedTime = 0;
+        lastPauseTime = null;
+        
+    } catch (error) {
+        console.error('Error cancelling workout:', error);
+        showNotification('Error cancelling workout', 'error');
+    }
 }
 
 function startWorkoutDurationTimer() {
@@ -409,12 +593,17 @@ function startWorkoutDurationTimer() {
     }
 
     workoutDurationTimer = setInterval(() => {
+        if (workoutState !== 'started') return; // Only count time when actually started
+        
         const now = new Date();
-        const duration = Math.floor((now - workoutStartTime) / 1000);
-        const minutes = Math.floor(duration / 60);
-        const seconds = duration % 60;
-        document.getElementById('workout-duration').textContent = 
-            `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        const elapsed = Math.floor((now - workoutStartTime - totalPausedTime) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        
+        const workoutDuration = document.getElementById('workout-duration');
+        if (workoutDuration) {
+            workoutDuration.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
     }, 1000);
 }
 
@@ -512,6 +701,7 @@ function createExerciseCard(exercise, index) {
 
     return card;
 }
+
 
 function generateSetRows(exercise, exerciseIndex, savedSets) {
     let rows = '';
@@ -868,6 +1058,12 @@ function createHistoryExerciseCard(exercise, index, exerciseData) {
             </div>
         </div>
 
+        ${exercise.video ? `
+            <a href="${exercise.video}" target="_blank" class="video-link">
+                <i class="fas fa-play-circle"></i> Watch Form Video
+            </a>
+        ` : ''}
+
         <table class="exercise-table">
             <thead>
                 <tr>
@@ -1168,6 +1364,35 @@ async function editHistoryWorkout() {
     updateWorkoutStats();
     
     showNotification(`Now editing ${historyData.workoutType} from ${date}`, 'info');
+}
+
+// Delete entire workout from history
+async function deleteEntireWorkout() {
+    if (!window.currentHistoryData || !currentUser) return;
+    
+    const historyData = window.currentHistoryData;
+    const workoutName = `${historyData.workoutType} from ${new Date(historyData.date).toLocaleDateString()}`;
+    
+    const confirmDelete = window.confirm(`Delete "${workoutName}" completely? This cannot be undone.`);
+    if (!confirmDelete) return;
+    
+    try {
+        // Delete from Firebase
+        const docRef = doc(db, "users", currentUser.uid, "workouts", historyData.date);
+        await deleteDoc(docRef);
+        
+        // Hide the workout display
+        document.getElementById('history-workout-display').classList.add('hidden');
+        
+        // Reload recent workouts
+        loadRecentWorkouts();
+        
+        showNotification(`"${workoutName}" deleted successfully`, 'success');
+        
+    } catch (error) {
+        console.error('❌ Error deleting workout:', error);
+        showNotification('Failed to delete workout', 'error');
+    }
 }
 
 // Add Missing Day functionality
@@ -1612,5 +1837,9 @@ window.editPlan = editPlan;
 window.deletePlan = deletePlan;
 window.deleteHistoryExercise = deleteHistoryExercise;
 window.openSwapModalForHistory = openSwapModalForHistory;
+window.deleteEntireWorkout = deleteEntireWorkout;
+window.toggleWorkoutState = toggleWorkoutState;
+window.completeWorkout = completeWorkout;
+window.cancelWorkout = cancelWorkout;
 
 console.log('✅ Big Surf Workout Tracker loaded successfully!');
