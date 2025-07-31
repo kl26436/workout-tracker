@@ -858,7 +858,7 @@ function startRestTimer() {
     globalRestTimerActive = true;
     updateGlobalTimerDisplay();
     
-    showNotification('Rest timer started - 90 seconds', 'info');
+    showNotification('Rest timer started - 60 seconds', 'info');
     
     globalRestTimer = setInterval(() => {
         globalRestTimeLeft--;
@@ -1105,7 +1105,6 @@ function createExerciseCard(exercise, index) {
                                 <th>Reps</th>
                                 <th>Weight (${useKilograms ? 'kg' : 'lbs'})</th>
                                 <th>Previous</th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1156,12 +1155,6 @@ function createExerciseCard(exercise, index) {
                     <small style="color: var(--text-secondary);">
                         ${exercise.reps} × ${exercise.weight} lbs
                     </small>
-                </td>
-                <td>
-                    <div class="timer-display" id="timer-${exerciseIndex}-${i}">
-                        <i class="fas fa-clock"></i>
-                        <span>Ready</span>
-                    </div>
                 </td>
             </tr>
         `;
