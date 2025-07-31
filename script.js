@@ -1,6 +1,5 @@
 // Firebase imports
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-// We need to import deleteDoc for the delete functionality
 import {
   getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, orderBy, limit, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -33,9 +32,13 @@ let exerciseDatabase = [];
 let timers = {};
 let workoutStartTime = null;
 let workoutDurationTimer = null;
-let workoutState = 'ready'; // 'ready', 'started', 'paused', 'completed'
+let workoutState = 'ready';
 let totalPausedTime = 0;
 let lastPauseTime = null;
+let globalRestTimer = null;
+let globalRestTimeLeft = 0;
+let globalRestTimerActive = false;
+
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
@@ -47,7 +50,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initializeWorkoutApp() {
-    // Set up auth state listener
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentUser = user;
@@ -140,40 +142,12 @@ function setupEventListeners() {
     if (createPlanBtn) {
         createPlanBtn.addEventListener('click', createNewPlan);
     }
-
-    // Modal controls
-    const closeSwapBtn = document.getElementById('close-swap-modal');
-    const exerciseSearch = document.getElementById('exercise-search');
-    
-    if (closeSwapBtn) {
-        closeSwapBtn.addEventListener('click', closeSwapModal);
-    }
-    if (exerciseSearch) {
-        exerciseSearch.addEventListener('input', searchExercises);
-    }
-    
-    // Close modal when clicking outside
-    const swapModal = document.getElementById('swap-modal');
-    const addExerciseModal = document.getElementById('add-exercise-modal');
-    
-    if (swapModal) {
-        swapModal.addEventListener('click', (e) => {
-            if (e.target.id === 'swap-modal') closeSwapModal();
-        });
-    }
-    
-    if (addExerciseModal) {
-        addExerciseModal.addEventListener('click', (e) => {
-            if (e.target.id === 'add-exercise-modal') closeAddExerciseModal();
-        });
-    }
 }
 
 async function loadData() {
     try {
         console.log('📥 Loading workout data...');
         
-        // Load workout plans
         const workoutResponse = await fetch('./workouts.json');
         if (workoutResponse.ok) {
             workoutPlans = await workoutResponse.json();
@@ -183,7 +157,6 @@ async function loadData() {
             workoutPlans = getDefaultWorkouts();
         }
         
-        // Load exercise database
         const exerciseResponse = await fetch('./exercises.json');
         if (exerciseResponse.ok) {
             exerciseDatabase = await exerciseResponse.json();
@@ -193,7 +166,6 @@ async function loadData() {
             exerciseDatabase = getDefaultExercises();
         }
         
-        // Load recent workouts for history tab
         if (currentUser) {
             loadRecentWorkouts();
         }
@@ -246,14 +218,13 @@ async function signOutUser() {
     try {
         await signOut(auth);
         showNotification('Signed out successfully', 'success');
-        showWorkoutSelector(); // Reset to workout selector
+        showWorkoutSelector();
     } catch (error) {
         console.error('❌ Sign out error:', error);
         showNotification('Sign out failed', 'error');
     }
 }
 
-// Date and UI functions
 function setTodayDisplay() {
     const today = new Date();
     const options = { 
@@ -268,7 +239,6 @@ function setTodayDisplay() {
         todayDateDisplay.textContent = `Today - ${today.toLocaleDateString('en-US', options)}`;
     }
     
-    // Set history date picker to today
     const historyDatePicker = document.getElementById('history-date-picker');
     if (historyDatePicker) {
         historyDatePicker.value = today.toISOString().split('T')[0];
@@ -279,7 +249,6 @@ function getTodayDateString() {
     return new Date().toISOString().split('T')[0];
 }
 
-// Navigation
 function switchTab(tabName) {
     document.querySelectorAll('.nav-tab').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.tab === tabName);
@@ -289,7 +258,6 @@ function switchTab(tabName) {
         content.classList.toggle('hidden', !content.id.startsWith(tabName));
     });
 
-    // Load data for specific tabs
     if (tabName === 'history' && currentUser) {
         loadRecentWorkouts();
     } else if (tabName === 'plans' && currentUser) {
@@ -297,14 +265,10 @@ function switchTab(tabName) {
     }
 }
 
-// Today's Workout Functions
 async function loadTodaysWorkout() {
     if (!currentUser) return;
-
-    // Always show workout selector first - let user decide what to do
     showWorkoutSelector();
     
-    // You could optionally check if there's a saved workout and show a notification
     const today = getTodayDateString();
     try {
         const docRef = doc(db, "users", currentUser.uid, "workouts", today);
@@ -313,7 +277,6 @@ async function loadTodaysWorkout() {
         if (docSnap.exists()) {
             const data = docSnap.data();
             if (data.workoutType && data.workoutType !== 'none') {
-                // Just notify user they have a saved workout, don't auto-load it
                 showNotification(`You have a saved ${data.workoutType} workout from today`, 'info');
             }
         }
@@ -329,20 +292,17 @@ function showWorkoutSelector() {
     
     if (workoutSelector) workoutSelector.classList.remove('hidden');
     if (activeWorkout) activeWorkout.classList.add('hidden');
-    if (addExerciseSection) addExerciseSection.classList.add('hidden'); // Hide add exercise button
+    if (addExerciseSection) addExerciseSection.classList.add('hidden');
     
-    // Clear any selected workout options
     document.querySelectorAll('.workout-option').forEach(option => {
         option.classList.remove('selected');
     });
     
-    // Reset date override and header if we were adding a missing day
     if (window.addingForDate) {
         window.addingForDate = null;
-        setTodayDisplay(); // Reset to today
+        setTodayDisplay();
     }
     
-    // Reset workout state
     workoutState = 'ready';
     totalPausedTime = 0;
     lastPauseTime = null;
@@ -358,7 +318,6 @@ async function selectWorkout(workoutType, existingData = null) {
         return;
     }
 
-    // Find the workout plan
     const workout = workoutPlans.find(w => w.day === workoutType);
     if (!workout) {
         showNotification('Workout plan not found', 'error');
@@ -367,10 +326,8 @@ async function selectWorkout(workoutType, existingData = null) {
 
     currentWorkout = workout;
     
-    // Use override date if adding missing day, otherwise use today or existing data
     const workoutDate = window.addingForDate || (existingData ? existingData.date : getTodayDateString());
     
-    // Load existing data or start fresh
     if (existingData) {
         savedData = existingData;
         workoutStartTime = existingData.startTime ? new Date(existingData.startTime) : new Date();
@@ -390,10 +347,8 @@ async function selectWorkout(workoutType, existingData = null) {
         totalPausedTime = 0;
     }
 
-    // Save the workout selection
     await saveWorkoutData();
 
-    // Update UI
     const workoutSelector = document.getElementById('workout-selector');
     const activeWorkout = document.getElementById('active-workout');
     const addExerciseSection = document.getElementById('add-exercise-section');
@@ -401,7 +356,7 @@ async function selectWorkout(workoutType, existingData = null) {
     
     if (workoutSelector) workoutSelector.classList.add('hidden');
     if (activeWorkout) activeWorkout.classList.remove('hidden');
-    if (addExerciseSection) addExerciseSection.classList.remove('hidden'); // Show add exercise button
+    if (addExerciseSection) addExerciseSection.classList.remove('hidden');
     if (currentWorkoutTitle) currentWorkoutTitle.textContent = workoutType;
     
     const currentWorkoutDate = document.getElementById('current-workout-date');
@@ -416,7 +371,6 @@ async function selectWorkout(workoutType, existingData = null) {
         }
     }
 
-    // Start duration timer only if it's today's workout
     if (!window.addingForDate) {
         startWorkoutDurationTimer();
     } else {
@@ -426,14 +380,12 @@ async function selectWorkout(workoutType, existingData = null) {
         }
     }
 
-    // Render the workout
     renderWorkout();
     updateWorkoutStats();
 
     showNotification(`${workoutType} workout loaded!`, 'success');
 }
 
-// Workout State Management
 function updateWorkoutStateUI() {
     const statusEl = document.getElementById('workout-status');
     const startPauseBtn = document.getElementById('start-pause-btn');
@@ -441,7 +393,14 @@ function updateWorkoutStateUI() {
     
     if (!statusEl || !startPauseBtn) return;
     
-    // Update status display
+    // Clear rest timer when workout stops
+    if (workoutState !== 'started' && globalRestTimer) {
+        clearInterval(globalRestTimer);
+        globalRestTimer = null;
+        globalRestTimerActive = false;
+        globalRestTimeLeft = 0;
+    }
+    
     statusEl.className = `workout-status ${workoutState}`;
     
     switch (workoutState) {
@@ -474,7 +433,12 @@ function updateWorkoutStateUI() {
             if (completeBtn) completeBtn.classList.add('hidden');
             break;
     }
+    
+    if (currentWorkout) {
+        renderWorkout();
+    }
 }
+
 
 function toggleWorkoutState() {
     if (workoutState === 'ready') {
@@ -537,25 +501,21 @@ async function completeWorkout() {
     
     workoutState = 'completed';
     
-    // Stop duration timer
     if (workoutDurationTimer) {
         clearInterval(workoutDurationTimer);
     }
 
-    // Calculate final duration
     const now = new Date();
     const totalDuration = Math.floor((now - workoutStartTime - totalPausedTime) / 1000);
     
-    // Update saved data with completion info
     savedData.completedAt = now.toISOString();
     savedData.totalDuration = totalDuration;
     savedData.workoutState = workoutState;
     
-    // Save final data
     await saveWorkoutData();
     
     updateWorkoutStateUI();
-    showNotification('Workout completed! Great job! 🎉', 'success');
+    showCompletionModal();
 }
 
 async function cancelWorkout() {
@@ -563,7 +523,6 @@ async function cancelWorkout() {
     if (!confirmCancel) return;
     
     try {
-        // Delete from Firebase
         if (currentUser && savedData.date) {
             const docRef = doc(db, "users", currentUser.uid, "workouts", savedData.date);
             await deleteDoc(docRef);
@@ -573,7 +532,6 @@ async function cancelWorkout() {
         showNotification('Workout cancelled and deleted', 'info');
         showWorkoutSelector();
         
-        // Reset state
         currentWorkout = null;
         savedData = {};
         workoutStartTime = null;
@@ -593,7 +551,17 @@ function startWorkoutDurationTimer() {
     }
 
     workoutDurationTimer = setInterval(() => {
-        if (workoutState !== 'started') return; // Only count time when actually started
+        if (workoutState !== 'started') return;
+        
+        // Only update workout duration if rest timer isn't active
+        if (!globalRestTimerActive) {
+            updateWorkoutDurationDisplay();
+        }
+    }, 1000);
+}
+
+    workoutDurationTimer = setInterval(() => {
+        if (workoutState !== 'started') return;
         
         const now = new Date();
         const elapsed = Math.floor((now - workoutStartTime - totalPausedTime) / 1000);
@@ -605,31 +573,6 @@ function startWorkoutDurationTimer() {
             workoutDuration.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
         }
     }, 1000);
-}
-
-async function finishWorkout() {
-    if (!currentWorkout || !currentUser) return;
-
-    // Stop duration timer
-    if (workoutDurationTimer) {
-        clearInterval(workoutDurationTimer);
-    }
-
-    // Update saved data with completion info
-    savedData.completedAt = new Date().toISOString();
-    savedData.totalDuration = Math.floor((new Date() - workoutStartTime) / 1000);
-    
-    // Save final data
-    await saveWorkoutData();
-
-    showNotification('Workout completed! Great job! 💪', 'success');
-    showWorkoutSelector();
-    
-    // Reset state
-    currentWorkout = null;
-    savedData = {};
-    workoutStartTime = null;
-}
 
 function renderWorkout() {
     const container = document.getElementById('workout-list');
@@ -650,58 +593,256 @@ function createExerciseCard(exercise, index) {
 
     const savedSets = savedData.exercises?.[`exercise_${index}`]?.sets || [];
     const savedNotes = savedData.exercises?.[`exercise_${index}`]?.notes || '';
+    const completedSets = savedSets.filter(set => set && set.reps && set.weight).length;
+    const isCompleted = completedSets === exercise.sets;
+    
+    // Default to collapsed unless workout is started and not completed
+    const isWorkoutStarted = workoutState === 'started' || workoutState === 'paused';
+    const shouldExpand = false; // Default collapsed
+    
+    // Add appropriate classes
+    if (isCompleted) {
+        card.classList.add('completed');
+    }
+    if (!isWorkoutStarted) {
+        card.classList.add('workout-not-started');
+    }
 
     card.innerHTML = `
-        <div class="exercise-header">
-            <h3 class="exercise-title">${exercise.machine}</h3>
-            <div class="exercise-actions">
-                <button class="btn btn-danger btn-small" onclick="deleteExercise(${index})" 
-                        title="Remove this exercise from workout">
-                    <i class="fas fa-trash"></i> Remove
-                </button>
-                <button class="btn btn-secondary btn-small" onclick="openSwapModal(${index})">
-                    <i class="fas fa-exchange-alt"></i> Swap
-                </button>
-                <button class="btn btn-secondary btn-small" onclick="viewHistory('${exercise.machine}')">
-                    <i class="fas fa-history"></i> History
-                </button>
+        <div class="exercise-header" onclick="toggleExerciseExpansion(${index})">
+            <div class="exercise-title-section">
+                <h3 class="exercise-title">${exercise.machine}</h3>
+                <div class="exercise-progress">
+                    <span class="progress-text">${completedSets}/${exercise.sets} sets</span>
+                    <div class="progress-bar-mini">
+                        <div class="progress-fill" style="width: ${(completedSets/exercise.sets)*100}%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="exercise-controls">
+                <i class="fas fa-chevron-${shouldExpand ? 'up' : 'down'} collapse-icon"></i>
+                <div class="exercise-actions">
+                    <button class="btn btn-danger btn-small" onclick="event.stopPropagation(); deleteExercise(${index})" 
+                            title="Remove this exercise from workout">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             </div>
         </div>
 
-        ${exercise.video ? `
+        ${exercise.video && shouldExpand ? `
             <a href="${exercise.video}" target="_blank" class="video-link">
                 <i class="fas fa-play-circle"></i> Watch Form Video
             </a>
         ` : ''}
 
-        <table class="exercise-table">
-            <thead>
-                <tr>
-                    <th>Set</th>
-                    <th>Reps</th>
-                    <th>Weight (lbs)</th>
-                    <th>Previous</th>
-                    <th>Rest Timer</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${generateSetRows(exercise, index, savedSets)}
-            </tbody>
-        </table>
+        <div class="exercise-content" style="display: ${shouldExpand ? 'block' : 'none'};">
+            ${isWorkoutStarted ? `
+                <table class="exercise-table">
+                    <thead>
+                        <tr>
+                            <th>Set</th>
+                            <th>Reps</th>
+                            <th>Weight (lbs)</th>
+                            <th>Previous</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${generateSetRowsWithTimer(exercise, index, savedSets)}
+                    </tbody>
+                </table>
 
-        <textarea class="notes-area" placeholder="Exercise notes..." 
-                  onchange="handleNoteChange(${index}, this.value)">${savedNotes}</textarea>
+                <textarea class="notes-area" placeholder="Exercise notes..." 
+                          onchange="handleNoteChange(${index}, this.value)">${savedNotes}</textarea>
+            ` : `
+                <div class="workout-not-started-message">
+                    <i class="fas fa-play-circle"></i>
+                    <p>Start your workout to begin tracking sets</p>
+                    <p class="target-info">${exercise.sets} sets × ${exercise.reps} reps @ ${exercise.weight} lbs</p>
+                </div>
+            `}
+        </div>
     `;
-
-    // Check if exercise is completed
-    const completedSets = savedSets.filter(set => set && set.reps && set.weight).length;
-    if (completedSets === exercise.sets) {
-        card.classList.add('completed');
-    }
 
     return card;
 }
 
+//Toggle exercise expansion
+function toggleExerciseExpansion(exerciseIndex) {
+    const card = document.querySelector(`[data-exercise-index="${exerciseIndex}"]`);
+    if (!card) return;
+    
+    const content = card.querySelector('.exercise-content');
+    const icon = card.querySelector('.collapse-icon');
+    
+    if (!content || !icon) return;
+    
+    const isCurrentlyVisible = content.style.display !== 'none';
+    
+    if (isCurrentlyVisible) {
+        // Collapse
+        content.style.display = 'none';
+        icon.className = 'fas fa-chevron-down collapse-icon';
+    } else {
+        // Expand
+        content.style.display = 'block';
+        icon.className = 'fas fa-chevron-up collapse-icon';
+    }
+}
+
+// 3. NEW: Generate set rows with single timer action
+function generateSetRowsWithTimer(exercise, exerciseIndex, savedSets) {
+    let rows = '';
+    for (let i = 0; i < exercise.sets; i++) {
+        const savedSet = savedSets[i] || {};
+        const isCompleted = savedSet.reps && savedSet.weight;
+        
+        rows += `
+            <tr>
+                <td>Set ${i + 1}</td>
+                <td>
+                    ${createSetInputWithButtons(exerciseIndex, i, 'reps', savedSet.reps, exercise.reps)}
+                </td>
+                <td>
+                    ${createSetInputWithButtons(exerciseIndex, i, 'weight', savedSet.weight, exercise.weight)}
+                </td>
+                <td>
+                    <small style="color: var(--text-secondary);">
+                        ${exercise.reps} × ${exercise.weight} lbs
+                    </small>
+                </td>
+                <td>
+                    ${isCompleted ? `
+                        <button class="btn btn-success btn-small" onclick="startRestTimer()" title="Start rest timer">
+                            <i class="fas fa-clock"></i> Rest
+                        </button>
+                    ` : `
+                        <span style="color: var(--text-secondary); font-size: 0.875rem;">Complete set</span>
+                    `}
+                </td>
+            </tr>
+        `;
+    }
+    return rows;
+}
+
+// 4. NEW: Single global rest timer
+function startRestTimer() {
+    // Clear any existing timer
+    if (globalRestTimer) {
+        clearInterval(globalRestTimer);
+    }
+    
+    globalRestTimeLeft = 90; // 90 seconds
+    globalRestTimerActive = true;
+    updateGlobalTimerDisplay();
+    
+    showNotification('Rest timer started - 90 seconds', 'info');
+    
+    globalRestTimer = setInterval(() => {
+        globalRestTimeLeft--;
+        updateGlobalTimerDisplay();
+        
+        if (globalRestTimeLeft <= 0) {
+            clearInterval(globalRestTimer);
+            globalRestTimerActive = false;
+            
+            // Vibrate if supported
+            if ('vibrate' in navigator) {
+                navigator.vibrate([200, 100, 200, 100, 200]);
+            }
+            
+            showNotification('Rest complete! Ready for next set! 💪', 'success');
+            updateGlobalTimerDisplay();
+        }
+    }, 1000);
+}
+
+// 5. NEW: Update global timer display
+function updateGlobalTimerDisplay() {
+    const workoutDuration = document.getElementById('workout-duration');
+    if (!workoutDuration) return;
+    
+    if (globalRestTimerActive && globalRestTimeLeft > 0) {
+        const minutes = Math.floor(globalRestTimeLeft / 60);
+        const seconds = globalRestTimeLeft % 60;
+        workoutDuration.innerHTML = `
+            <span style="color: var(--warning); font-weight: bold;">
+                <i class="fas fa-clock"></i> Rest: ${minutes}:${seconds.toString().padStart(2, '0')}
+            </span>
+        `;
+    } else if (!globalRestTimerActive && globalRestTimeLeft === 0 && globalRestTimer) {
+        workoutDuration.innerHTML = `
+            <span style="color: var(--success); font-weight: bold;">
+                <i class="fas fa-check-circle"></i> Rest Complete!
+            </span>
+        `;
+        // Clear the "Rest Complete" message after 3 seconds
+        setTimeout(() => {
+            if (!globalRestTimerActive) {
+                updateWorkoutDurationDisplay();
+            }
+        }, 3000);
+    } else {
+        updateWorkoutDurationDisplay();
+    }
+}
+
+// 6. NEW: Update regular workout duration display
+function updateWorkoutDurationDisplay() {
+    if (workoutState !== 'started' || !workoutStartTime) return;
+    
+    const now = new Date();
+    const elapsed = Math.floor((now - workoutStartTime - totalPausedTime) / 1000);
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+    
+    const workoutDuration = document.getElementById('workout-duration');
+    if (workoutDuration) {
+        workoutDuration.innerHTML = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+}
+
+// NEW: Enhanced set input with +/- buttons
+function createSetInputWithButtons(exerciseIndex, setIndex, field, currentValue, placeholder) {
+    const value = currentValue || '';
+    const isDisabled = workoutState !== 'started';
+    const disabledAttr = isDisabled ? 'disabled' : '';
+    
+    return `
+        <div class="set-input-group ${isDisabled ? 'disabled' : ''}">
+            <button type="button" class="input-btn minus" 
+                    onclick="adjustSetValue(${exerciseIndex}, ${setIndex}, '${field}', -1)"
+                    ${disabledAttr}>−</button>
+            <input type="number" class="set-input ${value ? 'completed' : ''}" 
+                   placeholder="${placeholder}" 
+                   value="${value}"
+                   onchange="handleSetChange(${exerciseIndex}, ${setIndex}, '${field}', this.value)"
+                   oninput="handleSetChange(${exerciseIndex}, ${setIndex}, '${field}', this.value)"
+                   ${disabledAttr}>
+            <button type="button" class="input-btn plus" 
+                    onclick="adjustSetValue(${exerciseIndex}, ${setIndex}, '${field}', 1)"
+                    ${disabledAttr}>+</button>
+        </div>
+    `;
+}
+
+function adjustSetValue(exerciseIndex, setIndex, field, change) {
+    if (workoutState !== 'started') {
+        showNotification('Start your workout first to track sets', 'warning');
+        return;
+    }
+    
+    const input = document.querySelector(`input[onchange*="handleSetChange(${exerciseIndex}, ${setIndex}, '${field}'"]`);
+    if (!input) return;
+    
+    const currentValue = parseInt(input.value) || 0;
+    const newValue = Math.max(0, currentValue + change);
+    
+    input.value = newValue;
+    handleSetChange(exerciseIndex, setIndex, field, newValue);
+}
 
 function generateSetRows(exercise, exerciseIndex, savedSets) {
     let rows = '';
@@ -711,18 +852,10 @@ function generateSetRows(exercise, exerciseIndex, savedSets) {
             <tr>
                 <td>Set ${i + 1}</td>
                 <td>
-                    <input type="number" class="set-input ${savedSet.reps ? 'completed' : ''}" 
-                           placeholder="${exercise.reps}" 
-                           value="${savedSet.reps || ''}"
-                           onchange="handleSetChange(${exerciseIndex}, ${i}, 'reps', this.value)"
-                           oninput="handleSetChange(${exerciseIndex}, ${i}, 'reps', this.value)">
+                    ${createSetInputWithButtons(exerciseIndex, i, 'reps', savedSet.reps, exercise.reps)}
                 </td>
                 <td>
-                    <input type="number" class="set-input ${savedSet.weight ? 'completed' : ''}" 
-                           placeholder="${exercise.weight}" 
-                           value="${savedSet.weight || ''}"
-                           onchange="handleSetChange(${exerciseIndex}, ${i}, 'weight', this.value)"
-                           oninput="handleSetChange(${exerciseIndex}, ${i}, 'weight', this.value)">
+                    ${createSetInputWithButtons(exerciseIndex, i, 'weight', savedSet.weight, exercise.weight)}
                 </td>
                 <td>
                     <small style="color: var(--text-secondary);">
@@ -741,13 +874,16 @@ function generateSetRows(exercise, exerciseIndex, savedSets) {
     return rows;
 }
 
-// New wrapper function to handle set changes
 async function handleSetChange(exerciseIndex, setIndex, field, value) {
+    if (workoutState !== 'started') {
+        showNotification('Start your workout first to track sets', 'warning');
+        return;
+    }
+    
     console.log(`Saving set: exercise ${exerciseIndex}, set ${setIndex}, ${field} = ${value}`);
     await saveSet(exerciseIndex, setIndex, field, value);
 }
 
-// New wrapper function to handle note changes
 async function handleNoteChange(exerciseIndex, note) {
     console.log(`Saving note for exercise ${exerciseIndex}: ${note}`);
     await saveNote(exerciseIndex, note);
@@ -772,10 +908,8 @@ async function saveSet(exerciseIndex, setIndex, field, value) {
     
     savedData.exercises[`exercise_${exerciseIndex}`].sets[setIndex][field] = value;
     
-    // Save to Firebase
     await saveWorkoutData();
     
-    // Update input styling - find the input that triggered this
     const inputs = document.querySelectorAll(`input[onchange*="handleSetChange(${exerciseIndex}, ${setIndex}"]`);
     inputs.forEach(input => {
         if (input.getAttribute('onchange').includes(`'${field}'`)) {
@@ -783,12 +917,13 @@ async function saveSet(exerciseIndex, setIndex, field, value) {
         }
     });
     
-    // Start rest timer when both reps and weight are entered
+    // Check if set is complete and re-render to show rest button
     const setData = savedData.exercises[`exercise_${exerciseIndex}`].sets[setIndex];
     if (setData && setData.reps && setData.weight) {
-        console.log(`Starting timer for exercise ${exerciseIndex}, set ${setIndex}`);
-        startRestTimer(exerciseIndex, setIndex);
+        console.log(`Set completed for exercise ${exerciseIndex}, set ${setIndex}`);
         checkExerciseCompletion(exerciseIndex);
+        // Re-render the specific exercise to show rest button
+        renderSingleExercise(exerciseIndex);
     }
     
     updateWorkoutStats();
@@ -806,12 +941,51 @@ async function saveNote(exerciseIndex, note) {
     await saveWorkoutData();
 }
 
+// 9. NEW: Render single exercise (for updating rest buttons)
+function renderSingleExercise(exerciseIndex) {
+    const existingCard = document.querySelector(`[data-exercise-index="${exerciseIndex}"]`);
+    if (!existingCard || !currentWorkout) return;
+    
+    const exercise = currentWorkout.exercises[exerciseIndex];
+    const newCard = createExerciseCard(exercise, exerciseIndex);
+    
+    // Preserve expansion state
+    const wasExpanded = existingCard.querySelector('.exercise-content').style.display === 'block';
+    if (wasExpanded) {
+        newCard.querySelector('.exercise-content').style.display = 'block';
+        newCard.querySelector('.collapse-icon').className = 'fas fa-chevron-up collapse-icon';
+    }
+    
+    existingCard.replaceWith(newCard);
+}
+
+// NEW: Offline support
+function saveWorkoutOffline() {
+    try {
+        localStorage.setItem('bigsurf_offline_workout', JSON.stringify(savedData));
+        console.log('💾 Workout saved offline');
+    } catch (error) {
+        console.error('❌ Error saving offline:', error);
+    }
+}
+
+function clearOfflineWorkout() {
+    try {
+        localStorage.removeItem('bigsurf_offline_workout');
+        console.log('🗑️ Cleared offline workout data');
+    } catch (error) {
+        console.error('❌ Error clearing offline data:', error);
+    }
+}
+
 async function saveWorkoutData() {
     if (!currentUser) return;
     
-    // Use the override date if we're adding a missing day
     const saveDate = window.addingForDate || savedData.date || getTodayDateString();
     savedData.date = saveDate;
+    
+    // Save offline first as backup
+    saveWorkoutOffline();
     
     try {
         const docRef = doc(db, "users", currentUser.uid, "workouts", saveDate);
@@ -821,9 +995,10 @@ async function saveWorkoutData() {
         });
         
         console.log('💾 Workout data saved successfully for', saveDate);
+        clearOfflineWorkout(); // Clear offline backup on successful save
     } catch (error) {
         console.error('❌ Error saving workout data:', error);
-        showNotification('Failed to save workout data', 'error');
+        showNotification('Saved offline (will sync when online)', 'warning');
     }
 }
 
@@ -856,37 +1031,6 @@ function updateWorkoutStats() {
     }
 }
 
-function startRestTimer(exerciseIndex, setIndex) {
-    const timerId = `timer-${exerciseIndex}-${setIndex}`;
-    const timerElement = document.getElementById(timerId);
-    
-    if (!timerElement) return;
-    
-    if (timers[timerId]) {
-        clearInterval(timers[timerId]);
-    }
-    
-    let timeLeft = 90; // 90 seconds rest
-    timerElement.innerHTML = `<i class="fas fa-clock"></i> <span class="timer-active">${timeLeft}s</span>`;
-    
-    timers[timerId] = setInterval(() => {
-        timeLeft--;
-        if (timeLeft > 0) {
-            timerElement.innerHTML = `<i class="fas fa-clock"></i> <span class="timer-active">${timeLeft}s</span>`;
-        } else {
-            timerElement.innerHTML = `<i class="fas fa-check-circle"></i> <span class="timer-complete">Ready!</span>`;
-            clearInterval(timers[timerId]);
-            
-            // Vibrate if supported
-            if ('vibrate' in navigator) {
-                navigator.vibrate([200, 100, 200]);
-            }
-            
-            showNotification('Rest period complete!', 'success');
-        }
-    }, 1000);
-}
-
 function checkExerciseCompletion(exerciseIndex) {
     const exercise = currentWorkout.exercises[exerciseIndex];
     const sets = savedData.exercises[`exercise_${exerciseIndex}`]?.sets || [];
@@ -895,8 +1039,200 @@ function checkExerciseCompletion(exerciseIndex) {
     const card = document.querySelector(`[data-exercise-index="${exerciseIndex}"]`);
     
     if (card) {
-        card.classList.toggle('completed', completedSets === exercise.sets);
+        const wasCompleted = card.classList.contains('completed');
+        const isCompleted = completedSets === exercise.sets;
+        
+        card.classList.toggle('completed', isCompleted);
+        
+        // Update progress bar
+        const progressFill = card.querySelector('.progress-fill');
+        const progressText = card.querySelector('.progress-text');
+        
+        if (progressFill) {
+            progressFill.style.width = `${(completedSets/exercise.sets)*100}%`;
+        }
+        if (progressText) {
+            progressText.textContent = `${completedSets}/${exercise.sets} sets`;
+        }
+        
+        // Show completion celebration and auto-collapse
+        if (!wasCompleted && isCompleted) {
+            showExerciseCompletion(exerciseIndex, exercise.machine);
+            
+            // Auto-collapse completed exercise after celebration
+            setTimeout(() => {
+                const content = card.querySelector('.exercise-content');
+                const icon = card.querySelector('.collapse-icon');
+                if (content && icon) {
+                    content.style.display = 'none';
+                    icon.className = 'fas fa-chevron-down collapse-icon';
+                }
+            }, 2000);
+        }
     }
+}
+
+
+// 8. NEW: Show exercise completion celebration
+function showExerciseCompletion(exerciseIndex, exerciseName) {
+    showNotification(`💪 ${exerciseName} completed!`, 'success');
+    
+    // Vibrate if supported
+    if ('vibrate' in navigator) {
+        navigator.vibrate([100, 50, 100, 50, 100]);
+    }
+}
+
+// NEW: Repeat last workout function
+async function loadLastWorkout() {
+    if (!currentUser) {
+        showNotification('Please sign in first', 'warning');
+        return;
+    }
+
+    try {
+        const workoutsRef = collection(db, "users", currentUser.uid, "workouts");
+        const q = query(workoutsRef, orderBy("lastUpdated", "desc"), limit(1));
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+            showNotification('No previous workouts found', 'info');
+            return;
+        }
+        
+        const lastWorkoutDoc = querySnapshot.docs[0];
+        const lastWorkoutData = lastWorkoutDoc.data();
+        
+        if (!lastWorkoutData.workoutType || lastWorkoutData.workoutType === 'none') {
+            showNotification('No valid previous workout found', 'info');
+            return;
+        }
+        
+        selectWorkout(lastWorkoutData.workoutType);
+        showNotification(`Started ${lastWorkoutData.workoutType} workout (like last time)`, 'success');
+        
+    } catch (error) {
+        console.error('❌ Error loading last workout:', error);
+        showNotification('Error loading last workout', 'error');
+    }
+}
+
+// NEW: Enhanced completion modal
+function showCompletionModal() {
+    const isHistoryEdit = window.addingForDate || (savedData.date !== getTodayDateString());
+    const workoutDate = isHistoryEdit ? new Date(savedData.date).toLocaleDateString() : 'today';
+    
+    // Calculate workout stats
+    let totalSets = 0;
+    let completedSets = 0;
+    let totalWeight = 0;
+    
+    if (savedData.exercises) {
+        Object.keys(savedData.exercises).forEach(key => {
+            if (key.startsWith('exercise_')) {
+                const sets = savedData.exercises[key].sets || [];
+                sets.forEach(set => {
+                    if (set && set.reps && set.weight) {
+                        completedSets++;
+                        totalWeight += (parseInt(set.reps) * parseInt(set.weight));
+                    }
+                });
+            }
+        });
+    }
+    
+    currentWorkout.exercises.forEach(exercise => {
+        totalSets += exercise.sets;
+    });
+    
+    const duration = savedData.totalDuration ? 
+        `${Math.floor(savedData.totalDuration / 60)}:${(savedData.totalDuration % 60).toString().padStart(2, '0')}` : 
+        'N/A';
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content" style="text-align: center; max-width: 500px;">
+            <div style="color: var(--success); font-size: 3rem; margin-bottom: 1rem;">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 style="color: var(--success); margin: 0 0 1rem 0;">Workout Complete! 💪</h2>
+            <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">
+                ${savedData.workoutType} workout ${isHistoryEdit ? `for ${workoutDate}` : ''}
+            </p>
+            
+            <div class="completion-stats">
+                <div class="completion-stat">
+                    <span class="number">${completedSets}/${totalSets}</span>
+                    <span class="label">Sets Completed</span>
+                </div>
+                <div class="completion-stat">
+                    <span class="number">${Math.round(totalWeight).toLocaleString()}</span>
+                    <span class="label">Total Volume (lbs)</span>
+                </div>
+                <div class="completion-stat">
+                    <span class="number">${duration}</span>
+                    <span class="label">Duration</span>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem;">
+                ${!isHistoryEdit ? `
+                    <button class="btn btn-primary" onclick="loadLastWorkout(); this.closest('.modal').remove();">
+                        <i class="fas fa-redo"></i> Do This Again
+                    </button>
+                ` : ''}
+                <button class="btn btn-secondary" onclick="goToHistory(); this.closest('.modal').remove();">
+                    <i class="fas fa-history"></i> View History
+                </button>
+                <button class="btn btn-secondary" onclick="goToHome(); this.closest('.modal').remove();">
+                    <i class="fas fa-home"></i> Back to Home
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    setTimeout(() => {
+        if (modal.parentNode) {
+            modal.remove();
+            goToHome();
+        }
+    }, 15000);
+}
+
+function startNewWorkout() {
+    currentWorkout = null;
+    savedData = {};
+    workoutStartTime = null;
+    workoutState = 'ready';
+    totalPausedTime = 0;
+    lastPauseTime = null;
+    window.addingForDate = null;
+    
+    switchTab('today');
+    showWorkoutSelector();
+    setTodayDisplay();
+}
+
+function goToHistory() {
+    switchTab('history');
+    loadRecentWorkouts();
+}
+
+function goToHome() {
+    switchTab('today');
+    showWorkoutSelector();
+    setTodayDisplay();
+    
+    currentWorkout = null;
+    savedData = {};
+    workoutStartTime = null;
+    workoutState = 'ready';
+    totalPausedTime = 0;
+    lastPauseTime = 0;
+    window.addingForDate = null;
 }
 
 // History Functions
@@ -955,7 +1291,6 @@ function createRecentWorkoutItem(docId, data) {
         `${Math.floor(data.totalDuration / 60)}:${(data.totalDuration % 60).toString().padStart(2, '0')}` : 
         'In Progress';
     
-    // Count completed exercises
     let completedExercises = 0;
     let totalExercises = 0;
     
@@ -1015,20 +1350,17 @@ function loadHistoryWorkout(docId, data) {
     const container = document.getElementById('history-workout-content');
     container.innerHTML = '';
     
-    // Find the workout plan
     const workout = workoutPlans.find(w => w.day === data.workoutType);
     if (!workout) {
         container.innerHTML = '<p>Workout plan not found</p>';
         return;
     }
     
-    // Create read-only exercise cards
     workout.exercises.forEach((exercise, index) => {
         const card = createHistoryExerciseCard(exercise, index, data.exercises?.[`exercise_${index}`] || {});
         container.appendChild(card);
     });
     
-    // Store current history data for copying
     window.currentHistoryData = data;
 }
 
@@ -1116,7 +1448,6 @@ async function copyWorkoutToToday() {
     const historyData = window.currentHistoryData;
     const today = getTodayDateString();
     
-    // Check if today already has a workout
     try {
         const todayDocRef = doc(db, "users", currentUser.uid, "workouts", today);
         const todayDocSnap = await getDoc(todayDocRef);
@@ -1126,7 +1457,6 @@ async function copyWorkoutToToday() {
             if (!confirm) return;
         }
         
-        // Copy the workout but reset the exercise data
         const newWorkoutData = {
             workoutType: historyData.workoutType,
             date: today,
@@ -1137,7 +1467,6 @@ async function copyWorkoutToToday() {
         await setDoc(todayDocRef, newWorkoutData);
         showNotification(`${historyData.workoutType} copied to today!`, 'success');
         
-        // Switch to today tab and load the workout
         switchTab('today');
         await loadTodaysWorkout();
         
@@ -1147,121 +1476,6 @@ async function copyWorkoutToToday() {
     }
 }
 
-// Exercise swapping (same as before)
-function openSwapModal(exerciseIndex) {
-    window.currentSwapIndex = exerciseIndex;
-    document.getElementById('swap-modal').classList.remove('hidden');
-    document.getElementById('exercise-search').value = '';
-    searchExercises();
-}
-
-function closeSwapModal() {
-    document.getElementById('swap-modal').classList.add('hidden');
-    document.getElementById('exercise-search').value = '';
-    
-    // Reset history swap flag
-    window.isHistorySwap = false;
-}
-
-function searchExercises() {
-    const query = document.getElementById('exercise-search').value.toLowerCase();
-    const container = document.getElementById('exercise-options');
-    
-    const filtered = exerciseDatabase.filter(exercise => 
-        exercise.machine?.toLowerCase().includes(query) ||
-        exercise.bodyPart?.toLowerCase().includes(query) ||
-        exercise.equipmentType?.toLowerCase().includes(query) ||
-        (exercise.tags && exercise.tags.some(tag => tag.toLowerCase().includes(query)))
-    );
-
-    container.innerHTML = '';
-    
-    if (filtered.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-search"></i>
-                <p>No exercises found${query ? ` matching "${query}"` : ''}</p>
-            </div>
-        `;
-        return;
-    }
-
-    filtered.forEach(exercise => {
-        const option = document.createElement('div');
-        option.className = 'exercise-option';
-        option.innerHTML = `
-            <div class="option-title">${exercise.machine || exercise.name}</div>
-            <div class="option-details">
-                ${exercise.bodyPart || 'General'} • ${exercise.equipmentType || 'Machine'} • 
-                ${exercise.sets || 3} sets × ${exercise.reps || 10} reps @ ${exercise.weight || 50} lbs
-            </div>
-        `;
-        option.addEventListener('click', () => swapExercise(exercise));
-        container.appendChild(option);
-    });
-}
-
-function swapExercise(newExercise) {
-    const exerciseIndex = window.currentSwapIndex;
-    
-    if (window.isHistorySwap && window.currentHistoryData) {
-        // Swapping in history view
-        const historyData = window.currentHistoryData;
-        const workout = workoutPlans.find(w => w.day === historyData.workoutType);
-        if (!workout) return;
-        
-        // Update the workout template for this viewing
-        workout.exercises[exerciseIndex] = {
-            machine: newExercise.machine || newExercise.name,
-            sets: newExercise.sets || 3,
-            reps: newExercise.reps || 10,
-            weight: newExercise.weight || 50,
-            video: newExercise.video || ''
-        };
-        
-        // Clear any existing data for this exercise since it's a different exercise now
-        if (historyData.exercises && historyData.exercises[`exercise_${exerciseIndex}`]) {
-            historyData.exercises[`exercise_${exerciseIndex}`] = { sets: [], notes: '' };
-        }
-        
-        // Save and reload
-        saveHistoryWorkoutData(historyData).then(() => {
-            loadHistoryWorkout(historyData.date, historyData);
-            showNotification(`Exercise swapped to ${newExercise.machine || newExercise.name}`, 'success');
-        });
-        
-    } else {
-        // Normal current workout swap
-        currentWorkout.exercises[exerciseIndex] = {
-            machine: newExercise.machine || newExercise.name,
-            sets: newExercise.sets || 3,
-            reps: newExercise.reps || 10,
-            weight: newExercise.weight || 50,
-            video: newExercise.video || ''
-        };
-        
-        renderWorkout();
-        showNotification(`Exercise swapped to ${newExercise.machine || newExercise.name}`, 'success');
-    }
-    
-    closeSwapModal();
-}
-
-async function saveHistoryWorkoutData(historyData) {
-    if (!currentUser) return;
-    
-    try {
-        const docRef = doc(db, "users", currentUser.uid, "workouts", historyData.date);
-        await setDoc(docRef, {
-            ...historyData,
-            lastUpdated: new Date().toISOString()
-        });
-        console.log('💾 History workout data saved successfully');
-    } catch (error) {
-        console.error('❌ Error saving history workout data:', error);
-        showNotification('Failed to save workout changes', 'error');
-    }
-}
 
 // Exercise management functions
 async function deleteExercise(exerciseIndex) {
@@ -1287,32 +1501,24 @@ async function deleteExercise(exerciseIndex) {
     
     console.log('Deleting exercise:', exercise.machine);
     
-    // Remove from current workout
     currentWorkout.exercises.splice(exerciseIndex, 1);
     
-    // Clean up saved data - shift indices down
     const newExercises = {};
     
     Object.keys(savedData.exercises || {}).forEach(key => {
         if (key.startsWith('exercise_')) {
             const oldIndex = parseInt(key.split('_')[1]);
             if (oldIndex < exerciseIndex) {
-                // Keep exercises before deleted one
                 newExercises[`exercise_${oldIndex}`] = savedData.exercises[key];
             } else if (oldIndex > exerciseIndex) {
-                // Shift exercises after deleted one down by 1
                 newExercises[`exercise_${oldIndex - 1}`] = savedData.exercises[key];
             }
-            // Skip the deleted exercise (oldIndex === exerciseIndex)
         }
     });
     
     savedData.exercises = newExercises;
     
-    // Save updated data
     await saveWorkoutData();
-    
-    // Re-render workout
     renderWorkout();
     
     showNotification(`"${exercise.machine}" removed from workout`, 'success');
@@ -1324,10 +1530,10 @@ async function editHistoryWorkout() {
     const historyData = window.currentHistoryData;
     const date = historyData.date;
     
-    // Switch to today tab and load this workout for editing
+    window.addingForDate = date;
+    
     switchTab('today');
     
-    // Find the workout plan
     const workout = workoutPlans.find(w => w.day === historyData.workoutType);
     if (!workout) {
         showNotification('Workout plan not found', 'error');
@@ -1337,19 +1543,24 @@ async function editHistoryWorkout() {
     currentWorkout = workout;
     savedData = historyData;
     workoutStartTime = historyData.startTime ? new Date(historyData.startTime) : new Date();
+    workoutState = historyData.workoutState || 'ready';
+    totalPausedTime = historyData.totalPausedTime || 0;
     
-    // Update UI to show we're editing a past workout
     document.getElementById('workout-selector').classList.add('hidden');
     document.getElementById('active-workout').classList.remove('hidden');
-    document.getElementById('current-workout-title').textContent = `${historyData.workoutType} (${date})`;
-    document.getElementById('current-workout-date').textContent = `Editing workout from ${new Date(date).toLocaleDateString()}`;
+    document.getElementById('add-exercise-section').classList.remove('hidden');
+    document.getElementById('current-workout-title').textContent = historyData.workoutType;
+    document.getElementById('current-workout-date').textContent = `Editing ${new Date(date).toLocaleDateString()}`;
     
-    // Don't start duration timer for past workouts
+    document.getElementById('today-date-display').textContent = 
+        `Editing Workout from ${new Date(date).toLocaleDateString('en-US', { 
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+        })}`;
+    
     if (workoutDurationTimer) {
         clearInterval(workoutDurationTimer);
     }
     
-    // Show total duration if completed
     if (historyData.totalDuration) {
         const minutes = Math.floor(historyData.totalDuration / 60);
         const seconds = historyData.totalDuration % 60;
@@ -1359,14 +1570,13 @@ async function editHistoryWorkout() {
         document.getElementById('workout-duration').textContent = 'In Progress';
     }
     
-    // Render the workout
+    updateWorkoutStateUI();
     renderWorkout();
     updateWorkoutStats();
     
-    showNotification(`Now editing ${historyData.workoutType} from ${date}`, 'info');
+    showNotification(`Now editing ${historyData.workoutType} from ${new Date(date).toLocaleDateString()}`, 'info');
 }
 
-// Delete entire workout from history
 async function deleteEntireWorkout() {
     if (!window.currentHistoryData || !currentUser) return;
     
@@ -1377,14 +1587,10 @@ async function deleteEntireWorkout() {
     if (!confirmDelete) return;
     
     try {
-        // Delete from Firebase
         const docRef = doc(db, "users", currentUser.uid, "workouts", historyData.date);
         await deleteDoc(docRef);
         
-        // Hide the workout display
         document.getElementById('history-workout-display').classList.add('hidden');
-        
-        // Reload recent workouts
         loadRecentWorkouts();
         
         showNotification(`"${workoutName}" deleted successfully`, 'success');
@@ -1395,7 +1601,6 @@ async function deleteEntireWorkout() {
     }
 }
 
-// Add Missing Day functionality
 async function addMissingDay() {
     if (!currentUser) {
         showNotification('Please sign in to add missing workouts', 'warning');
@@ -1408,7 +1613,6 @@ async function addMissingDay() {
         return;
     }
     
-    // Check if workout already exists for this date
     try {
         const docRef = doc(db, "users", currentUser.uid, "workouts", selectedDate);
         const docSnap = await getDoc(docRef);
@@ -1418,27 +1622,25 @@ async function addMissingDay() {
             if (!confirm) return;
         }
         
-        // Switch to today tab and set up for this date
+        window.addingForDate = selectedDate;
+        
         switchTab('today');
         
-        // Update the header to show we're adding for a different date
         document.getElementById('today-date-display').textContent = 
-            `Adding Workout - ${new Date(selectedDate).toLocaleDateString('en-US', { 
+            `Adding Workout for ${new Date(selectedDate).toLocaleDateString('en-US', { 
                 weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
             })}`;
         
-        // Reset state
         currentWorkout = null;
         savedData = {};
         workoutStartTime = null;
+        workoutState = 'ready';
+        totalPausedTime = 0;
+        lastPauseTime = null;
         
-        // Show workout selector
         showWorkoutSelector();
         
-        // Override the date for saving
-        window.addingForDate = selectedDate;
-        
-        showNotification(`Ready to add workout for ${selectedDate}`, 'success');
+        showNotification(`Choose a workout to add for ${new Date(selectedDate).toLocaleDateString()}`, 'info');
         
     } catch (error) {
         console.error('❌ Error checking existing workout:', error);
@@ -1502,11 +1704,9 @@ async function addNewExercise(event) {
     
     console.log('New exercise object:', newExercise);
     
-    // Add to exercise database
     exerciseDatabase.push(newExercise);
     console.log('Added to database, new length:', exerciseDatabase.length);
     
-    // Save to Firebase (custom exercises collection)
     if (currentUser) {
         try {
             const customExerciseRef = doc(db, "users", currentUser.uid, "customExercises", exerciseName.replace(/[^a-zA-Z0-9]/g, '_'));
@@ -1514,7 +1714,6 @@ async function addNewExercise(event) {
             console.log('✅ Custom exercise saved to Firebase');
         } catch (error) {
             console.error('❌ Error saving custom exercise:', error);
-            // Still continue - it's in memory for this session
         }
     }
     
@@ -1525,16 +1724,13 @@ async function addNewExercise(event) {
 async function addAndUseExercise(event) {
     event.preventDefault();
     
-    // First add the exercise
     await addNewExercise(event);
     
-    // Then add it to current workout if we have one
     if (currentWorkout && currentUser) {
         const exerciseName = document.getElementById('exercise-name').value.trim();
         const newExercise = exerciseDatabase.find(ex => ex.name === exerciseName);
         
         if (newExercise) {
-            // Add to current workout
             currentWorkout.exercises.push({
                 machine: newExercise.machine,
                 sets: newExercise.sets,
@@ -1543,13 +1739,108 @@ async function addAndUseExercise(event) {
                 video: newExercise.video
             });
             
-            // Save and re-render
             await saveWorkoutData();
             renderWorkout();
             
             showNotification(`"${exerciseName}" added to today's workout!`, 'success');
         }
     }
+}
+
+// Add exercise from library
+function addExerciseFromLibrary() {
+    if (!currentWorkout) {
+        showNotification('Please select a workout first', 'warning');
+        return;
+    }
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add Exercise from Library</h3>
+                <button class="close-btn" onclick="this.closest('.modal').remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <input type="text" id="library-exercise-search" class="search-input" 
+                   placeholder="Search exercises by name, muscle group, or equipment..."
+                   oninput="searchLibraryExercises()">
+            
+            <div id="library-exercise-options">
+                <!-- Exercise options will be populated here -->
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    searchLibraryExercises();
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+    });
+}
+
+function searchLibraryExercises() {
+    const query = document.getElementById('library-exercise-search')?.value.toLowerCase() || '';
+    const container = document.getElementById('library-exercise-options');
+    
+    if (!container) return;
+    
+    const filtered = exerciseDatabase.filter(exercise => 
+        exercise.machine?.toLowerCase().includes(query) ||
+        exercise.bodyPart?.toLowerCase().includes(query) ||
+        exercise.equipmentType?.toLowerCase().includes(query) ||
+        (exercise.tags && exercise.tags.some(tag => tag.toLowerCase().includes(query)))
+    );
+
+    container.innerHTML = '';
+    
+    if (filtered.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-search"></i>
+                <p>No exercises found${query ? ` matching "${query}"` : ''}</p>
+            </div>
+        `;
+        return;
+    }
+
+    filtered.forEach(exercise => {
+        const option = document.createElement('div');
+        option.className = 'exercise-option';
+        option.innerHTML = `
+            <div class="option-title">${exercise.machine || exercise.name}</div>
+            <div class="option-details">
+                ${exercise.bodyPart || 'General'} • ${exercise.equipmentType || 'Machine'} • 
+                ${exercise.sets || 3} sets × ${exercise.reps || 10} reps @ ${exercise.weight || 50} lbs
+            </div>
+        `;
+        option.addEventListener('click', () => addExerciseToWorkout(exercise));
+        container.appendChild(option);
+    });
+}
+
+async function addExerciseToWorkout(exercise) {
+    if (!currentWorkout || !currentUser) return;
+    
+    currentWorkout.exercises.push({
+        machine: exercise.machine || exercise.name,
+        sets: exercise.sets || 3,
+        reps: exercise.reps || 10,
+        weight: exercise.weight || 50,
+        video: exercise.video || ''
+    });
+    
+    await saveWorkoutData();
+    renderWorkout();
+    
+    document.querySelector('.modal')?.remove();
+    
+    showNotification(`"${exercise.machine || exercise.name}" added to workout!`, 'success');
 }
 
 // Plans functionality
@@ -1622,7 +1913,6 @@ function usePlan(planIndex) {
     const plan = workoutPlans[planIndex];
     if (!plan) return;
     
-    // Switch to today tab and select this workout
     switchTab('today');
     selectWorkout(plan.day);
 }
@@ -1657,16 +1947,10 @@ async function deleteHistoryExercise(exerciseIndex) {
     
     if (!confirmDelete) return;
     
-    // Remove from workout plan (this modifies the template, which might not be ideal)
-    // Better to modify the saved data structure
-    
-    // Remove the exercise data from saved history
     if (historyData.exercises) {
         delete historyData.exercises[`exercise_${exerciseIndex}`];
         
-        // Shift remaining exercises down
         const newExercises = {};
-        let newIndex = 0;
         
         Object.keys(historyData.exercises).forEach(key => {
             if (key.startsWith('exercise_')) {
@@ -1682,15 +1966,12 @@ async function deleteHistoryExercise(exerciseIndex) {
         historyData.exercises = newExercises;
     }
     
-    // Remove from the workout template for this viewing
     workout.exercises.splice(exerciseIndex, 1);
     
-    // Save the updated history data
     try {
         const docRef = doc(db, "users", currentUser.uid, "workouts", historyData.date);
         await setDoc(docRef, historyData);
         
-        // Reload the history display
         loadHistoryWorkout(historyData.date, historyData);
         
         showNotification(`"${exercise.machine}" removed from workout`, 'success');
@@ -1705,7 +1986,7 @@ function openSwapModalForHistory(exerciseIndex) {
     if (!window.currentHistoryData) return;
     
     window.currentSwapIndex = exerciseIndex;
-    window.isHistorySwap = true; // Flag to know we're swapping in history
+    window.isHistorySwap = true;
     
     document.getElementById('swap-modal').classList.remove('hidden');
     document.getElementById('exercise-search').value = '';
@@ -1718,7 +1999,6 @@ async function viewHistory(exerciseName) {
         return;
     }
     
-    // For now, just show a placeholder. This would require more complex querying
     showModal('Exercise History', `
         <h4 style="margin-top: 0;">${exerciseName}</h4>
         <p>Exercise history feature coming soon! For now, you can view your complete workout history in the History tab.</p>
@@ -1779,7 +2059,7 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// Default data functions (same as before)
+// Default data functions
 function getDefaultWorkouts() {
     return [
         {
@@ -1821,7 +2101,6 @@ function getDefaultExercises() {
 }
 
 // Make functions globally accessible
-window.openSwapModal = openSwapModal;
 window.viewHistory = viewHistory;
 window.saveSet = saveSet;
 window.saveNote = saveNote;
@@ -1841,5 +2120,16 @@ window.deleteEntireWorkout = deleteEntireWorkout;
 window.toggleWorkoutState = toggleWorkoutState;
 window.completeWorkout = completeWorkout;
 window.cancelWorkout = cancelWorkout;
+window.loadLastWorkout = loadLastWorkout;
+window.adjustSetValue = adjustSetValue;
+window.startNewWorkout = startNewWorkout;
+window.goToHistory = goToHistory;
+window.goToHome = goToHome;
+window.addExerciseFromLibrary = addExerciseFromLibrary;
+window.searchLibraryExercises = searchLibraryExercises;
+window.addExerciseToWorkout = addExerciseToWorkout;
+window.toggleExerciseExpansion = toggleExerciseExpansion;
+window.startRestTimer = startRestTimer;
+window.renderSingleExercise = renderSingleExercise;
 
 console.log('✅ Big Surf Workout Tracker loaded successfully!');
