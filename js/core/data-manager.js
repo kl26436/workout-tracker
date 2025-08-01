@@ -9,14 +9,41 @@ export async function saveWorkoutData(state) {
     state.savedData.date = saveDate;
     state.savedData.exerciseUnits = state.exerciseUnits;
     
+    // Convert all weights to pounds for storage (baseline for future analysis)
+    const normalizedData = { ...state.savedData };
+    if (normalizedData.exercises) {
+        Object.keys(normalizedData.exercises).forEach(exerciseKey => {
+            const exerciseData = normalizedData.exercises[exerciseKey];
+            const exerciseIndex = parseInt(exerciseKey.split('_')[1]);
+            const currentUnit = state.exerciseUnits[exerciseIndex] || state.globalUnit;
+            
+            if (exerciseData.sets) {
+                exerciseData.sets = exerciseData.sets.map(set => {
+                    if (set.weight && currentUnit === 'kg') {
+                        // Convert kg to lbs for storage
+                        return {
+                            ...set,
+                            weight: Math.round(set.weight * 2.20462),
+                            originalUnit: 'kg' // Track what user entered
+                        };
+                    }
+                    return {
+                        ...set,
+                        originalUnit: currentUnit || 'lbs'
+                    };
+                });
+            }
+        });
+    }
+    
     try {
         const docRef = doc(db, "users", state.currentUser.uid, "workouts", saveDate);
         await setDoc(docRef, {
-            ...state.savedData,
+            ...normalizedData,
             lastUpdated: new Date().toISOString()
         });
         
-        console.log('💾 Workout data saved successfully for', saveDate);
+        console.log('💾 Workout data saved successfully for', saveDate, '(weights normalized to lbs)');
     } catch (error) {
         console.error('❌ Error saving workout data:', error);
         showNotification('Failed to save workout data', 'error');

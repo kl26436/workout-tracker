@@ -108,15 +108,19 @@ function showUserInfo(user) {
     if (signInBtn) signInBtn.classList.add('hidden');
     if (userInfo) {
         userInfo.classList.remove('hidden');
+        
+        // Get first name only
+        const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
+        
         userInfo.innerHTML = `
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <div style="width: 32px; height: 32px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--bg-primary); font-weight: bold;">
-                        ${user.displayName ? user.displayName[0].toUpperCase() : 'U'}
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.875rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div style="width: 24px; height: 24px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--bg-primary); font-weight: bold; font-size: 0.75rem;">
+                        ${firstName[0].toUpperCase()}
                     </div>
-                    <span>Welcome, ${user.displayName || user.email}</span>
+                    <span>Hi ${firstName}</span>
                 </div>
-                <button class="btn btn-secondary btn-small" onclick="signOutUser()">
+                <button class="btn btn-secondary btn-small" onclick="signOutUser()" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
                     <i class="fas fa-sign-out-alt"></i> Sign Out
                 </button>
             </div>
@@ -665,7 +669,7 @@ function setExerciseUnit(exerciseIndex, unit) {
             btn.classList.toggle('active', btn.dataset.unit === unit);
         });
         
-        // Refresh modal content
+        // Refresh modal content with new unit
         const exercise = AppState.currentWorkout.exercises[exerciseIndex];
         const content = document.getElementById('modal-exercise-content');
         if (content) {
