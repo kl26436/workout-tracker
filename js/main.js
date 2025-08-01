@@ -3,6 +3,27 @@ import { auth, provider, onAuthStateChanged, signInWithPopup, signOut } from './
 import { AppState } from './core/app-state.js';
 import { showNotification, setTodayDisplay, convertWeight, updateProgress } from './core/ui-helpers.js';
 import { saveWorkoutData, loadTodaysWorkout, loadWorkoutPlans, loadExerciseHistory } from './core/data-manager.js';
+import { 
+    initializeWorkoutManagement, 
+    showWorkoutManagement, 
+    hideWorkoutManagement,
+    createNewTemplate,
+    editTemplate,
+    deleteTemplate,
+    useTemplate,
+    closeTemplateEditor,
+    saveCurrentTemplate,
+    addExerciseToTemplate,
+    editTemplateExercise,
+    removeTemplateExercise,
+    openExerciseLibrary,
+    closeExerciseLibrary,
+    searchExerciseLibrary,
+    filterExerciseLibrary,
+    showCreateExerciseForm,
+    closeCreateExerciseModal,
+    createNewExercise
+} from './workout/workout-management-ui.js';
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
@@ -11,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     setTodayDisplay();
     loadWorkoutPlans(AppState);
+    initializeWorkoutManagement(AppState);
 });
 
 function initializeWorkoutApp() {
@@ -166,14 +188,19 @@ async function showWorkoutSelector() {
     
     const workoutSelector = document.getElementById('workout-selector');
     const activeWorkout = document.getElementById('active-workout');
+    const workoutManagement = document.getElementById('workout-management');
     
     if (workoutSelector) workoutSelector.classList.remove('hidden');
     if (activeWorkout) activeWorkout.classList.add('hidden');
+    if (workoutManagement) workoutManagement.classList.add('hidden');
     
     AppState.clearTimers();
     
     // Don't reset the data - keep it for re-selection
     AppState.currentWorkout = null;
+    
+    // Hide workout management if it was open
+    hideWorkoutManagement();
     
     if (Object.keys(AppState.savedData.exercises || {}).length > 0) {
         showNotification('Workout progress saved. You can continue where you left off.', 'info');
@@ -810,5 +837,23 @@ window.loadExerciseHistory = (exerciseName, exerciseIndex) => loadExerciseHistor
 window.markExerciseComplete = markExerciseComplete;
 window.toggleModalRestTimer = toggleModalRestTimer;
 window.skipModalRestTimer = skipModalRestTimer;
+
+// Workout Management Global Functions
+window.showWorkoutManagement = showWorkoutManagement;
+window.createNewTemplate = createNewTemplate;
+window.editTemplate = editTemplate;
+window.deleteTemplate = deleteTemplate;
+window.useTemplate = useTemplate;
+window.closeTemplateEditor = closeTemplateEditor;
+window.saveCurrentTemplate = saveCurrentTemplate;
+window.addExerciseToTemplate = addExerciseToTemplate;
+window.editTemplateExercise = editTemplateExercise;
+window.removeTemplateExercise = removeTemplateExercise;
+window.closeExerciseLibrary = closeExerciseLibrary;
+window.searchExerciseLibrary = searchExerciseLibrary;
+window.filterExerciseLibrary = filterExerciseLibrary;
+window.showCreateExerciseForm = showCreateExerciseForm;
+window.closeCreateExerciseModal = closeCreateExerciseModal;
+window.createNewExercise = createNewExercise;
 
 console.log('✅ Enhanced Big Surf Workout Tracker (Modular) loaded successfully!');
