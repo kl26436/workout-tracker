@@ -42,6 +42,16 @@
         <div class="today-header">
             <h2 id="today-date-display">Today - Loading...</h2>
             <p class="today-subtitle">Choose your workout and start tracking</p>
+            
+            <!-- Add Management Button Here -->
+            <div style="margin-top: 1rem;">
+                <button class="btn btn-secondary" onclick="showWorkoutManagement()" style="margin-right: 0.5rem;">
+                    <i class="fas fa-cog"></i> Manage Workouts
+                </button>
+                <button class="btn btn-secondary" onclick="showWorkoutSelector()" id="back-to-workouts-btn" style="display: none;">
+                    <i class="fas fa-arrow-left"></i> Back to Workouts
+                </button>
+            </div>
         </div>
 
         <!-- Workout Selector -->

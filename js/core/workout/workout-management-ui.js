@@ -1,6 +1,6 @@
 // Workout Management UI Functions
 import { WorkoutManager } from './workout-manager.js';
-import { showNotification } from './ui-helpers.js';
+import { showNotification } from '../ui-helpers.js';
 
 let workoutManager;
 let currentEditingTemplate = null;

@@ -1,4 +1,4 @@
-// Main application entry point - Modular Version
+// Main application entry point - Enhanced with Exercise Swapping
 import { auth, provider, onAuthStateChanged, signInWithPopup, signOut } from './core/firebase-config.js';
 import { AppState } from './core/app-state.js';
 import { showNotification, setTodayDisplay, convertWeight, updateProgress } from './core/ui-helpers.js';
@@ -23,7 +23,7 @@ import {
     showCreateExerciseForm,
     closeCreateExerciseModal,
     createNewExercise
-} from './workout/workout-management-ui.js';
+} from './core/workout/workout-management-ui.js';
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
@@ -375,6 +375,9 @@ function createExerciseCard(exercise, index) {
         <div class="exercise-header">
             <h3 class="exercise-title">${exercise.machine}</h3>
             <div class="exercise-actions">
+                <button class="btn btn-secondary btn-small" onclick="swapExercise(${index})" title="Swap this exercise">
+                    <i class="fas fa-exchange-alt"></i>
+                </button>
                 <button class="exercise-focus-btn" onclick="focusExercise(${index})" title="Focus on this exercise">
                     <i class="fas fa-expand"></i>
                 </button>
@@ -411,6 +414,123 @@ function generateSetPreview(exercise, exerciseIndex, unit) {
     return preview;
 }
 
+// Exercise Swapping Functions
+async function swapExercise(exerciseIndex) {
+    if (!AppState.currentUser) {
+        showNotification('Please sign in to swap exercises', 'warning');
+        return;
+    }
+    
+    // Store the current exercise index for the swap
+    AppState.swappingExerciseIndex = exerciseIndex;
+    
+    // Open exercise library in swap mode
+    const modal = document.getElementById('exercise-library-modal');
+    if (!modal) return;
+    
+    modal.classList.remove('hidden');
+    
+    // Load exercise library with WorkoutManager
+    const { WorkoutManager } = await import('./core/workout/workout-manager.js');
+    const workoutManager = new WorkoutManager(AppState);
+    const exerciseLibrary = await workoutManager.getExerciseLibrary();
+    
+    renderExerciseLibraryForSwap(exerciseLibrary);
+}
+
+function renderExerciseLibraryForSwap(exercises) {
+    const grid = document.getElementById('exercise-library-grid');
+    if (!grid) return;
+    
+    // Update modal title to indicate swap mode
+    const modalTitle = document.querySelector('#exercise-library-modal .modal-title');
+    if (modalTitle) {
+        modalTitle.textContent = `Swap Exercise: ${AppState.currentWorkout.exercises[AppState.swappingExerciseIndex].machine}`;
+    }
+    
+    if (exercises.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-search"></i>
+                <h3>No Exercises Found</h3>
+                <p>Try adjusting your search or filters.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    grid.innerHTML = '';
+    exercises.forEach(exercise => {
+        const card = createSwapExerciseCard(exercise);
+        grid.appendChild(card);
+    });
+}
+
+function createSwapExerciseCard(exercise) {
+    const card = document.createElement('div');
+    card.className = 'library-exercise-card';
+    
+    card.innerHTML = `
+        <h5>${exercise.name || exercise.machine}</h5>
+        <div class="library-exercise-info">
+            ${exercise.bodyPart || 'General'} • ${exercise.equipmentType || 'Machine'}
+            ${exercise.isCustom ? ' • Custom' : ''}
+        </div>
+        <div class="library-exercise-stats">
+            ${exercise.sets || 3} sets × ${exercise.reps || 10} reps @ ${exercise.weight || 50} lbs
+        </div>
+        <div style="margin-top: 0.5rem;">
+            <button class="btn btn-primary btn-small" onclick="confirmExerciseSwap('${exercise.name || exercise.machine}', ${JSON.stringify(exercise).replace(/"/g, '&quot;')})">
+                <i class="fas fa-exchange-alt"></i> Swap
+            </button>
+        </div>
+    `;
+    
+    return card;
+}
+
+async function confirmExerciseSwap(exerciseName, exerciseData) {
+    if (AppState.swappingExerciseIndex === null || AppState.swappingExerciseIndex === undefined) return;
+    
+    const exerciseIndex = AppState.swappingExerciseIndex;
+    const oldExercise = AppState.currentWorkout.exercises[exerciseIndex];
+    
+    // Parse the exercise data (it comes as HTML-encoded JSON)
+    let newExercise;
+    try {
+        newExercise = typeof exerciseData === 'string' ? JSON.parse(exerciseData) : exerciseData;
+    } catch (e) {
+        console.error('Error parsing exercise data:', e);
+        return;
+    }
+    
+    // Update the workout
+    AppState.currentWorkout.exercises[exerciseIndex] = {
+        machine: newExercise.name || newExercise.machine,
+        sets: newExercise.sets || 3,
+        reps: newExercise.reps || 10,
+        weight: newExercise.weight || 50,
+        video: newExercise.video || ''
+    };
+    
+    // Clear any existing data for this exercise since it's different now
+    if (AppState.savedData.exercises && AppState.savedData.exercises[`exercise_${exerciseIndex}`]) {
+        AppState.savedData.exercises[`exercise_${exerciseIndex}`] = { sets: [], notes: '' };
+    }
+    
+    // Save the change
+    await saveWorkoutData(AppState);
+    
+    // Update UI
+    renderExercises();
+    closeExerciseLibrary();
+    
+    // Reset swapping state
+    AppState.swappingExerciseIndex = null;
+    
+    showNotification(`Swapped "${oldExercise.machine}" → "${newExercise.name || newExercise.machine}"`, 'success');
+}
+
 function focusExercise(index) {
     if (!AppState.currentWorkout) return;
     
@@ -429,14 +549,21 @@ function focusExercise(index) {
     const currentUnit = AppState.exerciseUnits[index] || AppState.globalUnit;
     
     if (unitToggle) {
-        unitToggle.innerHTML = `
+        // Clear existing event listeners to prevent multiplication
+        const newUnitToggle = unitToggle.cloneNode(true);
+        unitToggle.parentNode.replaceChild(newUnitToggle, unitToggle);
+        
+        newUnitToggle.innerHTML = `
             <button class="unit-btn ${currentUnit === 'lbs' ? 'active' : ''}" data-unit="lbs">lbs</button>
             <button class="unit-btn ${currentUnit === 'kg' ? 'active' : ''}" data-unit="kg">kg</button>
         `;
 
         // Add event listeners for this modal's unit toggle
-        unitToggle.querySelectorAll('.unit-btn').forEach(btn => {
-            btn.addEventListener('click', () => setExerciseUnit(index, btn.dataset.unit));
+        newUnitToggle.querySelectorAll('.unit-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                setExerciseUnit(index, btn.dataset.unit);
+            });
         });
     }
 
@@ -457,7 +584,7 @@ function generateExerciseTable(exercise, exerciseIndex, unit) {
     let html = `
         <!-- Exercise History Reference -->
         <div class="exercise-history-section">
-            <button class="btn btn-secondary btn-small" onclick="loadExerciseHistory('${exercise.machine}', ${exerciseIndex})">
+            <button class="btn btn-secondary btn-small" onclick="loadExerciseHistory('${exercise.machine}', ${exerciseIndex}, AppState)">
                 <i class="fas fa-history"></i> Show Last Workout
             </button>
             <div id="exercise-history-${exerciseIndex}" class="exercise-history-display hidden"></div>
@@ -664,8 +791,10 @@ function checkExerciseCompletion(exerciseIndex) {
     }
 }
 
-// Unit management
+// Unit management - FIXED to prevent multiplication
 function setGlobalUnit(unit) {
+    if (AppState.globalUnit === unit) return; // No change needed
+    
     AppState.globalUnit = unit;
     
     // Update global unit toggle
@@ -687,6 +816,25 @@ function setGlobalUnit(unit) {
 }
 
 function setExerciseUnit(exerciseIndex, unit) {
+    const currentUnit = AppState.exerciseUnits[exerciseIndex] || AppState.globalUnit;
+    if (currentUnit === unit) return; // No change needed
+    
+    // Store the conversion factor for existing data
+    const conversionFactor = (currentUnit === 'lbs' && unit === 'kg') ? 0.453592 : 
+                            (currentUnit === 'kg' && unit === 'lbs') ? 2.20462 : 1;
+    
+    // Convert existing set data if any
+    if (AppState.savedData.exercises && AppState.savedData.exercises[`exercise_${exerciseIndex}`]) {
+        const exerciseData = AppState.savedData.exercises[`exercise_${exerciseIndex}`];
+        if (exerciseData.sets) {
+            exerciseData.sets.forEach(set => {
+                if (set.weight && !isNaN(set.weight)) {
+                    set.weight = Math.round(set.weight * conversionFactor);
+                }
+            });
+        }
+    }
+    
     AppState.exerciseUnits[exerciseIndex] = unit;
     
     // Update modal unit toggle
@@ -704,8 +852,13 @@ function setExerciseUnit(exerciseIndex, unit) {
         }
     }
     
+    // Refresh main view
+    renderExercises();
+    
     // Save unit preference
     saveWorkoutData(AppState);
+    
+    showNotification(`Switched to ${unit.toUpperCase()} for this exercise`, 'success');
 }
 
 // Rest Timer Functions
@@ -828,6 +981,35 @@ function clearModalRestTimer(exerciseIndex) {
     }
 }
 
+// Enhanced Exercise Library Functions - Override the imported function for swap functionality
+function closeExerciseLibraryEnhanced() {
+    const modal = document.getElementById('exercise-library-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+    
+    // Reset modal title
+    const modalTitle = document.querySelector('#exercise-library-modal .modal-title');
+    if (modalTitle) {
+        modalTitle.textContent = 'Exercise Library';
+    }
+    
+    // Clear search
+    const searchInput = document.getElementById('exercise-library-search');
+    const bodyPartFilter = document.getElementById('body-part-filter');
+    const equipmentFilter = document.getElementById('equipment-filter');
+    
+    if (searchInput) searchInput.value = '';
+    if (bodyPartFilter) bodyPartFilter.value = '';
+    if (equipmentFilter) equipmentFilter.value = '';
+    
+    // Reset swapping state
+    AppState.swappingExerciseIndex = null;
+    
+    // Call the original close function to maintain compatibility
+    closeExerciseLibrary();
+}
+
 // Make functions globally accessible for onclick handlers
 window.focusExercise = focusExercise;
 window.updateSet = updateSet;
@@ -837,6 +1019,8 @@ window.loadExerciseHistory = (exerciseName, exerciseIndex) => loadExerciseHistor
 window.markExerciseComplete = markExerciseComplete;
 window.toggleModalRestTimer = toggleModalRestTimer;
 window.skipModalRestTimer = skipModalRestTimer;
+window.swapExercise = swapExercise;
+window.confirmExerciseSwap = confirmExerciseSwap;
 
 // Workout Management Global Functions
 window.showWorkoutManagement = showWorkoutManagement;
@@ -849,11 +1033,11 @@ window.saveCurrentTemplate = saveCurrentTemplate;
 window.addExerciseToTemplate = addExerciseToTemplate;
 window.editTemplateExercise = editTemplateExercise;
 window.removeTemplateExercise = removeTemplateExercise;
-window.closeExerciseLibrary = closeExerciseLibrary;
+window.closeExerciseLibrary = closeExerciseLibraryEnhanced; // Use enhanced version for swap functionality
 window.searchExerciseLibrary = searchExerciseLibrary;
 window.filterExerciseLibrary = filterExerciseLibrary;
 window.showCreateExerciseForm = showCreateExerciseForm;
 window.closeCreateExerciseModal = closeCreateExerciseModal;
 window.createNewExercise = createNewExercise;
 
-console.log('✅ Enhanced Big Surf Workout Tracker (Modular) loaded successfully!');
+console.log('✅ Enhanced Big Surf Workout Tracker with Exercise Swapping loaded successfully!');

@@ -1,6 +1,6 @@
 // Workout and Exercise Management Module
-import { db, doc, setDoc, getDoc, collection, getDocs } from '../core/firebase-config.js';
-import { showNotification } from '../core/ui-helpers.js';
+import { db, doc, setDoc, getDoc, collection, getDocs } from '../firebase-config.js';
+import { showNotification } from '../ui-helpers.js';
 
 export class WorkoutManager {
     constructor(appState) {
