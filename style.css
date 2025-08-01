@@ -40,8 +40,8 @@ body {
 }
 
 .logo-img {
-    width: 60px;
-    height: 60px;
+    width: 500px;
+    height: 500px;
     border-radius: 50%;
     margin: 0 auto 1rem;
     display: block;
@@ -49,15 +49,15 @@ body {
 }
 
 .logo-fallback {
-    width: 60px;
-    height: 60px;
+    width: 500px;
+    height: 500px;
     background: linear-gradient(135deg, var(--primary), #20b2aa);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto 1rem;
-    font-size: 1.5rem;
+    font-size: 4rem;
     font-weight: bold;
     color: var(--bg-primary);
 }
