@@ -454,7 +454,6 @@ function generateExerciseTable(exercise, exerciseIndex, unit) {
                     <th>Set</th>
                     <th>Reps</th>
                     <th>Weight (${unit})</th>
-                    <th>Target</th>
                 </tr>
             </thead>
             <tbody>
@@ -477,9 +476,6 @@ function generateExerciseTable(exercise, exerciseIndex, unit) {
                            placeholder="${convertedWeight}" 
                            value="${set.weight}"
                            onchange="updateSet(${exerciseIndex}, ${i}, 'weight', this.value)">
-                </td>
-                <td style="color: var(--text-secondary); font-size: 0.875rem;">
-                    ${exercise.reps} × ${convertedWeight} ${unit}
                 </td>
             </tr>
         `;
@@ -683,77 +679,8 @@ function setExerciseUnit(exerciseIndex, unit) {
 
 // Rest Timer Functions
 function startRestTimer(exerciseIndex, setIndex) {
-    const exerciseName = AppState.currentWorkout.exercises[exerciseIndex].machine;
-    const setNumber = setIndex + 1;
-    
-    // Clear any existing global rest timer
-    clearGlobalRestTimer();
-    
-    // Show sticky timer
-    const stickyTimer = document.getElementById('rest-timer-sticky');
-    const exerciseLabel = document.getElementById('rest-timer-exercise');
-    const timerDisplay = document.getElementById('rest-timer-display');
-    
-    if (!stickyTimer || !exerciseLabel || !timerDisplay) {
-        console.warn('Rest timer elements not found');
-        return;
-    }
-    
-    console.log(`Starting rest timer for ${exerciseName} - Set ${setNumber}`);
-    
-    exerciseLabel.textContent = `${exerciseName} - Set ${setNumber}`;
-    stickyTimer.classList.add('active');
-    
-    let timeLeft = 90;
-    let isPaused = false;
-    
-    const updateDisplay = () => {
-        const minutes = Math.floor(timeLeft / 60);
-        const seconds = timeLeft % 60;
-        timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        timerDisplay.style.color = 'var(--primary)';
-    };
-    
-    updateDisplay();
-    
-    AppState.globalRestTimer = {
-        interval: setInterval(() => {
-            if (!isPaused && timeLeft > 0) {
-                timeLeft--;
-                updateDisplay();
-                
-                if (timeLeft === 0) {
-                    timerDisplay.textContent = 'Ready!';
-                    timerDisplay.style.color = 'var(--success)';
-                    
-                    if ('vibrate' in navigator) {
-                        navigator.vibrate([200, 100, 200]);
-                    }
-                    
-                    showNotification('Rest period complete! 💪', 'success');
-                    
-                    setTimeout(() => {
-                        stickyTimer.classList.remove('active');
-                        timerDisplay.style.color = 'var(--primary)';
-                    }, 5000);
-                }
-            }
-        }, 1000),
-        
-        pause: () => {
-            isPaused = !isPaused;
-            const pauseBtn = document.getElementById('pause-rest-btn');
-            if (pauseBtn) {
-                pauseBtn.innerHTML = isPaused ? '<i class="fas fa-play"></i>' : '<i class="fas fa-pause"></i>';
-            }
-        },
-        
-        skip: () => {
-            clearInterval(AppState.globalRestTimer.interval);
-            stickyTimer.classList.remove('active');
-            timerDisplay.style.color = 'var(--primary)';
-        }
-    };
+    // Skip the sticky timer - we only use modal timer now
+    console.log(`Rest timer skipped for main screen - using modal timer only`);
 }
 
 function startModalRestTimer(exerciseIndex, setIndex) {
