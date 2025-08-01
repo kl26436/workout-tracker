@@ -672,7 +672,7 @@ function closeExerciseModalHandler() {
     renderExercises(); // Refresh the main view
 }
 
-// Set and note updating
+// Set and note updating - Enhanced with proper unit tracking
 async function updateSet(exerciseIndex, setIndex, field, value) {
     if (!AppState.currentUser) return;
     
@@ -688,10 +688,35 @@ async function updateSet(exerciseIndex, setIndex, field, value) {
     
     // Ensure sets array is the right length
     while (exerciseData.sets.length <= setIndex) {
-        exerciseData.sets.push({ reps: '', weight: '' });
+        exerciseData.sets.push({ reps: '', weight: '', originalWeights: { lbs: '', kg: '' } });
     }
     
-    exerciseData.sets[setIndex][field] = value;
+    const currentUnit = AppState.exerciseUnits[exerciseIndex] || AppState.globalUnit;
+    
+    if (field === 'weight' && value) {
+        // Store the value in current unit and calculate the other
+        const numValue = parseFloat(value);
+        if (!isNaN(numValue)) {
+            if (!exerciseData.sets[setIndex].originalWeights) {
+                exerciseData.sets[setIndex].originalWeights = { lbs: '', kg: '' };
+            }
+            
+            // Store the value in the unit it was entered
+            exerciseData.sets[setIndex].originalWeights[currentUnit] = numValue;
+            
+            // Calculate the other unit
+            if (currentUnit === 'lbs') {
+                exerciseData.sets[setIndex].originalWeights.kg = Math.round(numValue * 0.453592 * 10) / 10; // Round to 1 decimal
+            } else {
+                exerciseData.sets[setIndex].originalWeights.lbs = Math.round(numValue * 2.20462);
+            }
+            
+            // Set the display value
+            exerciseData.sets[setIndex][field] = numValue;
+        }
+    } else {
+        exerciseData.sets[setIndex][field] = value;
+    }
     
     // Save to Firebase
     await saveWorkoutData(AppState);
@@ -791,7 +816,7 @@ function checkExerciseCompletion(exerciseIndex) {
     }
 }
 
-// Unit management - FIXED to prevent multiplication
+// Unit management - FIXED to prevent multiplication and remember original values
 function setGlobalUnit(unit) {
     if (AppState.globalUnit === unit) return; // No change needed
     
@@ -819,23 +844,37 @@ function setExerciseUnit(exerciseIndex, unit) {
     const currentUnit = AppState.exerciseUnits[exerciseIndex] || AppState.globalUnit;
     if (currentUnit === unit) return; // No change needed
     
-    // Store the conversion factor for existing data
-    const conversionFactor = (currentUnit === 'lbs' && unit === 'kg') ? 0.453592 : 
-                            (currentUnit === 'kg' && unit === 'lbs') ? 2.20462 : 1;
+    AppState.exerciseUnits[exerciseIndex] = unit;
     
-    // Convert existing set data if any
+    // Update the displayed values without conversion - use stored original values
     if (AppState.savedData.exercises && AppState.savedData.exercises[`exercise_${exerciseIndex}`]) {
         const exerciseData = AppState.savedData.exercises[`exercise_${exerciseIndex}`];
         if (exerciseData.sets) {
             exerciseData.sets.forEach(set => {
-                if (set.weight && !isNaN(set.weight)) {
-                    set.weight = Math.round(set.weight * conversionFactor);
+                if (set.originalWeights && set.originalWeights[unit] !== '') {
+                    // Use the stored original value for this unit
+                    set.weight = set.originalWeights[unit];
+                } else if (set.weight && !isNaN(set.weight)) {
+                    // First time switching - calculate and store
+                    if (!set.originalWeights) {
+                        set.originalWeights = { lbs: '', kg: '' };
+                    }
+                    
+                    const conversionFactor = (currentUnit === 'lbs' && unit === 'kg') ? 0.453592 : 
+                                            (currentUnit === 'kg' && unit === 'lbs') ? 2.20462 : 1;
+                    
+                    const convertedWeight = unit === 'kg' ? 
+                        Math.round(set.weight * conversionFactor * 10) / 10 : // kg to 1 decimal
+                        Math.round(set.weight * conversionFactor); // lbs to whole number
+                    
+                    // Store both values
+                    set.originalWeights[currentUnit] = set.weight;
+                    set.originalWeights[unit] = convertedWeight;
+                    set.weight = convertedWeight;
                 }
             });
         }
     }
-    
-    AppState.exerciseUnits[exerciseIndex] = unit;
     
     // Update modal unit toggle
     const modal = document.getElementById('exercise-modal');
@@ -1015,6 +1054,7 @@ window.focusExercise = focusExercise;
 window.updateSet = updateSet;
 window.updateNotes = updateNotes;
 window.signOutUser = signOutUser;
+window.showWorkoutSelector = showWorkoutSelector; // Add this missing function
 window.loadExerciseHistory = (exerciseName, exerciseIndex) => loadExerciseHistory(exerciseName, exerciseIndex, AppState);
 window.markExerciseComplete = markExerciseComplete;
 window.toggleModalRestTimer = toggleModalRestTimer;
