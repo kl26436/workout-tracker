@@ -25,25 +25,12 @@
             <div id="user-info" class="hidden"></div>
         </div>
 
-        <!-- Navigation (if you want to keep tabs) -->
-        <nav class="nav-tabs" style="display: none;">
-            <button class="nav-tab active" data-tab="today">
-                <i class="fas fa-dumbbell"></i> Today's Workout
-            </button>
-            <button class="nav-tab" data-tab="history">
-                <i class="fas fa-history"></i> History
-            </button>
-            <button class="nav-tab" data-tab="plans">
-                <i class="fas fa-calendar-alt"></i> Plans
-            </button>
-        </nav>
-
         <!-- Today's Date Display -->
         <div class="today-header">
             <h2 id="today-date-display">Today - Loading...</h2>
             <p class="today-subtitle">Choose your workout and start tracking</p>
             
-            <!-- Add Management Button Here -->
+            <!-- Enhanced Management Buttons -->
             <div style="margin-top: 1rem;">
                 <button class="btn btn-secondary" onclick="showWorkoutManagement()" style="margin-right: 0.5rem;">
                     <i class="fas fa-cog"></i> Manage Workouts
@@ -54,37 +41,41 @@
             </div>
         </div>
 
-        <!-- Workout Selector -->
+        <!-- Enhanced Workout Selector with Template Selection -->
         <div id="workout-selector">
-            <div class="workout-grid">
-                <div class="workout-option" data-workout="Chest – Push">
-                    <i class="fas fa-hand-paper"></i>
-                    <span>Chest & Push</span>
-                </div>
-                <div class="workout-option" data-workout="Back – Pull">
-                    <i class="fas fa-hand-rock"></i>
-                    <span>Back & Pull</span>
-                </div>
-                <div class="workout-option" data-workout="Legs – Quad Focus">
-                    <i class="fas fa-walking"></i>
-                    <span>Legs (Quads)</span>
-                </div>
-                <div class="workout-option" data-workout="Legs – Posterior Focus">
-                    <i class="fas fa-running"></i>
-                    <span>Legs (Glutes/Hams)</span>
-                </div>
-                <div class="workout-option" data-workout="Cardio + Core">
-                    <i class="fas fa-heartbeat"></i>
-                    <span>Cardio & Core</span>
-                </div>
-                <div class="workout-option" data-workout="Cardio / Abs / Mobility">
-                    <i class="fas fa-spa"></i>
-                    <span>Recovery Day</span>
+            <div class="workout-type-header">
+                <h3>Choose Workout Type</h3>
+                <p>Select a workout category, then choose your specific template</p>
+            </div>
+            
+            <div class="workout-grid" id="workout-type-grid">
+                <!-- Workout types will be populated here -->
+            </div>
+            
+            <!-- Template Selection Modal -->
+            <div id="template-selection-modal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 id="template-modal-title" class="modal-title">Choose Template</h3>
+                        <button class="close-btn" onclick="closeTemplateSelection()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="template-selection-grid" id="template-selection-grid">
+                        <!-- Templates will be populated here -->
+                    </div>
+                    
+                    <div class="template-selection-actions">
+                        <button class="btn btn-primary" onclick="createTemplateForType()">
+                            <i class="fas fa-plus"></i> Create New Template
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Active Workout -->
+        <!-- Active Workout (unchanged) -->
         <div id="active-workout" class="hidden">
             <!-- Global Settings -->
             <div class="global-settings">
@@ -117,15 +108,6 @@
             <!-- Exercise List -->
             <div id="exercise-list" class="exercise-list"></div>
         </div>
-
-        <!-- Hidden content for other tabs (keep your existing structure) -->
-        <div id="history-tab" class="tab-content hidden">
-            <!-- Your existing history tab content -->
-        </div>
-
-        <div id="plans-tab" class="tab-content hidden">
-            <!-- Your existing plans tab content -->
-        </div>
     </div>
 
     <!-- Sticky Rest Timer -->
@@ -144,13 +126,23 @@
         </div>
     </div>
 
-    <!-- Exercise Focus Modal -->
+    <!-- Exercise Focus Modal with Video Support -->
     <div id="exercise-modal" class="exercise-modal">
         <div class="exercise-modal-content">
             <div class="modal-header">
                 <h3 id="modal-exercise-title">Exercise</h3>
                 <button class="close-btn" id="close-exercise-modal">
                     <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Exercise Video Section -->
+            <div id="exercise-video-section" class="exercise-video-section hidden">
+                <div class="video-container">
+                    <iframe id="exercise-video-iframe" width="100%" height="315" frameborder="0" allowfullscreen></iframe>
+                </div>
+                <button class="btn btn-secondary btn-small" onclick="hideExerciseVideo()">
+                    <i class="fas fa-eye-slash"></i> Hide Video
                 </button>
             </div>
             
@@ -165,142 +157,61 @@
         </div>
     </div>
 
-    <!-- Workout Management Section -->
-<div id="workout-management" class="hidden">
-    <!-- Workout Template Editor -->
-    <div class="management-header">
-        <h2>Workout Management</h2>
-        <div class="management-actions">
-            <button class="btn btn-secondary" onclick="showWorkoutSelector()">
-                <i class="fas fa-arrow-left"></i> Back to Workouts
-            </button>
-            <button class="btn btn-primary" onclick="createNewTemplate()">
-                <i class="fas fa-plus"></i> New Template
-            </button>
-        </div>
-    </div>
-
-    <!-- Template List -->
-    <div class="template-grid">
-        <div id="template-list">
-            <!-- Templates will be loaded here -->
-        </div>
-    </div>
-
-    <!-- Current Template Editor -->
-    <div id="template-editor" class="hidden">
-        <div class="editor-header">
-            <h3 id="editor-title">Edit Template</h3>
-            <div class="editor-actions">
-                <button class="btn btn-secondary" onclick="closeTemplateEditor()">Cancel</button>
-                <button class="btn btn-success" onclick="saveCurrentTemplate()">
-                    <i class="fas fa-save"></i> Save Template
+    <!-- Enhanced Workout Management Section -->
+    <div id="workout-management" class="hidden">
+        <div class="management-header">
+            <h2>Workout Management</h2>
+            <div class="management-actions">
+                <button class="btn btn-secondary" onclick="showWorkoutSelector()">
+                    <i class="fas fa-arrow-left"></i> Back to Workouts
+                </button>
+                <button class="btn btn-primary" onclick="showCreateTemplateModal()">
+                    <i class="fas fa-plus"></i> New Template
                 </button>
             </div>
         </div>
 
-        <div class="template-form">
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="template-name">Template Name</label>
-                    <input type="text" id="template-name" class="form-input" placeholder="e.g., My Chest Workout">
-                </div>
-                <div class="form-group">
-                    <label for="template-category">Category</label>
-                    <select id="template-category" class="form-input">
-                        <option value="Push">Push (Chest, Shoulders, Triceps)</option>
-                        <option value="Pull">Pull (Back, Biceps)</option>
-                        <option value="Legs">Legs (Quads, Glutes, Hamstrings)</option>
-                        <option value="Cardio">Cardio & Core</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Exercise List Editor -->
-            <div class="exercise-editor">
-                <div class="exercise-editor-header">
-                    <h4>Exercises</h4>
-                    <button class="btn btn-success btn-small" onclick="addExerciseToTemplate()">
-                        <i class="fas fa-plus"></i> Add Exercise
-                    </button>
-                </div>
-                <div id="template-exercises" class="template-exercise-list">
-                    <!-- Template exercises will be loaded here -->
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Exercise Library Modal -->
-<div id="exercise-library-modal" class="modal hidden">
-    <div class="modal-content exercise-library-content">
-        <div class="modal-header">
-            <h3 class="modal-title">Exercise Library</h3>
-            <button class="close-btn" onclick="closeExerciseLibrary()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        
-        <!-- Search and Filters -->
-        <div class="library-filters">
-            <div class="filter-row">
-                <input type="text" id="exercise-library-search" class="search-input" 
-                       placeholder="Search exercises..." onkeyup="searchExerciseLibrary()">
-            </div>
-            <div class="filter-row">
-                <select id="body-part-filter" class="form-input" onchange="filterExerciseLibrary()">
-                    <option value="">All Body Parts</option>
-                    <option value="Chest">Chest</option>
-                    <option value="Back">Back</option>
-                    <option value="Shoulders">Shoulders</option>
-                    <option value="Arms">Arms</option>
-                    <option value="Legs">Legs</option>
-                    <option value="Core">Core</option>
-                </select>
-                <select id="equipment-filter" class="form-input" onchange="filterExerciseLibrary()">
-                    <option value="">All Equipment</option>
-                    <option value="Machine">Machine</option>
-                    <option value="Cable">Cable</option>
-                    <option value="Dumbbell">Dumbbell</option>
-                    <option value="Barbell">Barbell</option>
-                    <option value="Bodyweight">Bodyweight</option>
-                </select>
-                <button class="btn btn-primary" onclick="showCreateExerciseForm()">
-                    <i class="fas fa-plus"></i> Create New
+        <!-- Template Categories -->
+        <div class="template-categories">
+            <div class="category-tabs">
+                <button class="category-tab active" data-category="default" onclick="switchTemplateCategory('default')">
+                    <i class="fas fa-star"></i> Default Templates
                 </button>
-            </div>
-        </div>
-        
-        <!-- Exercise Grid -->
-        <div id="exercise-library-grid" class="exercise-library-grid">
-            <!-- Exercises will be loaded here -->
-        </div>
-    </div>
-</div>
-
-<!-- Create Exercise Modal -->
-<div id="create-exercise-modal" class="modal hidden">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 class="modal-title">Create New Exercise</h3>
-            <button class="close-btn" onclick="closeCreateExerciseModal()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        
-        <form id="create-exercise-form" onsubmit="createNewExercise(event)">
-            <div class="form-group">
-                <label for="new-exercise-name">Exercise Name *</label>
-                <input type="text" id="new-exercise-name" class="form-input" 
-                       placeholder="e.g., Incline Dumbbell Press" required>
+                <button class="category-tab" data-category="custom" onclick="switchTemplateCategory('custom')">
+                    <i class="fas fa-user"></i> My Templates
+                </button>
             </div>
             
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="new-exercise-body-part">Body Part</label>
-                    <select id="new-exercise-body-part" class="form-input">
+            <div class="category-content">
+                <div id="default-templates" class="template-grid">
+                    <!-- Default templates will be loaded here -->
+                </div>
+                <div id="custom-templates" class="template-grid hidden">
+                    <!-- Custom templates will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Exercise Library Modal with Add New Exercise -->
+    <div id="exercise-library-modal" class="modal hidden">
+        <div class="modal-content exercise-library-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Exercise Library</h3>
+                <button class="close-btn" onclick="closeExerciseLibrary()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Search and Filters -->
+            <div class="library-filters">
+                <div class="filter-row">
+                    <input type="text" id="exercise-library-search" class="search-input" 
+                           placeholder="Search exercises..." onkeyup="searchExerciseLibrary()">
+                </div>
+                <div class="filter-row">
+                    <select id="body-part-filter" class="form-input" onchange="filterExerciseLibrary()">
+                        <option value="">All Body Parts</option>
                         <option value="Chest">Chest</option>
                         <option value="Back">Back</option>
                         <option value="Shoulders">Shoulders</option>
@@ -308,63 +219,200 @@
                         <option value="Legs">Legs</option>
                         <option value="Core">Core</option>
                     </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="new-exercise-equipment">Equipment</label>
-                    <select id="new-exercise-equipment" class="form-input">
+                    <select id="equipment-filter" class="form-input" onchange="filterExerciseLibrary()">
+                        <option value="">All Equipment</option>
                         <option value="Machine">Machine</option>
                         <option value="Cable">Cable</option>
                         <option value="Dumbbell">Dumbbell</option>
                         <option value="Barbell">Barbell</option>
                         <option value="Bodyweight">Bodyweight</option>
                     </select>
+                    <button class="btn btn-success" onclick="showQuickAddExercise()">
+                        <i class="fas fa-plus"></i> Quick Add
+                    </button>
+                    <button class="btn btn-primary" onclick="showCreateExerciseForm()">
+                        <i class="fas fa-plus-circle"></i> Create New
+                    </button>
                 </div>
             </div>
             
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="new-exercise-sets">Default Sets</label>
-                    <input type="number" id="new-exercise-sets" class="form-input" 
-                           value="3" min="1" max="10">
-                </div>
-                
-                <div class="form-group">
-                    <label for="new-exercise-reps">Default Reps</label>
-                    <input type="number" id="new-exercise-reps" class="form-input" 
-                           value="10" min="1" max="50">
-                </div>
-                
-                <div class="form-group">
-                    <label for="new-exercise-weight">Starting Weight (lbs)</label>
-                    <input type="number" id="new-exercise-weight" class="form-input" 
-                           value="50" min="0" step="5">
+            <!-- Quick Add Exercise Section -->
+            <div id="quick-add-section" class="quick-add-section hidden">
+                <h4>Quick Add Exercise</h4>
+                <div class="quick-add-form">
+                    <div class="form-row">
+                        <input type="text" id="quick-exercise-name" class="form-input" placeholder="Exercise Name *" required>
+                        <select id="quick-body-part" class="form-input">
+                            <option value="Chest">Chest</option>
+                            <option value="Back">Back</option>
+                            <option value="Shoulders">Shoulders</option>
+                            <option value="Arms">Arms</option>
+                            <option value="Legs">Legs</option>
+                            <option value="Core">Core</option>
+                        </select>
+                        <select id="quick-equipment" class="form-input">
+                            <option value="Machine">Machine</option>
+                            <option value="Cable">Cable</option>
+                            <option value="Dumbbell">Dumbbell</option>
+                            <option value="Barbell">Barbell</option>
+                            <option value="Bodyweight">Bodyweight</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-secondary" onclick="hideQuickAddExercise()">Cancel</button>
+                        <button class="btn btn-success" onclick="quickAddExercise()">
+                            <i class="fas fa-plus"></i> Add & Use
+                        </button>
+                    </div>
                 </div>
             </div>
             
-            <div class="form-group">
-                <label for="new-exercise-video">Form Video URL (optional)</label>
-                <input type="url" id="new-exercise-video" class="form-input" 
-                       placeholder="https://www.youtube.com/watch?v=...">
+            <!-- Exercise Grid -->
+            <div id="exercise-library-grid" class="exercise-library-grid">
+                <!-- Exercises will be loaded here -->
             </div>
-            
-            <div class="form-actions">
-                <button type="button" class="btn btn-secondary" onclick="closeCreateExerciseModal()">
-                    Cancel
-                </button>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Create Exercise
-                </button>
-            </div>
-        </form>
+        </div>
     </div>
-</div>
 
-    <!-- Your existing modals can stay -->
-    <!-- Exercise Swap Modal -->
-    <!-- Add New Exercise Modal -->
+    <!-- Create Template Modal -->
+    <div id="create-template-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Create New Template</h3>
+                <button class="close-btn" onclick="closeCreateTemplateModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="create-template-form" onsubmit="createTemplate(event)">
+                <div class="form-group">
+                    <label for="template-name">Template Name *</label>
+                    <input type="text" id="template-name" class="form-input" 
+                           placeholder="e.g., My Chest & Triceps Workout" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="template-category">Category</label>
+                        <select id="template-category" class="form-input">
+                            <option value="Push">Push (Chest, Shoulders, Triceps)</option>
+                            <option value="Pull">Pull (Back, Biceps)</option>
+                            <option value="Legs">Legs (Quads, Glutes, Hamstrings)</option>
+                            <option value="Cardio">Cardio & Core</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="template-type">Template Type</label>
+                        <select id="template-type" class="form-input">
+                            <option value="custom">My Custom Template</option>
+                            <option value="default">New Default Template</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="template-description">Description (optional)</label>
+                    <textarea id="template-description" class="form-input" rows="3" 
+                              placeholder="Brief description of this workout..."></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateTemplateModal()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Create & Edit
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Enhanced Create Exercise Modal -->
+    <div id="create-exercise-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Create New Exercise</h3>
+                <button class="close-btn" onclick="closeCreateExerciseModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="create-exercise-form" onsubmit="createNewExercise(event)">
+                <div class="form-group">
+                    <label for="new-exercise-name">Exercise Name *</label>
+                    <input type="text" id="new-exercise-name" class="form-input" 
+                           placeholder="e.g., Incline Dumbbell Press" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="new-exercise-body-part">Body Part</label>
+                        <select id="new-exercise-body-part" class="form-input">
+                            <option value="Chest">Chest</option>
+                            <option value="Back">Back</option>
+                            <option value="Shoulders">Shoulders</option>
+                            <option value="Arms">Arms</option>
+                            <option value="Legs">Legs</option>
+                            <option value="Core">Core</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="new-exercise-equipment">Equipment</label>
+                        <select id="new-exercise-equipment" class="form-input">
+                            <option value="Machine">Machine</option>
+                            <option value="Cable">Cable</option>
+                            <option value="Dumbbell">Dumbbell</option>
+                            <option value="Barbell">Barbell</option>
+                            <option value="Bodyweight">Bodyweight</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="new-exercise-sets">Default Sets</label>
+                        <input type="number" id="new-exercise-sets" class="form-input" 
+                               value="3" min="1" max="10">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="new-exercise-reps">Default Reps</label>
+                        <input type="number" id="new-exercise-reps" class="form-input" 
+                               value="10" min="1" max="50">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="new-exercise-weight">Starting Weight (lbs)</label>
+                        <input type="number" id="new-exercise-weight" class="form-input" 
+                               value="50" min="0" step="5">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="new-exercise-video">Form Video URL (optional)</label>
+                    <input type="url" id="new-exercise-video" class="form-input" 
+                           placeholder="https://www.youtube.com/watch?v=...">
+                    <small style="color: var(--text-secondary); font-size: 0.875rem;">
+                        YouTube URLs will be automatically converted to embeddable format
+                    </small>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateExerciseModal()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Create Exercise
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script type="module" src="js/main.js"></script>
-
 </body>
 </html>

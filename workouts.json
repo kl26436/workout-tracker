@@ -43,39 +43,32 @@
     "day": "Legs – Quad Focus",
     "exercises": [
       {
-        "machine": "Leg Press",
+        "machine": "Romanian Deadlift (Machine or Cable)",
         "sets": 4,
-        "reps": 10,
-        "weight": 300,
-        "video": "https://www.youtube.com/watch?v=n1Dyy3De1Rc"
+        "reps": 9,
+        "weight": 75,
+        "video": "https://www.youtube.com/watch?v=2SHsk9AzdjA"
+      },
+      {
+        "machine": "Hip Abduction Machine",
+        "sets": 3,
+        "reps": 15,
+        "weight": 55,
+        "video": "https://www.youtube.com/watch?v=sM6XU5WwLUE"
       },
       {
         "machine": "Leg Curl Machine",
-        "sets": 4,
-        "reps": 12,
+        "sets": 3,
+        "reps": 10,
         "weight": 80,
         "video": "https://www.youtube.com/watch?v=s1xJBgnXReU"
       },
       {
-        "machine": "Leg Extension",
-        "sets": 3,
-        "reps": 12,
-        "weight": 80,
-        "video": "https://www.youtube.com/watch?v=yR3xzINo_yM"
-      },
-      {
-        "machine": "Glute Kickback Machine",
+        "machine": "Machine Crunch",
         "sets": 3,
         "reps": 15,
-        "weight": 55,
-        "video": "https://www.youtube.com/watch?v=2vSRrEgHjkI"
-      },
-      {
-        "machine": "Calf Raise Machine",
-        "sets": 3,
-        "reps": 20,
-        "weight": 90,
-        "video": "https://www.youtube.com/watch?v=-M4-G8p8fmc"
+        "weight": 60,
+        "video": "https://www.youtube.com/watch?v=XHITnBrPZxU"
       }
     ]
   },

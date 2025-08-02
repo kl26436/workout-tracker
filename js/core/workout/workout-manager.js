@@ -1,5 +1,5 @@
 // Workout and Exercise Management Module
-import { db, doc, setDoc, getDoc, collection, getDocs } from '../firebase-config.js';
+import { db, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from '../firebase-config.js';
 import { showNotification } from '../ui-helpers.js';
 
 export class WorkoutManager {
@@ -170,4 +170,42 @@ export class WorkoutManager {
             return matchesSearch && matchesBodyPart && matchesEquipment;
         });
     }
+    // Delete a workout template
+async deleteWorkoutTemplate(templateId) {
+    if (!this.appState.currentUser) return false;
+    
+    try {
+        const docRef = doc(db, "users", this.appState.currentUser.uid, "workoutTemplates", templateId);
+        await deleteDoc(docRef);
+        
+        console.log('✅ Template deleted successfully');
+        return true;
+    } catch (error) {
+        console.error('❌ Error deleting workout template:', error);
+        showNotification('Failed to delete workout template', 'error');
+        return false;
+    }
+}
+
+// Update an existing workout template
+async updateWorkoutTemplate(templateId, templateData) {
+    if (!this.appState.currentUser) return false;
+    
+    try {
+        const docRef = doc(db, "users", this.appState.currentUser.uid, "workoutTemplates", templateId);
+        
+        await setDoc(docRef, {
+            ...templateData,
+            lastUpdated: new Date().toISOString(),
+            updatedBy: this.appState.currentUser.uid
+        }, { merge: true });
+        
+        console.log('✅ Template updated successfully');
+        return true;
+    } catch (error) {
+        console.error('❌ Error updating workout template:', error);
+        showNotification('Failed to update workout template', 'error');
+        return false;
+    }
+}
 }
