@@ -1,0 +1,245 @@
+[
+  {
+    "name": "Seated Chest Press",
+    "machine": "Seated Chest Press",
+    "bodyPart": "Chest",
+    "equipmentType": "Machine",
+    "tags": ["chest", "push", "compound"],
+    "sets": 4,
+    "reps": 10,
+    "weight": 110,
+    "video": "https://www.youtube.com/watch?v=n8TOta_pfr4"
+  },
+  {
+    "name": "Incline Dumbbell Press",
+    "machine": "Incline Dumbbell Press",
+    "bodyPart": "Chest",
+    "equipmentType": "Dumbbell",
+    "tags": ["chest", "push", "upper chest", "compound"],
+    "sets": 4,
+    "reps": 8,
+    "weight": 45,
+    "video": "https://www.youtube.com/watch?v=example1"
+  },
+  {
+    "name": "Cable Crossover",
+    "machine": "Cable Crossover",
+    "bodyPart": "Chest",
+    "equipmentType": "Cable",
+    "tags": ["chest", "isolation", "cable", "fly"],
+    "sets": 3,
+    "reps": 12,
+    "weight": 30,
+    "video": "https://www.youtube.com/watch?v=example2"
+  },
+  {
+    "name": "Pec Deck",
+    "machine": "Pec Deck",
+    "bodyPart": "Chest",
+    "equipmentType": "Machine",
+    "tags": ["chest", "isolation", "fly"],
+    "sets": 3,
+    "reps": 12,
+    "weight": 70,
+    "video": "https://www.youtube.com/watch?v=JJitfZKlKk4"
+  },
+  {
+    "name": "Lat Pulldown",
+    "machine": "Lat Pulldown",
+    "bodyPart": "Back",
+    "equipmentType": "Machine",
+    "tags": ["back", "pull", "lats", "compound"],
+    "sets": 4,
+    "reps": 10,
+    "weight": 130,
+    "video": "https://www.youtube.com/watch?v=CAwf7n6Luuc"
+  },
+  {
+    "name": "Dumbbell Rows",
+    "machine": "Dumbbell Rows",
+    "bodyPart": "Back",
+    "equipmentType": "Dumbbell",
+    "tags": ["back", "pull", "rows", "compound"],
+    "sets": 4,
+    "reps": 10,
+    "weight": 35,
+    "video": "https://www.youtube.com/watch?v=example3"
+  },
+  {
+    "name": "Cable Rows",
+    "machine": "Cable Rows",
+    "bodyPart": "Back",
+    "equipmentType": "Cable",
+    "tags": ["back", "pull", "rows", "cable"],
+    "sets": 4,
+    "reps": 10,
+    "weight": 100,
+    "video": "https://www.youtube.com/watch?v=example4"
+  },
+  {
+    "name": "Leg Press",
+    "machine": "Leg Press",
+    "bodyPart": "Legs",
+    "equipmentType": "Machine",
+    "tags": ["legs", "quads", "compound", "push"],
+    "sets": 4,
+    "reps": 10,
+    "weight": 300,
+    "video": "https://www.youtube.com/watch?v=n1Dyy3De1Rc"
+  },
+  {
+    "name": "Goblet Squats",
+    "machine": "Goblet Squats",
+    "bodyPart": "Legs",
+    "equipmentType": "Dumbbell",
+    "tags": ["legs", "quads", "glutes", "compound"],
+    "sets": 3,
+    "reps": 12,
+    "weight": 35,
+    "video": "https://www.youtube.com/watch?v=example5"
+  },
+  {
+    "name": "Leg Extension",
+    "machine": "Leg Extension",
+    "bodyPart": "Legs",
+    "equipmentType": "Machine",
+    "tags": ["legs", "quads", "isolation"],
+    "sets": 3,
+    "reps": 12,
+    "weight": 80,
+    "video": "https://www.youtube.com/watch?v=yR3xzINo_yM"
+  },
+  {
+    "name": "Leg Curl Machine",
+    "machine": "Leg Curl Machine",
+    "bodyPart": "Legs",
+    "equipmentType": "Machine",
+    "tags": ["legs", "hamstrings", "isolation"],
+    "sets": 4,
+    "reps": 12,
+    "weight": 80,
+    "video": "https://www.youtube.com/watch?v=s1xJBgnXReU"
+  },
+  {
+    "name": "Shoulder Press Machine",
+    "machine": "Shoulder Press Machine",
+    "bodyPart": "Shoulders",
+    "equipmentType": "Machine",
+    "tags": ["shoulders", "push", "compound"],
+    "sets": 4,
+    "reps": 10,
+    "weight": 100,
+    "video": "https://www.youtube.com/watch?v=BAZkFGeUy5U"
+  },
+  {
+    "name": "Dumbbell Shoulder Press",
+    "machine": "Dumbbell Shoulder Press",
+    "bodyPart": "Shoulders",
+    "equipmentType": "Dumbbell",
+    "tags": ["shoulders", "push", "compound", "dumbbell"],
+    "sets": 4,
+    "reps": 10,
+    "weight": 30,
+    "video": "https://www.youtube.com/watch?v=example6"
+  },
+  {
+    "name": "Lateral Raise Machine",
+    "machine": "Lateral Raise Machine",
+    "bodyPart": "Shoulders",
+    "equipmentType": "Machine",
+    "tags": ["shoulders", "isolation", "lateral delts"],
+    "sets": 3,
+    "reps": 15,
+    "weight": 30,
+    "video": "https://www.youtube.com/watch?v=QcxbeuDutNc"
+  },
+  {
+    "name": "Cable Bicep Curl",
+    "machine": "Cable Bicep Curl",
+    "bodyPart": "Arms",
+    "equipmentType": "Cable",
+    "tags": ["arms", "biceps", "isolation", "curl"],
+    "sets": 3,
+    "reps": 15,
+    "weight": 75,
+    "video": "https://www.youtube.com/watch?v=av7-8igSXTs"
+  },
+  {
+    "name": "Dumbbell Bicep Curls",
+    "machine": "Dumbbell Bicep Curls",
+    "bodyPart": "Arms",
+    "equipmentType": "Dumbbell",
+    "tags": ["arms", "biceps", "isolation", "dumbbell"],
+    "sets": 3,
+    "reps": 12,
+    "weight": 25,
+    "video": "https://www.youtube.com/watch?v=example7"
+  },
+  {
+    "name": "Triceps Pushdown",
+    "machine": "Triceps Pushdown",
+    "bodyPart": "Arms",
+    "equipmentType": "Cable",
+    "tags": ["arms", "triceps", "isolation", "pushdown"],
+    "sets": 3,
+    "reps": 15,
+    "weight": 60,
+    "video": "https://www.youtube.com/watch?v=G0-qvTlUODk"
+  },
+  {
+    "name": "Dumbbell Tricep Extensions",
+    "machine": "Dumbbell Tricep Extensions",
+    "bodyPart": "Arms",
+    "equipmentType": "Dumbbell",
+    "tags": ["arms", "triceps", "isolation", "overhead"],
+    "sets": 3,
+    "reps": 12,
+    "weight": 20,
+    "video": "https://www.youtube.com/watch?v=example8"
+  },
+  {
+    "name": "Machine Crunch",
+    "machine": "Machine Crunch",
+    "bodyPart": "Core",
+    "equipmentType": "Machine",
+    "tags": ["core", "abs", "isolation"],
+    "sets": 3,
+    "reps": 15,
+    "weight": 60,
+    "video": "https://www.youtube.com/watch?v=XHITnBrPZxU"
+  },
+  {
+    "name": "Plank",
+    "machine": "Plank",
+    "bodyPart": "Core",
+    "equipmentType": "Bodyweight",
+    "tags": ["core", "isometric", "bodyweight"],
+    "sets": 3,
+    "reps": 1,
+    "weight": 0,
+    "video": "https://www.youtube.com/watch?v=pSHjTRCQxIw"
+  },
+  {
+    "name": "Russian Twists",
+    "machine": "Russian Twists",
+    "bodyPart": "Core",
+    "equipmentType": "Bodyweight",
+    "tags": ["core", "obliques", "rotation"],
+    "sets": 3,
+    "reps": 20,
+    "weight": 0,
+    "video": "https://www.youtube.com/watch?v=wkD8rjkodUI"
+  },
+  {
+    "name": "Calf Raise Machine",
+    "machine": "Calf Raise Machine",
+    "bodyPart": "Legs",
+    "equipmentType": "Machine",
+    "tags": ["legs", "calves", "isolation"],
+    "sets": 3,
+    "reps": 20,
+    "weight": 90,
+    "video": "https://www.youtube.com/watch?v=-M4-G8p8fmc"
+  }
+]
+    

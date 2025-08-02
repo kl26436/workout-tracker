@@ -940,34 +940,66 @@ function startModalRestTimer(exerciseIndex, setIndex) {
     
     let timeLeft = 90;
     let isPaused = false;
+    let startTime = Date.now();
     
+    // Request wake lock to keep timer running
+    requestWakeLock();
+    
+    // Use high-resolution timer for better accuracy
     const updateDisplay = () => {
         const minutes = Math.floor(timeLeft / 60);
         const seconds = timeLeft % 60;
         timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        // Update document title for background visibility
+        document.title = timeLeft > 0 ? `Rest: ${minutes}:${seconds.toString().padStart(2, '0')} - Big Surf` : 'Ready! - Big Surf';
     };
     
     updateDisplay();
     
+    // Store timer data with enhanced iOS support
     modalTimer.timerData = {
+        startTime: startTime,
+        originalDuration: 90,
+        timeLeft: timeLeft,
+        isPaused: isPaused,
+        
         interval: setInterval(() => {
             if (!isPaused && timeLeft > 0) {
-                timeLeft--;
-                updateDisplay();
+                // Calculate actual elapsed time to account for background suspension
+                const now = Date.now();
+                const actualElapsed = Math.floor((now - startTime) / 1000);
+                const newTimeLeft = Math.max(0, modalTimer.timerData.originalDuration - actualElapsed);
+                
+                // Only update if time actually changed (prevents background suspension issues)
+                if (newTimeLeft !== timeLeft) {
+                    timeLeft = newTimeLeft;
+                    modalTimer.timerData.timeLeft = timeLeft;
+                    updateDisplay();
+                }
                 
                 if (timeLeft === 0) {
                     timerDisplay.textContent = 'Ready!';
                     timerDisplay.style.color = 'var(--success)';
+                    document.title = 'Ready! - Big Surf';
                     
+                    // Multiple notification methods for iOS
                     if ('vibrate' in navigator) {
-                        navigator.vibrate([200, 100, 200]);
+                        navigator.vibrate([200, 100, 200, 100, 200]);
                     }
                     
+                    // Play audio notification (works even when locked on iOS)
+                    playTimerSound();
+                    
                     showNotification('Rest period complete! 💪', 'success');
+                    
+                    // Release wake lock
+                    releaseWakeLock();
                     
                     setTimeout(() => {
                         modalTimer.classList.add('hidden');
                         timerDisplay.style.color = 'var(--primary)';
+                        document.title = 'Big Surf - Workout Tracker';
                     }, 5000);
                 }
             }
@@ -975,6 +1007,15 @@ function startModalRestTimer(exerciseIndex, setIndex) {
         
         pause: () => {
             isPaused = !isPaused;
+            modalTimer.timerData.isPaused = isPaused;
+            
+            if (!isPaused) {
+                // Reset start time when resuming
+                const elapsed = modalTimer.timerData.originalDuration - timeLeft;
+                modalTimer.timerData.startTime = Date.now() - (elapsed * 1000);
+                startTime = modalTimer.timerData.startTime;
+            }
+            
             const pauseBtn = modalTimer.querySelector('.modal-rest-controls .btn:first-child');
             if (pauseBtn) {
                 pauseBtn.innerHTML = isPaused ? '<i class="fas fa-play"></i>' : '<i class="fas fa-pause"></i>';
@@ -985,8 +1026,49 @@ function startModalRestTimer(exerciseIndex, setIndex) {
             clearInterval(modalTimer.timerData.interval);
             modalTimer.classList.add('hidden');
             timerDisplay.style.color = 'var(--primary)';
+            document.title = 'Big Surf - Workout Tracker';
+            releaseWakeLock();
         }
     };
+    
+    // Handle visibility change (when app goes to background)
+    const handleVisibilityChange = () => {
+        if (document.hidden) {
+            console.log('App went to background - timer should continue');
+        } else {
+            console.log('App returned to foreground - syncing timer');
+            // Re-sync timer when returning from background
+            if (modalTimer.timerData && !modalTimer.timerData.isPaused) {
+                const now = Date.now();
+                const elapsed = Math.floor((now - modalTimer.timerData.startTime) / 1000);
+                const newTimeLeft = Math.max(0, modalTimer.timerData.originalDuration - elapsed);
+                modalTimer.timerData.timeLeft = newTimeLeft;
+                timeLeft = newTimeLeft;
+                updateDisplay();
+            }
+        }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Clean up event listener when timer ends
+    const originalSkip = modalTimer.timerData.skip;
+    modalTimer.timerData.skip = () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        originalSkip();
+    };
+}
+
+// ALSO UPDATE your existing clearModalRestTimer function:
+function clearModalRestTimer(exerciseIndex) {
+    const modalTimer = document.getElementById(`modal-rest-timer-${exerciseIndex}`);
+    if (modalTimer && modalTimer.timerData) {
+        clearInterval(modalTimer.timerData.interval);
+        modalTimer.timerData = null;
+        modalTimer.classList.add('hidden');
+        document.title = 'Big Surf - Workout Tracker';
+        releaseWakeLock(); // Add this line to your existing function
+    }
 }
 
 function toggleRestTimer() {
@@ -1027,12 +1109,61 @@ function clearGlobalRestTimer() {
     if (timerDisplay) timerDisplay.style.color = 'var(--primary)';
 }
 
-function clearModalRestTimer(exerciseIndex) {
-    const modalTimer = document.getElementById(`modal-rest-timer-${exerciseIndex}`);
-    if (modalTimer && modalTimer.timerData) {
-        clearInterval(modalTimer.timerData.interval);
-        modalTimer.timerData = null;
-        modalTimer.classList.add('hidden');
+
+
+// ADD THESE NEW HELPER FUNCTIONS (after your imports, before other functions)
+let wakeLock = null;
+
+// Request wake lock to keep screen active during timers
+async function requestWakeLock() {
+    try {
+        if ('wakeLock' in navigator) {
+            wakeLock = await navigator.wakeLock.request('screen');
+            console.log('Wake lock acquired');
+        }
+    } catch (err) {
+        console.log('Wake lock failed:', err);
+    }
+}
+
+// Release wake lock
+async function releaseWakeLock() {
+    if (wakeLock) {
+        try {
+            await wakeLock.release();
+            wakeLock = null;
+            console.log('Wake lock released');
+        } catch (err) {
+            console.log('Wake lock release failed:', err);
+        }
+    }
+}
+
+// Play timer completion sound (works on iOS even when locked)
+function playTimerSound() {
+    try {
+        // Create audio context for iOS
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Create a simple beep sound
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.5);
+        
+        console.log('Timer sound played');
+    } catch (error) {
+        console.log('Could not play timer sound:', error);
     }
 }
 

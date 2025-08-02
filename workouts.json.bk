@@ -1,6 +1,6 @@
 [
   {
-    "day": "Chest \u2013 Push",
+    "day": "Chest – Push",
     "exercises": [
       {
         "machine": "Seated Chest Press",
@@ -10,7 +10,7 @@
         "video": "https://www.youtube.com/watch?v=n8TOta_pfr4"
       },
       {
-        "machine": "Pec Deck",
+        "machine": "Pec Deck (Chest Fly)",
         "sets": 3,
         "reps": 12,
         "weight": 70,
@@ -40,10 +40,10 @@
     ]
   },
   {
-    "day": "Legs \u2013 Quad Focus",
+    "day": "Legs – Quad Focus",
     "exercises": [
       {
-        "machine": "Romanian Deadlift (Cable or Machine)",
+        "machine": "Romanian Deadlift (Machine or Cable)",
         "sets": 4,
         "reps": 9,
         "weight": 75,
@@ -99,7 +99,7 @@
     ]
   },
   {
-    "day": "Back \u2013 Pull",
+    "day": "Back – Pull",
     "exercises": [
       {
         "machine": "Lat Pulldown",
@@ -123,14 +123,14 @@
         "video": "https://www.youtube.com/watch?v=nsHUfYxVlL4"
       },
       {
-        "machine": "Cable Bicep Curl",
+        "machine": "Cable or Machine Bicep Curl",
         "sets": 3,
         "reps": 15,
         "weight": 75,
         "video": "https://www.youtube.com/watch?v=av7-8igSXTs"
       },
       {
-        "machine": "Rope Face Pulls",
+        "machine": "Rope Face Pulls or Cable Pullovers",
         "sets": 3,
         "reps": 12,
         "weight": 35,
@@ -139,7 +139,7 @@
     ]
   },
   {
-    "day": "Legs \u2013 Posterior Focus",
+    "day": "Legs – Posterior Focus",
     "exercises": [
       {
         "machine": "Romanian Deadlift (Cable or Machine)",
