@@ -1870,44 +1870,127 @@ body {
 }
 
 /* Add Manual Workout Modal */
+/* Redesigned Manual Workout Modal */
+.manual-workout-modal {
+    max-width: 900px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
 
-/* Improved Manual Workout Entry */
-.manual-workout-exercises {
-    margin: 1.5rem 0;
+/* Manual Workout Steps */
+.manual-step {
+    min-height: 400px;
+}
+
+.manual-step.hidden {
+    display: none !important;
+}
+
+/* Step Actions */
+.step-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+}
+
+/* Step 2 Header */
+.step-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
     padding: 1.5rem;
     background: var(--bg-tertiary);
     border-radius: 12px;
     border: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
-.manual-workout-exercises h4 {
-    margin: 0 0 1rem 0;
+.step-info {
+    text-align: center;
+    flex: 1;
+}
+
+.step-info h4 {
+    margin: 0 0 0.25rem 0;
+    color: var(--text-primary);
+    font-size: 1.25rem;
+}
+
+.step-info p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+/* Exercise Management */
+.manual-exercise-management {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+}
+
+.exercise-management-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.exercise-management-header h4 {
+    margin: 0;
     color: var(--text-primary);
     display: flex;
     align-items: center;
     gap: 0.5rem;
 }
 
-.manual-workout-exercises h4::before {
-    content: '\f0cb';
-    font-family: 'Font Awesome 6 Free';
-    font-weight: 900;
-    color: var(--primary);
+/* Manual Exercise Container */
+.manual-exercises-container {
+    min-height: 300px;
 }
 
-.manual-exercises-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+/* No Exercises State */
+.no-exercises-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-secondary);
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    background: var(--bg-tertiary);
 }
 
-/* Exercise Cards */
+.no-exercises-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--border);
+}
+
+.no-exercises-state h5 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+}
+
+.no-exercises-state p {
+    margin: 0 0 1.5rem 0;
+}
+
+/* Manual Exercise Cards */
 .manual-exercise-card {
-    background: var(--bg-secondary);
+    background: var(--bg-tertiary);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.5rem;
+    margin-bottom: 1rem;
     transition: all 0.3s ease;
+    position: relative;
 }
 
 .manual-exercise-card:hover {
@@ -1915,255 +1998,217 @@ body {
     box-shadow: 0 4px 12px rgba(64, 224, 208, 0.1);
 }
 
-.manual-exercise-header {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border);
+.manual-exercise-card.completed {
+    border-left: 4px solid var(--success);
+    background: rgba(35, 134, 54, 0.05);
 }
 
-.manual-exercise-header h5 {
-    margin: 0 0 0.5rem 0;
+.manual-exercise-card.completed::before {
+    content: '\f00c';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    color: var(--success);
+    font-size: 1.25rem;
+}
+
+.manual-exercise-card .exercise-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.manual-exercise-card .exercise-header h4 {
+    margin: 0;
     color: var(--text-primary);
     font-size: 1.125rem;
-    font-weight: 600;
+    flex: 1;
+    padding-right: 1rem;
 }
 
-.exercise-template-info {
+.manual-exercise-card .exercise-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+/* Exercise Preview in Manual Cards */
+.manual-exercise-card .exercise-preview {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.manual-exercise-card .no-sets {
     color: var(--text-secondary);
-    font-size: 0.875rem;
-    background: var(--bg-tertiary);
-    padding: 0.5rem 0.75rem;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    display: inline-block;
-}
-
-/* Sets Grid */
-.manual-sets-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.manual-set-card {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    border-radius: 8px;
+    font-style: italic;
+    text-align: center;
     padding: 1rem;
-    transition: all 0.3s ease;
-}
-
-.manual-set-card:hover {
-    border-color: var(--primary);
     background: var(--bg-secondary);
-}
-
-.set-number {
-    text-align: center;
-    font-weight: 600;
-    color: var(--primary);
-    margin-bottom: 0.75rem;
-    font-size: 0.875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.set-inputs {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.input-group label {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin: 0;
-}
-
-.set-input {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
     border-radius: 6px;
-    padding: 0.75rem;
+    border: 1px dashed var(--border);
+}
+
+/* Manual Exercise Entry Modal */
+.manual-exercise-entry-modal {
+    /* Inherits from .exercise-modal */
+}
+
+/* Enhanced Exercise Table for Manual Entry */
+.manual-exercise-entry-modal .exercise-table {
+    margin-bottom: 1rem;
+}
+
+.manual-exercise-entry-modal .exercise-table th {
+    background: var(--bg-secondary);
     color: var(--text-primary);
-    text-align: center;
-    font-size: 1rem;
-    font-weight: 500;
-    transition: all 0.3s ease;
 }
 
-.set-input:focus {
-    border-color: var(--primary);
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(64, 224, 208, 0.2);
-    background: var(--bg-primary);
+.manual-exercise-entry-modal .exercise-table tr.completed-set {
+    background: rgba(35, 134, 54, 0.1);
 }
 
-.set-input:not(:placeholder-shown) {
+.manual-exercise-entry-modal .exercise-table tr.completed-set .set-input {
     border-color: var(--success);
     background: rgba(35, 134, 54, 0.1);
 }
 
-.weight-input-group {
+/* Enhanced Set Inputs */
+.manual-exercise-entry-modal .set-input {
+    min-width: 80px;
+}
+
+.manual-exercise-entry-modal .set-input:valid:not(:placeholder-shown) {
+    border-color: var(--success);
+    box-shadow: 0 0 0 2px rgba(35, 134, 54, 0.2);
+}
+
+/* Manual Workout Progress Indicators */
+.manual-workout-progress {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1rem 0;
+    padding: 1rem;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+.progress-item {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-}
-
-.weight-input-group .set-input {
-    flex: 1;
-}
-
-.weight-unit {
     color: var(--text-secondary);
     font-size: 0.875rem;
+}
+
+.progress-item i {
+    color: var(--primary);
+}
+
+.progress-value {
     font-weight: 600;
-    min-width: 30px;
-}
-
-/* Exercise Notes Section */
-.exercise-notes-section {
-    border-top: 1px solid var(--border);
-    padding-top: 1rem;
-}
-
-.exercise-notes-section label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    font-weight: 500;
-}
-
-.exercise-notes-input {
-    width: 100%;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.75rem;
     color: var(--text-primary);
-    font-size: 0.875rem;
-    transition: all 0.3s ease;
 }
 
-.exercise-notes-input:focus {
-    border-color: var(--primary);
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(64, 224, 208, 0.2);
-    background: var(--bg-secondary);
+/* Form Validation States */
+.manual-workout-basic-form .form-input:invalid {
+    border-color: var(--danger);
 }
 
-.exercise-notes-input::placeholder {
-    color: var(--text-secondary);
-    font-style: italic;
+.manual-workout-basic-form .form-input:valid {
+    border-color: var(--success);
 }
 
-/* Enhanced Modal Styling */
-#add-manual-workout-modal .modal-content {
-    max-width: 900px;
-    max-height: 90vh;
-    overflow-y: auto;
+/* Enhanced Unit Toggle for Manual Entry */
+.manual-exercise-entry-modal .exercise-unit-toggle {
+    background: var(--bg-tertiary);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border);
 }
 
-/* Progress Indicators */
-.manual-exercise-card.has-data {
-    border-left: 4px solid var(--success);
+/* Improved Button States */
+.manual-exercise-card .btn-small {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
 }
 
-.manual-exercise-card.has-data .manual-exercise-header h5::after {
-    content: '\f00c';
-    font-family: 'Font Awesome 6 Free';
-    font-weight: 900;
-    color: var(--success);
-    margin-left: 0.5rem;
-    font-size: 0.875rem;
+.manual-exercise-card .exercise-actions .btn:hover {
+    transform: translateY(-1px);
 }
 
 /* Loading States */
-.manual-exercises-list.loading {
+.manual-exercises-container.loading {
     opacity: 0.6;
     pointer-events: none;
+    position: relative;
 }
 
-.manual-exercises-list.loading::after {
-    content: 'Loading exercises...';
-    display: block;
-    text-align: center;
-    color: var(--text-secondary);
-    font-style: italic;
-    margin-top: 1rem;
-}
-
-/* Empty State */
-.manual-exercises-list:empty::after {
-    content: 'Select a workout type to add exercise data';
-    display: block;
-    text-align: center;
-    color: var(--text-secondary);
-    font-style: italic;
-    padding: 2rem;
-    background: var(--bg-tertiary);
-    border-radius: 8px;
-    border: 2px dashed var(--border);
+.manual-exercises-container.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border);
+    border-top: 3px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .manual-sets-grid {
-        grid-template-columns: 1fr;
+    .manual-workout-modal {
+        margin: 0.5rem;
+        max-width: calc(100vw - 1rem);
     }
-    
-    .manual-exercise-card {
-        padding: 1rem;
+
+    .step-header {
+        flex-direction: column;
+        text-align: center;
     }
-    
-    .set-inputs {
-        flex-direction: row;
+
+    .step-actions {
+        flex-direction: column;
+    }
+
+    .exercise-management-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .manual-exercise-card .exercise-header {
+        flex-direction: column;
         gap: 1rem;
     }
-    
-    .input-group {
-        flex: 1;
+
+    .manual-exercise-card .exercise-actions {
+        justify-content: center;
     }
-    
-    .weight-input-group {
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-    
-    .weight-unit {
-        align-self: center;
-        font-size: 0.75rem;
-    }
-    
-    #add-manual-workout-modal .modal-content {
+
+    .manual-exercise-entry-modal .exercise-modal-content {
         margin: 0.5rem;
         padding: 1rem;
     }
-}
 
-@media (max-width: 480px) {
-    .manual-sets-grid {
-        grid-template-columns: 1fr;
+    .manual-exercise-entry-modal .exercise-table {
+        font-size: 0.875rem;
     }
-    
-    .set-inputs {
-        flex-direction: column;
-        gap: 0.75rem;
+
+    .manual-exercise-entry-modal .set-input {
+        min-width: 60px;
     }
 }
 
-/* Animation for Exercise Cards */
+/* Animation for Manual Exercise Cards */
 .manual-exercise-card {
     animation: slideInUp 0.3s ease;
 }
@@ -2179,29 +2224,63 @@ body {
     }
 }
 
-/* Focus States */
-.manual-set-card:focus-within {
+/* Enhanced Focus States */
+.manual-exercise-card:focus-within {
     border-color: var(--primary);
     box-shadow: 0 0 0 2px rgba(64, 224, 208, 0.2);
-    background: var(--bg-secondary);
 }
 
-/* Enhanced Form Validation */
-.set-input:invalid {
-    border-color: var(--danger);
-}
-
-.set-input:valid:not(:placeholder-shown) {
-    border-color: var(--success);
+.step-header:focus-within {
+    box-shadow: 0 0 0 2px rgba(64, 224, 208, 0.2);
 }
 
 /* Better Visual Hierarchy */
-.manual-workout-exercises > p {
-    background: rgba(64, 224, 208, 0.1);
-    padding: 0.75rem;
-    border-radius: 6px;
-    border-left: 3px solid var(--primary);
+.manual-step h3 {
+    color: var(--primary);
     margin-bottom: 1.5rem;
-    font-size: 0.875rem;
-    line-height: 1.4;
+}
+
+.manual-step h4 {
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+/* Success States */
+.manual-exercise-card.completed .exercise-header h4 {
+    color: var(--success);
+}
+
+/* Category Badge */
+.workout-category-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    background: var(--primary);
+    color: var(--bg-primary);
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Enhanced Modal Transitions */
+.manual-exercise-entry-modal {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.manual-exercise-entry-modal.active .exercise-modal-content {
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
