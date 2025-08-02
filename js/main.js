@@ -4,6 +4,7 @@ import { AppState } from './core/app-state.js';
 import { showNotification, setTodayDisplay, convertWeight, updateProgress } from './core/ui-helpers.js';
 import { saveWorkoutData, loadTodaysWorkout, loadWorkoutPlans, loadExerciseHistory } from './core/data-manager.js';
 import { getExerciseLibrary } from './core/exercise-library.js';
+import { getWorkoutHistory } from './core/workout-history.js';
 import { 
     initializeWorkoutManagement, 
     showWorkoutManagement, 
@@ -31,6 +32,7 @@ let isEditingMode = false;
 let exerciseLibrary = null;
 let inProgressWorkout = null;
 let showingProgressPrompt = false;
+let workoutHistory = null;
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
@@ -48,6 +50,11 @@ function initializeWorkoutApp() {
     exerciseLibrary = getExerciseLibrary(AppState);
     exerciseLibrary.initialize();
     window.exerciseLibrary = exerciseLibrary;
+    
+    // Initialize workout history
+    workoutHistory = getWorkoutHistory(AppState);
+    workoutHistory.initialize();
+    window.workoutHistory = workoutHistory;
     
     // Set up auth state listener
     onAuthStateChanged(auth, async (user) => {
@@ -330,10 +337,12 @@ async function showWorkoutSelector() {
     const workoutSelector = document.getElementById('workout-selector');
     const activeWorkout = document.getElementById('active-workout');
     const workoutManagement = document.getElementById('workout-management');
+    const historySection = document.getElementById('workout-history-section'); // ADD THIS LINE
     
     if (workoutSelector) workoutSelector.classList.remove('hidden');
     if (activeWorkout) activeWorkout.classList.add('hidden');
     if (workoutManagement) workoutManagement.classList.add('hidden');
+    if (historySection) historySection.classList.add('hidden'); // ADD THIS LINE
     
     AppState.clearTimers();
     
@@ -2539,6 +2548,417 @@ async function useTemplate(templateId) {
     }
 }
 
+async function showWorkoutHistory() {
+    if (!AppState.currentUser) {
+        showNotification('Please sign in to view workout history', 'warning');
+        return;
+    }
+
+    // Hide other sections
+    const workoutSelector = document.getElementById('workout-selector');
+    const activeWorkout = document.getElementById('active-workout');
+    const workoutManagement = document.getElementById('workout-management');
+    const historySection = document.getElementById('workout-history-section');
+    
+    if (workoutSelector) workoutSelector.classList.add('hidden');
+    if (activeWorkout) activeWorkout.classList.add('hidden');
+    if (workoutManagement) workoutManagement.classList.add('hidden');
+    if (historySection) historySection.classList.remove('hidden');
+    
+    // Load history
+    await workoutHistory.loadHistory();
+}
+
+// ADD NEW FUNCTION: Show add manual workout modal
+function showAddManualWorkoutModal() {
+    const modal = document.getElementById('add-manual-workout-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        
+        // Set default date to today
+        const today = new Date().toISOString().split('T')[0];
+        const dateInput = document.getElementById('manual-workout-date');
+        if (dateInput) {
+            dateInput.value = today;
+        }
+        
+        // Focus on the date input
+        setTimeout(() => {
+            dateInput?.focus();
+        }, 100);
+        
+        // Reset form state
+        const exerciseSection = document.getElementById('manual-workout-exercises');
+        const submitBtn = modal.querySelector('button[type="submit"]');
+        
+        if (exerciseSection) exerciseSection.classList.add('hidden');
+        if (submitBtn) {
+            submitBtn.innerHTML = '<i class="fas fa-plus"></i> Add Workout';
+            submitBtn.classList.add('btn-primary');
+            submitBtn.classList.remove('btn-success');
+        }
+    }
+}
+
+// ADD NEW FUNCTION: Close add manual workout modal
+function closeAddManualWorkoutModal() {
+    const modal = document.getElementById('add-manual-workout-modal');
+    const form = document.getElementById('add-manual-workout-form');
+    
+    if (modal) modal.classList.add('hidden');
+    if (form) {
+        form.reset();
+        
+        // Clear validation states
+        form.querySelectorAll('.set-input').forEach(input => {
+            input.classList.remove('invalid', 'valid');
+            input.setCustomValidity('');
+        });
+        
+        // Clear exercise progress indicators
+        form.querySelectorAll('.manual-exercise-card').forEach(card => {
+            card.classList.remove('has-data');
+        });
+    }
+    
+    // Hide exercise section
+    const exerciseSection = document.getElementById('manual-workout-exercises');
+    if (exerciseSection) exerciseSection.classList.add('hidden');
+}
+document.addEventListener('keydown', function(event) {
+    // ESC to close modal
+    if (event.key === 'Escape') {
+        const modal = document.getElementById('add-manual-workout-modal');
+        if (modal && !modal.classList.contains('hidden')) {
+            closeAddManualWorkoutModal();
+        }
+    }
+    
+    // Enter to move to next input in manual workout form
+    if (event.key === 'Enter' && event.target.classList.contains('set-input')) {
+        event.preventDefault();
+        const form = event.target.closest('form');
+        const inputs = Array.from(form.querySelectorAll('.set-input'));
+        const currentIndex = inputs.indexOf(event.target);
+        const nextInput = inputs[currentIndex + 1];
+        
+        if (nextInput) {
+            nextInput.focus();
+            nextInput.select();
+        }
+    }
+});
+
+function fillTemplateValues(exerciseIndex) {
+    const workoutType = document.getElementById('manual-workout-type')?.value;
+    const workout = AppState.workoutPlans?.find(w => w.day === workoutType);
+    
+    if (!workout || !workout.exercises[exerciseIndex]) return;
+    
+    const exercise = workout.exercises[exerciseIndex];
+    const exerciseCard = document.querySelector(`[data-exercise-index="${exerciseIndex}"]`);
+    
+    if (!exerciseCard) return;
+    
+    // Fill all sets with template values
+    for (let setIndex = 0; setIndex < exercise.sets; setIndex++) {
+        const repsInput = exerciseCard.querySelector(`input[name="exercise_${exerciseIndex}_set_${setIndex}_reps"]`);
+        const weightInput = exerciseCard.querySelector(`input[name="exercise_${exerciseIndex}_set_${setIndex}_weight"]`);
+        
+        if (repsInput && !repsInput.value) repsInput.value = exercise.reps;
+        if (weightInput && !weightInput.value) weightInput.value = exercise.weight;
+    }
+    
+    // Update progress
+    updateExerciseProgress(exerciseIndex);
+    
+    showNotification(`Filled ${exercise.machine} with template values`, 'success');
+}
+
+// ADD NEW FUNCTION: Load workout template for manual entry
+function loadWorkoutTemplate() {
+    const workoutType = document.getElementById('manual-workout-type')?.value;
+    const exerciseSection = document.getElementById('manual-workout-exercises');
+    const exercisesList = document.getElementById('manual-exercises-list');
+    
+    if (!workoutType || !exerciseSection || !exercisesList) return;
+    
+    // Find the workout template
+    const workout = AppState.workoutPlans?.find(w => w.day === workoutType);
+    if (!workout) {
+        exerciseSection.classList.add('hidden');
+        return;
+    }
+    
+    // Show loading state
+    exercisesList.classList.add('loading');
+    exerciseSection.classList.remove('hidden');
+    
+    // Small delay for better UX
+    setTimeout(() => {
+        // Generate improved exercise inputs
+        let exercisesHTML = '';
+        workout.exercises.forEach((exercise, index) => {
+            exercisesHTML += `
+                <div class="manual-exercise-card" data-exercise-index="${index}">
+                    <div class="manual-exercise-header">
+                        <h5>${exercise.machine}</h5>
+                        <div class="exercise-template-info">
+                            <i class="fas fa-info-circle"></i>
+                            Template: ${exercise.sets} sets × ${exercise.reps} reps @ ${exercise.weight} lbs
+                        </div>
+                    </div>
+                    
+                    <div class="manual-sets-grid">
+                        ${Array.from({length: exercise.sets}, (_, setIndex) => `
+                            <div class="manual-set-card">
+                                <div class="set-number">
+                                    <i class="fas fa-dumbbell"></i> Set ${setIndex + 1}
+                                </div>
+                                <div class="set-inputs">
+                                    <div class="input-group">
+                                        <label>Reps</label>
+                                        <input type="number" 
+                                               name="exercise_${index}_set_${setIndex}_reps" 
+                                               placeholder="${exercise.reps}" 
+                                               min="1" max="50" 
+                                               class="set-input"
+                                               onchange="updateExerciseProgress(${index})"
+                                               oninput="validateSetInput(this)">
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Weight</label>
+                                        <div class="weight-input-group">
+                                            <input type="number" 
+                                                   name="exercise_${index}_set_${setIndex}_weight" 
+                                                   placeholder="${exercise.weight}" 
+                                                   min="0" step="5" 
+                                                   class="set-input"
+                                                   onchange="updateExerciseProgress(${index})"
+                                                   oninput="validateSetInput(this)">
+                                            <span class="weight-unit">lbs</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="exercise-notes-section">
+                        <label for="exercise_${index}_notes">
+                            <i class="fas fa-sticky-note"></i> Exercise Notes (optional)
+                        </label>
+                        <input type="text" 
+                               name="exercise_${index}_notes" 
+                               placeholder="How did this exercise feel? Any observations..." 
+                               class="form-input exercise-notes-input">
+                    </div>
+                </div>
+            `;
+        });
+        
+        exercisesList.innerHTML = exercisesHTML;
+        exercisesList.classList.remove('loading');
+        
+        // Add some visual feedback
+        showNotification(`Loaded ${workout.exercises.length} exercises for ${workoutType}`, 'success');
+        
+    }, 300);
+}
+
+// NEW FUNCTION: Update exercise progress indicator
+function updateExerciseProgress(exerciseIndex) {
+    const exerciseCard = document.querySelector(`[data-exercise-index="${exerciseIndex}"]`);
+    if (!exerciseCard) return;
+    
+    // Check if exercise has any data
+    const inputs = exerciseCard.querySelectorAll('.set-input');
+    const hasData = Array.from(inputs).some(input => input.value.trim() !== '');
+    
+    // Update visual state
+    exerciseCard.classList.toggle('has-data', hasData);
+    
+    // Update overall form completion
+    updateFormCompletion();
+}
+
+// NEW FUNCTION: Validate set input
+function validateSetInput(input) {
+    const value = parseInt(input.value);
+    const min = parseInt(input.min);
+    const max = parseInt(input.max);
+    
+    // Remove any existing validation classes
+    input.classList.remove('invalid', 'valid');
+    
+    if (input.value.trim() === '') {
+        return; // Empty is okay
+    }
+    
+    if (isNaN(value) || value < min || (max && value > max)) {
+        input.classList.add('invalid');
+        input.setCustomValidity('Please enter a valid number within the allowed range');
+    } else {
+        input.classList.add('valid');
+        input.setCustomValidity('');
+    }
+}
+
+// NEW FUNCTION: Update form completion status
+function updateFormCompletion() {
+    const exerciseCards = document.querySelectorAll('.manual-exercise-card');
+    const totalExercises = exerciseCards.length;
+    const completedExercises = document.querySelectorAll('.manual-exercise-card.has-data').length;
+    
+    // Update completion indicator (you can add this to the UI if desired)
+    const completionRate = totalExercises > 0 ? (completedExercises / totalExercises) * 100 : 0;
+    
+    // Update submit button text
+    const submitBtn = document.querySelector('#add-manual-workout-form button[type="submit"]');
+    if (submitBtn) {
+        if (completedExercises === 0) {
+            submitBtn.innerHTML = '<i class="fas fa-plus"></i> Add Workout (No Exercise Data)';
+        } else if (completedExercises === totalExercises) {
+            submitBtn.innerHTML = '<i class="fas fa-check"></i> Add Complete Workout';
+            submitBtn.classList.add('btn-success');
+            submitBtn.classList.remove('btn-primary');
+        } else {
+            submitBtn.innerHTML = `<i class="fas fa-plus"></i> Add Workout (${completedExercises}/${totalExercises} exercises)`;
+            submitBtn.classList.add('btn-primary');
+            submitBtn.classList.remove('btn-success');
+        }
+    }
+}
+
+// ADD NEW FUNCTION: Submit manual workout
+async function submitManualWorkout(event) {
+    event.preventDefault();
+    
+    if (!AppState.currentUser) {
+        showNotification('Please sign in to add workouts', 'warning');
+        return;
+    }
+    
+    // Get form data
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    const workoutDate = formData.get('manual-workout-date') || document.getElementById('manual-workout-date')?.value;
+    const workoutType = formData.get('manual-workout-type') || document.getElementById('manual-workout-type')?.value;
+    const duration = document.getElementById('manual-workout-duration')?.value;
+    const status = document.getElementById('manual-workout-status')?.value;
+    const notes = document.getElementById('manual-workout-notes')?.value;
+    
+    if (!workoutDate || !workoutType) {
+        showNotification('Please fill in the required fields', 'warning');
+        return;
+    }
+    
+    // Check if workout already exists for this date
+    const existingWorkout = workoutHistory.currentHistory?.find(w => w.date === workoutDate);
+    if (existingWorkout) {
+        const confirmOverwrite = confirm(
+            `A workout already exists for ${new Date(workoutDate).toLocaleDateString()}. Do you want to overwrite it?`
+        );
+        if (!confirmOverwrite) return;
+    }
+    
+    try {
+        // Build workout data
+        const workoutData = {
+            date: workoutDate,
+            workoutType: workoutType,
+            startTime: new Date(workoutDate + 'T09:00:00').toISOString(),
+            totalDuration: duration ? parseInt(duration) * 60 : 3600,
+            exercises: {},
+            exerciseUnits: {},
+            addedManually: true,
+            manualNotes: notes
+        };
+        
+        // Set status
+        if (status === 'completed') {
+            workoutData.completedAt = new Date(workoutDate + 'T10:00:00').toISOString();
+        } else if (status === 'cancelled') {
+            workoutData.cancelledAt = new Date(workoutDate + 'T10:00:00').toISOString();
+            workoutData.status = 'cancelled';
+        }
+        
+        // Parse exercise data
+        const workout = AppState.workoutPlans?.find(w => w.day === workoutType);
+        if (workout) {
+            workout.exercises.forEach((exercise, exerciseIndex) => {
+                const exerciseData = { sets: [], notes: '' };
+                
+                // Get exercise notes
+                const exerciseNotesInput = form.querySelector(`input[name="exercise_${exerciseIndex}_notes"]`);
+                if (exerciseNotesInput?.value) {
+                    exerciseData.notes = exerciseNotesInput.value;
+                }
+                
+                // Get sets data
+                for (let setIndex = 0; setIndex < exercise.sets; setIndex++) {
+                    const repsInput = form.querySelector(`input[name="exercise_${exerciseIndex}_set_${setIndex}_reps"]`);
+                    const weightInput = form.querySelector(`input[name="exercise_${exerciseIndex}_set_${setIndex}_weight"]`);
+                    
+                    const reps = repsInput?.value;
+                    const weight = weightInput?.value;
+                    
+                    if (reps && weight) {
+                        exerciseData.sets.push({
+                            reps: parseInt(reps),
+                            weight: parseInt(weight),
+                            originalUnit: 'lbs'
+                        });
+                    } else {
+                        exerciseData.sets.push({ reps: '', weight: '' });
+                    }
+                }
+                
+                workoutData.exercises[`exercise_${exerciseIndex}`] = exerciseData;
+                workoutData.exerciseUnits[exerciseIndex] = 'lbs';
+            });
+        }
+        
+        // Save workout
+        await workoutHistory.addManualWorkout(workoutData);
+        
+        // Close modal
+        closeAddManualWorkoutModal();
+        
+        showNotification('Workout added successfully!', 'success');
+        
+    } catch (error) {
+        console.error('Error adding manual workout:', error);
+        showNotification('Error adding workout. Please try again.', 'error');
+    }
+}
+
+// ADD NEW FUNCTION: Clear history filters
+function clearHistoryFilters() {
+    // Clear search
+    const searchInput = document.getElementById('history-search');
+    if (searchInput) searchInput.value = '';
+    
+    // Clear date filters
+    const startDate = document.getElementById('history-start-date');
+    const endDate = document.getElementById('history-end-date');
+    if (startDate) startDate.value = '';
+    if (endDate) endDate.value = '';
+    
+    // Reset to 'all' filter
+    document.querySelectorAll('.history-filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === 'all');
+    });
+    
+    // Reload full history
+    if (workoutHistory) {
+        workoutHistory.filteredHistory = [...workoutHistory.currentHistory];
+        workoutHistory.currentPage = 1;
+        workoutHistory.renderHistory();
+    }
+}
+
 // Global function assignments for onclick handlers
 window.focusExercise = focusExercise;
 window.updateSet = updateSet;
@@ -2554,6 +2974,12 @@ window.confirmExerciseSwap = confirmExerciseSwap;
 window.continueInProgressWorkout = continueInProgressWorkout;
 window.discardInProgressWorkout = discardInProgressWorkout;
 window.cancelCurrentWorkout = cancelCurrentWorkout;
+window.showWorkoutHistory = showWorkoutHistory;
+window.showAddManualWorkoutModal = showAddManualWorkoutModal;
+window.closeAddManualWorkoutModal = closeAddManualWorkoutModal;
+window.loadWorkoutTemplate = loadWorkoutTemplate;
+window.submitManualWorkout = submitManualWorkout;
+window.clearHistoryFilters = clearHistoryFilters;
 
 // Workout Management Global Functions
 window.showWorkoutManagement = showWorkoutManagement;
@@ -2571,6 +2997,10 @@ window.showCreateExerciseForm = showCreateExerciseForm;
 window.closeCreateExerciseModal = closeCreateExerciseModal;
 window.createNewExercise = createNewExerciseEnhanced;
 window.AppState = AppState;
+window.updateExerciseProgress = updateExerciseProgress;
+window.validateSetInput = validateSetInput;
+window.updateFormCompletion = updateFormCompletion;
+window.fillTemplateValues = fillTemplateValues;
 
 
 // Template Selection Functions

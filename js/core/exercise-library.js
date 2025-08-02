@@ -168,42 +168,89 @@ export class ExerciseLibrary {
     }
 
     // Create exercise card based on context
-    createExerciseCard(exercise) {
-        const card = document.createElement('div');
-        card.className = 'library-exercise-card';
-        
-        let actionButton = '';
-        
-        if (this.context === 'swap') {
-            actionButton = `
-                <button class="btn btn-primary btn-small" onclick="exerciseLibrary.selectForSwap('${exercise.name || exercise.machine}', ${JSON.stringify(exercise).replace(/"/g, '&quot;')})">
-                    <i class="fas fa-exchange-alt"></i> Swap
-                </button>
-            `;
-        } else if (this.context === 'template') {
-            actionButton = `
-                <button class="btn btn-primary btn-small" onclick="exerciseLibrary.selectForTemplate('${exercise.name || exercise.machine}', ${JSON.stringify(exercise).replace(/"/g, '&quot;')})">
-                    <i class="fas fa-plus"></i> Add to Template
-                </button>
-            `;
-        }
-        
-        card.innerHTML = `
-            <h5>${exercise.name || exercise.machine}</h5>
-            <div class="library-exercise-info">
-                ${exercise.bodyPart || 'General'} • ${exercise.equipmentType || 'Machine'}
-                ${exercise.isCustom ? ' • Custom' : ''}
-            </div>
-            <div class="library-exercise-stats">
-                ${exercise.sets || 3} sets × ${exercise.reps || 10} reps @ ${exercise.weight || 50} lbs
-            </div>
-            <div style="margin-top: 0.5rem;">
-                ${actionButton}
-            </div>
+createExerciseCard(exercise) {
+    const card = document.createElement('div');
+    card.className = 'library-exercise-card';
+    
+    let actionButton = '';
+    
+    if (this.context === 'swap') {
+        actionButton = `
+            <button class="btn btn-primary btn-small" onclick="exerciseLibrary.selectForSwap('${exercise.name || exercise.machine}', ${JSON.stringify(exercise).replace(/"/g, '&quot;')})">
+                <i class="fas fa-exchange-alt"></i> Swap
+            </button>
         `;
-        
-        return card;
+    } else if (this.context === 'template') {
+        actionButton = `
+            <button class="btn btn-primary btn-small" onclick="exerciseLibrary.selectForTemplate('${exercise.name || exercise.machine}', ${JSON.stringify(exercise).replace(/"/g, '&quot;')})">
+                <i class="fas fa-plus"></i> Add to Template
+            </button>
+        `;
+    } else if (this.context === 'manual-workout') {
+        actionButton = `
+            <button class="btn btn-primary btn-small" onclick="exerciseLibrary.selectForManualWorkout('${exercise.name || exercise.machine}', ${JSON.stringify(exercise).replace(/"/g, '&quot;')})">
+                <i class="fas fa-plus"></i> Add to Workout
+            </button>
+        `;
     }
+    
+    card.innerHTML = `
+        <h5>${exercise.name || exercise.machine}</h5>
+        <div class="library-exercise-info">
+            ${exercise.bodyPart || 'General'} • ${exercise.equipmentType || 'Machine'}
+            ${exercise.isCustom ? ' • Custom' : ''}
+        </div>
+        <div class="library-exercise-stats">
+            ${exercise.sets || 3} sets × ${exercise.reps || 10} reps @ ${exercise.weight || 50} lbs
+        </div>
+        <div style="margin-top: 0.5rem;">
+            ${actionButton}
+        </div>
+    `;
+    
+    return card;
+}
+
+// ADD this new method to the ExerciseLibrary class:
+selectForManualWorkout(exerciseName, exerciseDataString) {
+    if (!this.appState.addingToManualWorkout || !this.appState.manualWorkoutContext) {
+        return;
+    }
+    
+    let exerciseData;
+    try {
+        exerciseData = typeof exerciseDataString === 'string' ? 
+            JSON.parse(exerciseDataString.replace(/&quot;/g, '"')) : 
+            exerciseDataString;
+    } catch (e) {
+        console.error('Error parsing exercise data:', e);
+        return;
+    }
+    
+    const manualExercise = {
+        name: exerciseData.name || exerciseData.machine,
+        bodyPart: exerciseData.bodyPart,
+        equipmentType: exerciseData.equipmentType,
+        sets: [
+            { reps: '', weight: '' },
+            { reps: '', weight: '' },
+            { reps: '', weight: '' }
+        ], // Start with 3 empty sets
+        notes: '',
+        manuallyCompleted: false
+    };
+    
+    // Add to manual workout
+    this.appState.manualWorkoutContext.exercises.push(manualExercise);
+    
+    // Update the manual workout display
+    if (window.renderManualExerciseList) {
+        window.renderManualExerciseList();
+    }
+    
+    this.close();
+    showNotification(`Added "${manualExercise.name}" to workout`, 'success');
+}
 
     // Select exercise for swapping
     async selectForSwap(exerciseName, exerciseDataString) {
@@ -269,38 +316,46 @@ export class ExerciseLibrary {
 
     // Close the library
     close() {
-        if (this.modal) {
-            this.modal.classList.add('hidden');
-        }
-        
-        // Reset modal title
-        const modalTitle = this.modal?.querySelector('.modal-title');
-        if (modalTitle) {
-            modalTitle.textContent = 'Exercise Library';
-        }
-        
-        // Clear search and filters
-        const searchInput = document.getElementById('exercise-library-search');
-        const bodyPartFilter = document.getElementById('body-part-filter');
-        const equipmentFilter = document.getElementById('equipment-filter');
-        
-        if (searchInput) searchInput.value = '';
-        if (bodyPartFilter) bodyPartFilter.value = '';
-        if (equipmentFilter) equipmentFilter.value = '';
-        
-        // Reset state
-        this.currentLibrary = [];
-        this.filteredExercises = [];
-        this.context = null;
-        this.isOpen = false;
-        
-        // Reset app state
-        this.appState.swappingExerciseIndex = null;
-        this.appState.addingToTemplate = false;
-        this.appState.templateEditingContext = null;
-        
+    if (this.modal) {
+        this.modal.classList.add('hidden');
+    }
+    
+    // Reset modal title
+    const modalTitle = this.modal?.querySelector('.modal-title');
+    if (modalTitle) {
+        modalTitle.textContent = 'Exercise Library';
+    }
+    
+    // Clear search and filters
+    const searchInput = document.getElementById('exercise-library-search');
+    const bodyPartFilter = document.getElementById('body-part-filter');
+    const equipmentFilter = document.getElementById('equipment-filter');
+    
+    if (searchInput) searchInput.value = '';
+    if (bodyPartFilter) bodyPartFilter.value = '';
+    if (equipmentFilter) equipmentFilter.value = '';
+    
+    // Reset state
+    this.currentLibrary = [];
+    this.filteredExercises = [];
+    this.context = null;
+    this.isOpen = false;
+    
+    // Reset app state
+    this.appState.swappingExerciseIndex = null;
+    this.appState.addingToTemplate = false;
+    this.appState.templateEditingContext = null;
+    this.appState.addingToManualWorkout = false;
+    this.appState.manualWorkoutContext = null;
+    
         console.log('🚪 Exercise library closed and reset');
     }
+
+ async openForManualWorkout() {
+    this.context = 'manual-workout';
+    
+    await this.loadAndShow('Add Exercise to Manual Workout');
+}
 }
 
 // Create a singleton instance
