@@ -3,6 +3,7 @@ import { auth, provider, onAuthStateChanged, signInWithPopup, signOut } from './
 import { AppState } from './core/app-state.js';
 import { showNotification, setTodayDisplay, convertWeight, updateProgress } from './core/ui-helpers.js';
 import { saveWorkoutData, loadTodaysWorkout, loadWorkoutPlans, loadExerciseHistory } from './core/data-manager.js';
+import { getExerciseLibrary } from './core/exercise-library.js';
 import { 
     initializeWorkoutManagement, 
     showWorkoutManagement, 
@@ -19,7 +20,7 @@ import {
     filterExerciseLibrary,
     showCreateExerciseForm,
     closeCreateExerciseModal,
-    createNewExercise
+    createNewExercise,
 } from './core/workout/workout-management-ui.js';
 
 // State variables
@@ -27,6 +28,9 @@ let selectedWorkoutCategory = null;
 let currentTemplateCategory = 'default';
 let currentEditingTemplate = null;
 let isEditingMode = false;
+let exerciseLibrary = null;
+let inProgressWorkout = null;
+let showingProgressPrompt = false;
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
@@ -40,6 +44,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initializeWorkoutApp() {
+    // Initialize exercise library BEFORE auth (so it's always available)
+    exerciseLibrary = getExerciseLibrary(AppState);
+    exerciseLibrary.initialize();
+    window.exerciseLibrary = exerciseLibrary;
+    
     // Set up auth state listener
     onAuthStateChanged(auth, async (user) => {
         if (user) {
@@ -47,18 +56,146 @@ function initializeWorkoutApp() {
             showUserInfo(user);
             await loadWorkoutPlans(AppState);
             
-            // Try to load today's workout
-            const todaysData = await loadTodaysWorkout(AppState);
-            if (todaysData) {
-                selectWorkout(todaysData.workoutType, todaysData);
-            } else {
-                showWorkoutSelector();
-            }
+            // Check for in-progress workout and show options
+            await checkAndShowInProgressWorkout();
+            
         } else {
             AppState.currentUser = null;
             showSignInButton();
+            showWorkoutSelector(); // Show selector if not signed in
         }
     });
+}
+
+async function checkAndShowInProgressWorkout() {
+    try {
+        const todaysData = await loadTodaysWorkout(AppState);
+        
+        if (todaysData && todaysData.workoutType && !todaysData.completedAt) {
+            // There's an in-progress workout
+            inProgressWorkout = todaysData;
+            showInProgressWorkoutPrompt();
+        } else {
+            // No in-progress workout, show normal selector
+            inProgressWorkout = null;
+            showWorkoutSelector();
+        }
+    } catch (error) {
+        console.error('Error checking in-progress workout:', error);
+        showWorkoutSelector(); // Fallback to normal selector
+    }
+}
+
+// NEW FUNCTION: Show in-progress workout prompt
+function showInProgressWorkoutPrompt() {
+    if (showingProgressPrompt) return; // Prevent multiple prompts
+    showingProgressPrompt = true;
+    
+    const workoutSelector = document.getElementById('workout-selector');
+    const activeWorkout = document.getElementById('active-workout');
+    const workoutManagement = document.getElementById('workout-management');
+    
+    // Hide other sections
+    if (activeWorkout) activeWorkout.classList.add('hidden');
+    if (workoutManagement) workoutManagement.classList.add('hidden');
+    
+    // Show selector with in-progress prompt
+    if (workoutSelector) {
+        workoutSelector.classList.remove('hidden');
+        
+        // Add in-progress workout prompt at the top
+        const existingPrompt = workoutSelector.querySelector('.in-progress-prompt');
+        if (existingPrompt) {
+            existingPrompt.remove(); // Remove existing prompt if any
+        }
+        
+        const progressSets = countProgressSets(inProgressWorkout);
+        const workoutAge = getWorkoutAge(inProgressWorkout.startTime);
+        
+        const promptHTML = `
+            <div class="in-progress-prompt">
+                <div class="progress-alert">
+                    <div class="progress-alert-content">
+                        <div class="progress-alert-header">
+                            <i class="fas fa-clock"></i>
+                            <h3>Workout In Progress</h3>
+                        </div>
+                        <div class="progress-alert-body">
+                            <p><strong>${inProgressWorkout.workoutType}</strong></p>
+                            <div class="progress-details">
+                                <span>${progressSets.completed}/${progressSets.total} sets completed</span>
+                                <span>Started ${workoutAge}</span>
+                            </div>
+                        </div>
+                        <div class="progress-alert-actions">
+                            <button class="btn btn-primary" onclick="continueInProgressWorkout()">
+                                <i class="fas fa-play"></i> Continue Workout
+                            </button>
+                            <button class="btn btn-danger" onclick="discardInProgressWorkout()">
+                                <i class="fas fa-trash"></i> Discard & Start New
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        workoutSelector.insertAdjacentHTML('afterbegin', promptHTML);
+    }
+}
+
+// NEW FUNCTION: Continue in-progress workout
+async function continueInProgressWorkout() {
+    if (!inProgressWorkout) return;
+    
+    showingProgressPrompt = false;
+    
+    // Remove the prompt
+    const prompt = document.querySelector('.in-progress-prompt');
+    if (prompt) prompt.remove();
+    
+    // Load the in-progress workout
+    await selectWorkout(inProgressWorkout.workoutType, inProgressWorkout);
+    
+    showNotification('Continuing your workout!', 'success');
+}
+
+// NEW FUNCTION: Discard in-progress workout
+async function discardInProgressWorkout() {
+    if (!inProgressWorkout) return;
+    
+    const confirmDiscard = confirm(
+        `Are you sure you want to discard your in-progress "${inProgressWorkout.workoutType}" workout? ` +
+        `This will permanently delete your progress and cannot be undone.`
+    );
+    
+    if (!confirmDiscard) return;
+    
+    try {
+        // Mark the workout as discarded
+        const discardedData = {
+            ...inProgressWorkout,
+            discardedAt: new Date().toISOString(),
+            status: 'discarded'
+        };
+        
+        await saveWorkoutData({ ...AppState, savedData: discardedData });
+        
+        // Clear state
+        inProgressWorkout = null;
+        showingProgressPrompt = false;
+        AppState.reset();
+        
+        // Remove prompt and show normal selector
+        const prompt = document.querySelector('.in-progress-prompt');
+        if (prompt) prompt.remove();
+        
+        showNotification('Previous workout discarded. You can start a new one!', 'info');
+        
+    } catch (error) {
+        console.error('Error discarding workout:', error);
+        showNotification('Error discarding workout. Please try again.', 'error');
+    }
 }
 
 function setupEventListeners() {
@@ -217,6 +354,16 @@ async function selectWorkout(workoutType, existingData = null, customWorkout = n
         return;
     }
 
+    // Check for workout conflicts (different workout in progress)
+    if (inProgressWorkout && 
+        inProgressWorkout.workoutType !== workoutType && 
+        !existingData && 
+        !showingProgressPrompt) {
+        
+        const shouldContinue = await showWorkoutConflictDialog(workoutType);
+        if (!shouldContinue) return;
+    }
+
     let workout;
     
     if (customWorkout) {
@@ -277,6 +424,14 @@ async function selectWorkout(workoutType, existingData = null, customWorkout = n
         console.log('🆕 Starting fresh workout for', workoutType);
     }
 
+    // Clear any in-progress state since we're starting/continuing a workout
+    inProgressWorkout = AppState.savedData;
+    showingProgressPrompt = false;
+    
+    // Remove any prompts
+    const prompt = document.querySelector('.in-progress-prompt');
+    if (prompt) prompt.remove();
+
     // Save the workout selection
     await saveWorkoutData(AppState);
 
@@ -294,6 +449,193 @@ async function selectWorkout(workoutType, existingData = null, customWorkout = n
     
     showNotification(progressMessage, 'success');
 }
+
+// NEW FUNCTION: Show workout conflict dialog
+async function showWorkoutConflictDialog(newWorkoutType) {
+    const progressSets = countProgressSets(inProgressWorkout);
+    
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.zIndex = '9999';
+        
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Workout Conflict</h3>
+                </div>
+                <div style="padding: 1rem 0;">
+                    <p>You have an in-progress workout:</p>
+                    <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                        <strong>${inProgressWorkout.workoutType}</strong><br>
+                        ${progressSets.completed}/${progressSets.total} sets completed
+                    </div>
+                    <p>What would you like to do?</p>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-secondary" onclick="resolveConflict(false)">
+                        Cancel
+                    </button>
+                    <button class="btn btn-warning" onclick="resolveConflict('finish')">
+                        <i class="fas fa-check"></i> Finish Current
+                    </button>
+                    <button class="btn btn-danger" onclick="resolveConflict('discard')">
+                        <i class="fas fa-trash"></i> Discard Current
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Store resolve function globally for onclick handlers
+        window.resolveConflict = async (action) => {
+            document.body.removeChild(modal);
+            delete window.resolveConflict;
+            
+            if (action === false) {
+                resolve(false);
+                return;
+            }
+            
+            if (action === 'finish') {
+                // Quick finish the current workout
+                await finishCurrentWorkoutQuiet();
+                resolve(true);
+            } else if (action === 'discard') {
+                // Discard current workout
+                await discardCurrentWorkoutQuiet();
+                resolve(true);
+            }
+        };
+    });
+}
+
+// NEW FUNCTION: Add cancel workout button to active workout
+function addCancelWorkoutButton() {
+    const workoutActions = document.querySelector('.workout-actions');
+    if (!workoutActions) return;
+    
+    // Check if cancel button already exists
+    const existingCancel = workoutActions.querySelector('.cancel-workout-btn');
+    if (existingCancel) return;
+    
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn btn-secondary cancel-workout-btn';
+    cancelBtn.innerHTML = '<i class="fas fa-times"></i> Cancel';
+    cancelBtn.onclick = cancelCurrentWorkout;
+    
+    // Insert before the finish button
+    const finishBtn = document.getElementById('finish-workout-btn');
+    if (finishBtn) {
+        workoutActions.insertBefore(cancelBtn, finishBtn);
+    } else {
+        workoutActions.appendChild(cancelBtn);
+    }
+}
+
+// NEW FUNCTION: Cancel current workout
+async function cancelCurrentWorkout() {
+    if (!AppState.currentWorkout || !AppState.currentUser) return;
+
+    const hasProgress = AppState.hasWorkoutProgress();
+    
+    let confirmMessage = 'Cancel this workout?';
+    if (hasProgress) {
+        confirmMessage = 'Cancel this workout? You have progress that will be lost and cannot be recovered.';
+    }
+
+    if (!confirm(confirmMessage)) return;
+
+    try {
+        // Mark as cancelled
+        const cancelledData = {
+            ...AppState.savedData,
+            cancelledAt: new Date().toISOString(),
+            status: 'cancelled'
+        };
+        
+        await saveWorkoutData({ ...AppState, savedData: cancelledData });
+        
+        // Clear state
+        AppState.reset();
+        inProgressWorkout = null;
+        showingProgressPrompt = false;
+        
+        showNotification('Workout cancelled', 'info');
+        showWorkoutSelector();
+        
+    } catch (error) {
+        console.error('Error cancelling workout:', error);
+        showNotification('Error cancelling workout. Please try again.', 'error');
+    }
+}
+
+// HELPER FUNCTIONS
+function countProgressSets(workoutData) {
+    if (!workoutData || !workoutData.exercises) {
+        return { completed: 0, total: 0 };
+    }
+    
+    let completed = 0;
+    let total = 0;
+    
+    // Find the workout plan to get total sets
+    const workout = AppState.workoutPlans?.find(w => w.day === workoutData.workoutType);
+    if (workout) {
+        workout.exercises.forEach((exercise, index) => {
+            total += exercise.sets;
+            const exerciseData = workoutData.exercises[`exercise_${index}`];
+            if (exerciseData && exerciseData.sets) {
+                const completedSets = exerciseData.sets.filter(set => set && set.reps && set.weight).length;
+                completed += completedSets;
+            }
+        });
+    }
+    
+    return { completed, total };
+}
+
+function getWorkoutAge(startTime) {
+    if (!startTime) return 'recently';
+    
+    const start = new Date(startTime);
+    const now = new Date();
+    const diffMinutes = Math.floor((now - start) / (1000 * 60));
+    
+    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+    if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)}h ago`;
+    return 'yesterday';
+}
+
+async function finishCurrentWorkoutQuiet() {
+    if (!inProgressWorkout) return;
+    
+    const finishData = {
+        ...inProgressWorkout,
+        completedAt: new Date().toISOString(),
+        totalDuration: Math.floor((new Date() - new Date(inProgressWorkout.startTime)) / 1000)
+    };
+    
+    await saveWorkoutData({ ...AppState, savedData: finishData });
+    inProgressWorkout = null;
+    AppState.reset();
+}
+
+async function discardCurrentWorkoutQuiet() {
+    if (!inProgressWorkout) return;
+    
+    const discardData = {
+        ...inProgressWorkout,
+        discardedAt: new Date().toISOString(),
+        status: 'discarded'
+    };
+    
+    await saveWorkoutData({ ...AppState, savedData: discardData });
+    inProgressWorkout = null;
+    AppState.reset();
+}
+
 
 function updateWorkoutDisplay(workoutName) {
     const titleEl = document.getElementById('current-workout-title');
@@ -321,10 +663,9 @@ function updateWorkoutDisplay(workoutName) {
     AppState.workoutDurationTimer = setInterval(updateTime, 60000); // Update every minute
     
     updateProgress(AppState);
-}
-
-function startWorkoutDurationTimer() {
-    // This is now handled in updateWorkoutDisplay
+    
+    // Add cancel button
+    addCancelWorkoutButton();
 }
 
 async function finishWorkout() {
@@ -424,28 +765,51 @@ function generateSetPreview(exercise, exerciseIndex, unit) {
     return preview;
 }
 
-// Exercise Swapping Functions
 async function swapExercise(exerciseIndex) {
     if (!AppState.currentUser) {
         showNotification('Please sign in to swap exercises', 'warning');
         return;
     }
     
-    // Store the current exercise index for the swap
-    AppState.swappingExerciseIndex = exerciseIndex;
+    await exerciseLibrary.openForSwap(exerciseIndex);
+}
+
+// NEW CONTEXT-AWARE CARD CREATION
+function createExerciseCardForContext(exercise) {
+    const card = document.createElement('div');
+    card.className = 'library-exercise-card';
     
-    // Open exercise library in swap mode
-    const modal = document.getElementById('exercise-library-modal');
-    if (!modal) return;
+    let actionButton = '';
     
-    modal.classList.remove('hidden');
+    if (currentExerciseLibraryContext === 'swap') {
+        actionButton = `
+            <button class="btn btn-primary btn-small" onclick="confirmExerciseSwap('${exercise.name || exercise.machine}', ${JSON.stringify(exercise).replace(/"/g, '&quot;')})">
+                <i class="fas fa-exchange-alt"></i> Swap
+            </button>
+        `;
+    } else if (currentExerciseLibraryContext === 'template') {
+        actionButton = `
+            <button class="btn btn-primary btn-small" onclick="addExerciseToTemplateFromLibrary('${exercise.name || exercise.machine}', ${JSON.stringify(exercise).replace(/"/g, '&quot;')})">
+                <i class="fas fa-plus"></i> Add to Template
+            </button>
+        `;
+    }
     
-    // Load exercise library with WorkoutManager
-    const { WorkoutManager } = await import('./core/workout/workout-manager.js');
-    const workoutManager = new WorkoutManager(AppState);
-    const exerciseLibrary = await workoutManager.getExerciseLibrary();
+    card.innerHTML = `
+        <h5>${exercise.name || exercise.machine}</h5>
+        <div class="library-exercise-info">
+            ${exercise.bodyPart || 'General'} • ${exercise.equipmentType || 'Machine'}
+            ${exercise.isCustom ? ' • Custom' : ''}
+        </div>
+        <div class="library-exercise-stats">
+            ${exercise.sets || 3} sets × ${exercise.reps || 10} reps @ ${exercise.weight || 50} lbs
+        </div>
+        <div style="margin-top: 0.5rem;">
+            ${actionButton}
+        </div>
+    `;
     
-    renderExerciseLibraryForSwap(exerciseLibrary);
+    return card;
 }
 
 function renderExerciseLibraryForSwap(exercises) {
@@ -940,66 +1304,34 @@ function startModalRestTimer(exerciseIndex, setIndex) {
     
     let timeLeft = 90;
     let isPaused = false;
-    let startTime = Date.now();
     
-    // Request wake lock to keep timer running
-    requestWakeLock();
-    
-    // Use high-resolution timer for better accuracy
     const updateDisplay = () => {
         const minutes = Math.floor(timeLeft / 60);
         const seconds = timeLeft % 60;
         timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        
-        // Update document title for background visibility
-        document.title = timeLeft > 0 ? `Rest: ${minutes}:${seconds.toString().padStart(2, '0')} - Big Surf` : 'Ready! - Big Surf';
     };
     
     updateDisplay();
     
-    // Store timer data with enhanced iOS support
     modalTimer.timerData = {
-        startTime: startTime,
-        originalDuration: 90,
-        timeLeft: timeLeft,
-        isPaused: isPaused,
-        
         interval: setInterval(() => {
             if (!isPaused && timeLeft > 0) {
-                // Calculate actual elapsed time to account for background suspension
-                const now = Date.now();
-                const actualElapsed = Math.floor((now - startTime) / 1000);
-                const newTimeLeft = Math.max(0, modalTimer.timerData.originalDuration - actualElapsed);
-                
-                // Only update if time actually changed (prevents background suspension issues)
-                if (newTimeLeft !== timeLeft) {
-                    timeLeft = newTimeLeft;
-                    modalTimer.timerData.timeLeft = timeLeft;
-                    updateDisplay();
-                }
+                timeLeft--;
+                updateDisplay();
                 
                 if (timeLeft === 0) {
                     timerDisplay.textContent = 'Ready!';
                     timerDisplay.style.color = 'var(--success)';
-                    document.title = 'Ready! - Big Surf';
                     
-                    // Multiple notification methods for iOS
                     if ('vibrate' in navigator) {
-                        navigator.vibrate([200, 100, 200, 100, 200]);
+                        navigator.vibrate([200, 100, 200]);
                     }
                     
-                    // Play audio notification (works even when locked on iOS)
-                    playTimerSound();
-                    
                     showNotification('Rest period complete! 💪', 'success');
-                    
-                    // Release wake lock
-                    releaseWakeLock();
                     
                     setTimeout(() => {
                         modalTimer.classList.add('hidden');
                         timerDisplay.style.color = 'var(--primary)';
-                        document.title = 'Big Surf - Workout Tracker';
                     }, 5000);
                 }
             }
@@ -1007,15 +1339,6 @@ function startModalRestTimer(exerciseIndex, setIndex) {
         
         pause: () => {
             isPaused = !isPaused;
-            modalTimer.timerData.isPaused = isPaused;
-            
-            if (!isPaused) {
-                // Reset start time when resuming
-                const elapsed = modalTimer.timerData.originalDuration - timeLeft;
-                modalTimer.timerData.startTime = Date.now() - (elapsed * 1000);
-                startTime = modalTimer.timerData.startTime;
-            }
-            
             const pauseBtn = modalTimer.querySelector('.modal-rest-controls .btn:first-child');
             if (pauseBtn) {
                 pauseBtn.innerHTML = isPaused ? '<i class="fas fa-play"></i>' : '<i class="fas fa-pause"></i>';
@@ -1026,49 +1349,8 @@ function startModalRestTimer(exerciseIndex, setIndex) {
             clearInterval(modalTimer.timerData.interval);
             modalTimer.classList.add('hidden');
             timerDisplay.style.color = 'var(--primary)';
-            document.title = 'Big Surf - Workout Tracker';
-            releaseWakeLock();
         }
     };
-    
-    // Handle visibility change (when app goes to background)
-    const handleVisibilityChange = () => {
-        if (document.hidden) {
-            console.log('App went to background - timer should continue');
-        } else {
-            console.log('App returned to foreground - syncing timer');
-            // Re-sync timer when returning from background
-            if (modalTimer.timerData && !modalTimer.timerData.isPaused) {
-                const now = Date.now();
-                const elapsed = Math.floor((now - modalTimer.timerData.startTime) / 1000);
-                const newTimeLeft = Math.max(0, modalTimer.timerData.originalDuration - elapsed);
-                modalTimer.timerData.timeLeft = newTimeLeft;
-                timeLeft = newTimeLeft;
-                updateDisplay();
-            }
-        }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Clean up event listener when timer ends
-    const originalSkip = modalTimer.timerData.skip;
-    modalTimer.timerData.skip = () => {
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-        originalSkip();
-    };
-}
-
-// ALSO UPDATE your existing clearModalRestTimer function:
-function clearModalRestTimer(exerciseIndex) {
-    const modalTimer = document.getElementById(`modal-rest-timer-${exerciseIndex}`);
-    if (modalTimer && modalTimer.timerData) {
-        clearInterval(modalTimer.timerData.interval);
-        modalTimer.timerData = null;
-        modalTimer.classList.add('hidden');
-        document.title = 'Big Surf - Workout Tracker';
-        releaseWakeLock(); // Add this line to your existing function
-    }
 }
 
 function toggleRestTimer() {
@@ -1109,91 +1391,19 @@ function clearGlobalRestTimer() {
     if (timerDisplay) timerDisplay.style.color = 'var(--primary)';
 }
 
-
-
-// ADD THESE NEW HELPER FUNCTIONS (after your imports, before other functions)
-let wakeLock = null;
-
-// Request wake lock to keep screen active during timers
-async function requestWakeLock() {
-    try {
-        if ('wakeLock' in navigator) {
-            wakeLock = await navigator.wakeLock.request('screen');
-            console.log('Wake lock acquired');
-        }
-    } catch (err) {
-        console.log('Wake lock failed:', err);
+function clearModalRestTimer(exerciseIndex) {
+    const modalTimer = document.getElementById(`modal-rest-timer-${exerciseIndex}`);
+    if (modalTimer && modalTimer.timerData) {
+        clearInterval(modalTimer.timerData.interval);
+        modalTimer.timerData = null;
+        modalTimer.classList.add('hidden');
     }
 }
 
-// Release wake lock
-async function releaseWakeLock() {
-    if (wakeLock) {
-        try {
-            await wakeLock.release();
-            wakeLock = null;
-            console.log('Wake lock released');
-        } catch (err) {
-            console.log('Wake lock release failed:', err);
-        }
-    }
-}
-
-// Play timer completion sound (works on iOS even when locked)
-function playTimerSound() {
-    try {
-        // Create audio context for iOS
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        
-        // Create a simple beep sound
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-        oscillator.type = 'sine';
-        
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.5);
-        
-        console.log('Timer sound played');
-    } catch (error) {
-        console.log('Could not play timer sound:', error);
-    }
-}
-
-// Enhanced Exercise Library Functions
 function closeExerciseLibraryEnhanced() {
-    const modal = document.getElementById('exercise-library-modal');
-    if (modal) {
-        modal.classList.add('hidden');
+    if (exerciseLibrary) {
+        exerciseLibrary.close();
     }
-    
-    // Reset modal title
-    const modalTitle = document.querySelector('#exercise-library-modal .modal-title');
-    if (modalTitle) {
-        modalTitle.textContent = 'Exercise Library';
-    }
-    
-    // Clear search
-    const searchInput = document.getElementById('exercise-library-search');
-    const bodyPartFilter = document.getElementById('body-part-filter');
-    const equipmentFilter = document.getElementById('equipment-filter');
-    
-    if (searchInput) searchInput.value = '';
-    if (bodyPartFilter) bodyPartFilter.value = '';
-    if (equipmentFilter) equipmentFilter.value = '';
-    
-    // Reset swapping state
-    AppState.swappingExerciseIndex = null;
-    
-    // Call the original close function to maintain compatibility
-    closeExerciseLibrary();
 }
 
 // Template Selection System
@@ -1906,12 +2116,7 @@ function createTemplateEditorExerciseCard(exercise, index) {
 async function addExerciseToCurrentTemplate() {
     if (!currentEditingTemplate) return;
     
-    // Store the context that we're adding to template
-    AppState.addingToTemplate = true;
-    AppState.templateEditingContext = currentEditingTemplate;
-    
-    // Open exercise library
-    await openExerciseLibraryForTemplate();
+    await exerciseLibrary.openForTemplate(currentEditingTemplate);
 }
 
 function updateTemplateExerciseParam(exerciseIndex, param, value) {
@@ -2116,10 +2321,18 @@ async function createNewExerciseEnhanced(event) {
     }
 }
 
-// Open Exercise Library for Template
+// Enhanced Exercise Library Functions with Proper Context Handling
+let currentExerciseLibraryContext = null; // 'template', 'swap', or null
+let currentExerciseLibrary = [];
+let currentFilteredExercises = [];
+
+// REPLACE the existing openExerciseLibraryForTemplate function with this:
 async function openExerciseLibraryForTemplate() {
     const modal = document.getElementById('exercise-library-modal');
     if (!modal) return;
+    
+    // Set context
+    currentExerciseLibraryContext = 'template';
     
     // Update modal title
     const modalTitle = document.querySelector('#exercise-library-modal .modal-title');
@@ -2133,36 +2346,15 @@ async function openExerciseLibraryForTemplate() {
     try {
         const { WorkoutManager } = await import('./core/workout/workout-manager.js');
         const workoutManager = new WorkoutManager(AppState);
-        const exerciseLibrary = await workoutManager.getExerciseLibrary();
+        currentExerciseLibrary = await workoutManager.getExerciseLibrary();
+        currentFilteredExercises = [...currentExerciseLibrary];
         
-        renderExerciseLibraryForTemplate(exerciseLibrary);
+        console.log('📚 Loaded exercise library for template:', currentExerciseLibrary.length, 'exercises');
+        renderExerciseLibraryWithContext();
     } catch (error) {
         console.error('Error loading exercise library:', error);
         showNotification('Error loading exercises', 'error');
     }
-}
-
-// Render Exercise Library for Template
-function renderExerciseLibraryForTemplate(exercises) {
-    const grid = document.getElementById('exercise-library-grid');
-    if (!grid) return;
-    
-    if (exercises.length === 0) {
-        grid.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-search"></i>
-                <h3>No Exercises Found</h3>
-                <p>Try adjusting your search or create a new exercise.</p>
-            </div>
-        `;
-        return;
-    }
-    
-    grid.innerHTML = '';
-    exercises.forEach(exercise => {
-        const card = createExerciseLibraryCardForTemplate(exercise);
-        grid.appendChild(card);
-    });
 }
 
 // Create Exercise Library Card for Template
@@ -2359,6 +2551,9 @@ window.toggleModalRestTimer = toggleModalRestTimer;
 window.skipModalRestTimer = skipModalRestTimer;
 window.swapExercise = swapExercise;
 window.confirmExerciseSwap = confirmExerciseSwap;
+window.continueInProgressWorkout = continueInProgressWorkout;
+window.discardInProgressWorkout = discardInProgressWorkout;
+window.cancelCurrentWorkout = cancelCurrentWorkout;
 
 // Workout Management Global Functions
 window.showWorkoutManagement = showWorkoutManagement;
@@ -2372,11 +2567,11 @@ window.addExerciseToTemplate = addExerciseToTemplate;
 window.editTemplateExercise = editTemplateExercise;
 window.removeTemplateExercise = removeTemplateExercise;
 window.closeExerciseLibrary = closeExerciseLibraryEnhanced;
-window.searchExerciseLibrary = searchExerciseLibrary;
-window.filterExerciseLibrary = filterExerciseLibrary;
 window.showCreateExerciseForm = showCreateExerciseForm;
 window.closeCreateExerciseModal = closeCreateExerciseModal;
 window.createNewExercise = createNewExerciseEnhanced;
+window.AppState = AppState;
+
 
 // Template Selection Functions
 window.showTemplateSelection = showTemplateSelection;

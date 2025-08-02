@@ -1456,3 +1456,44 @@ body {
 .template-editor-section .btn-small:hover {
     transform: translateY(-1px) scale(1.05);
 }
+
+/* Animation for Progress Alert Icon */
+@keyframes pulse {
+    0%, 100% { 
+        opacity: 1; 
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 0.7; 
+        transform: scale(1.05);
+    }
+}
+
+/* Loading State for Progress Check */
+.checking-progress {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+
+.checking-progress .spinner {
+    margin: 0 auto 1rem;
+}
+
+/* Enhanced Workout Actions Layout */
+.workout-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.workout-actions > span {
+    margin-right: 0.5rem;
+}
+
+/* Better Visual Hierarchy */
+.progress-alert-body strong {
+    color: var(--primary);
+    font-size: 1.125rem;
+}
