@@ -402,6 +402,10 @@ body {
     min-width: 200px;
 }
 
+.rest-timer-sticky:not(.active) {
+    display: none !important;
+}
+
 .rest-timer-sticky.active {
     transform: translateX(0);
 }
@@ -2050,11 +2054,6 @@ body {
     background: var(--bg-secondary);
     border-radius: 6px;
     border: 1px dashed var(--border);
-}
-
-/* Manual Exercise Entry Modal */
-.manual-exercise-entry-modal {
-    /* Inherits from .exercise-modal */
 }
 
 /* Enhanced Exercise Table for Manual Entry */
