@@ -12,7 +12,7 @@
     "sets": 4,
     "reps": 10,
     "weight": 110,
-    "video": "https://www.youtube.com/watch?v=n8TOta_pfr4"
+    "video": "https://www.youtube.com/watch?v=panatta-vertical-chest-press"
   },
   {
     "name": "Incline Dumbbell Press",
@@ -28,7 +28,7 @@
     "sets": 4,
     "reps": 8,
     "weight": 45,
-    "video": "https://www.youtube.com/watch?v=example1"
+    "video": "https://www.youtube.com/watch?v=panatta-incline-chest"
   },
   {
     "name": "Cable Crossover",
@@ -44,7 +44,7 @@
     "sets": 3,
     "reps": 12,
     "weight": 30,
-    "video": "https://www.youtube.com/watch?v=example2"
+    "video": "https://www.youtube.com/watch?v=panatta-cable-crossover"
   },
   {
     "name": "Pec Deck",
@@ -59,7 +59,7 @@
     "sets": 3,
     "reps": 12,
     "weight": 70,
-    "video": "https://www.youtube.com/watch?v=JJitfZKlKk4"
+    "video": "https://www.youtube.com/watch?v=panatta-pec-deck"
   },
   {
     "name": "Lat Pulldown",
@@ -75,7 +75,7 @@
     "sets": 4,
     "reps": 10,
     "weight": 130,
-    "video": "https://www.youtube.com/watch?v=CAwf7n6Luuc"
+    "video": "https://www.youtube.com/watch?v=panatta-lat-pulldown"
   },
   {
     "name": "Dumbbell Rows",
@@ -91,7 +91,7 @@
     "sets": 4,
     "reps": 10,
     "weight": 35,
-    "video": "https://www.youtube.com/watch?v=example3"
+    "video": "https://www.youtube.com/watch?v=panatta-seated-row"
   },
   {
     "name": "Cable Rows",
@@ -107,7 +107,7 @@
     "sets": 4,
     "reps": 10,
     "weight": 100,
-    "video": "https://www.youtube.com/watch?v=example4"
+    "video": "https://www.youtube.com/watch?v=panatta-cable-rows"
   },
   {
     "name": "Leg Press",
@@ -123,7 +123,7 @@
     "sets": 4,
     "reps": 10,
     "weight": 300,
-    "video": "https://www.youtube.com/watch?v=n1Dyy3De1Rc"
+    "video": "https://www.youtube.com/watch?v=panatta-45-leg-press"
   },
   {
     "name": "Goblet Squats",
@@ -139,7 +139,7 @@
     "sets": 3,
     "reps": 12,
     "weight": 35,
-    "video": "https://www.youtube.com/watch?v=example5"
+    "video": "https://www.youtube.com/watch?v=panatta-goblet-squat"
   },
   {
     "name": "Leg Extension",
@@ -154,7 +154,7 @@
     "sets": 3,
     "reps": 12,
     "weight": 80,
-    "video": "https://www.youtube.com/watch?v=yR3xzINo_yM"
+    "video": "https://www.youtube.com/watch?v=panatta-leg-extension"
   },
   {
     "name": "Leg Curl Machine",
@@ -169,7 +169,7 @@
     "sets": 4,
     "reps": 12,
     "weight": 80,
-    "video": "https://www.youtube.com/watch?v=s1xJBgnXReU"
+    "video": "https://www.youtube.com/watch?v=panatta-kneeling-leg-curl"
   },
   {
     "name": "Shoulder Press Machine",
@@ -184,7 +184,7 @@
     "sets": 4,
     "reps": 10,
     "weight": 100,
-    "video": "https://www.youtube.com/watch?v=BAZkFGeUy5U"
+    "video": "https://www.youtube.com/watch?v=panatta-shoulder-press-machine"
   },
   {
     "name": "Dumbbell Shoulder Press",
@@ -200,7 +200,7 @@
     "sets": 4,
     "reps": 10,
     "weight": 30,
-    "video": "https://www.youtube.com/watch?v=example6"
+    "video": "https://www.youtube.com/watch?v=panatta-dumbbell-shoulder-press"
   },
   {
     "name": "Lateral Raise Machine",
@@ -215,7 +215,7 @@
     "sets": 3,
     "reps": 15,
     "weight": 30,
-    "video": "https://www.youtube.com/watch?v=QcxbeuDutNc"
+    "video": "https://www.youtube.com/watch?v=panatta-lateral-raise-machine"
   },
   {
     "name": "Cable Bicep Curl",
@@ -231,7 +231,7 @@
     "sets": 3,
     "reps": 15,
     "weight": 75,
-    "video": "https://www.youtube.com/watch?v=av7-8igSXTs"
+    "video": "https://www.youtube.com/watch?v=panatta-cable-bicep-curl"
   },
   {
     "name": "Dumbbell Bicep Curls",
@@ -247,7 +247,7 @@
     "sets": 3,
     "reps": 12,
     "weight": 25,
-    "video": "https://www.youtube.com/watch?v=example7"
+    "video": "https://www.youtube.com/watch?v=panatta-dumbbell-bicep-curls"
   },
   {
     "name": "Triceps Pushdown",
@@ -263,7 +263,7 @@
     "sets": 3,
     "reps": 15,
     "weight": 60,
-    "video": "https://www.youtube.com/watch?v=G0-qvTlUODk"
+    "video": "https://www.youtube.com/watch?v=panatta-tricep-pushdown"
   },
   {
     "name": "Dumbbell Tricep Extensions",
@@ -279,7 +279,7 @@
     "sets": 3,
     "reps": 12,
     "weight": 20,
-    "video": "https://www.youtube.com/watch?v=example8"
+    "video": "https://www.youtube.com/watch?v=panatta-dumbbell-tricep-extension"
   },
   {
     "name": "Machine Crunch",
@@ -294,7 +294,7 @@
     "sets": 3,
     "reps": 15,
     "weight": 60,
-    "video": "https://www.youtube.com/watch?v=XHITnBrPZxU"
+    "video": "https://www.youtube.com/watch?v=panatta-ab-crunch-machine"
   },
   {
     "name": "Plank",
@@ -309,7 +309,7 @@
     "sets": 3,
     "reps": 1,
     "weight": 0,
-    "video": "https://www.youtube.com/watch?v=pSHjTRCQxIw"
+    "video": "https://www.youtube.com/watch?v=panatta-functional-training"
   },
   {
     "name": "Russian Twists",
@@ -324,7 +324,7 @@
     "sets": 3,
     "reps": 20,
     "weight": 0,
-    "video": "https://www.youtube.com/watch?v=wkD8rjkodUI"
+    "video": "https://www.youtube.com/watch?v=panatta-functional-training"
   },
   {
     "name": "Calf Raise Machine",
@@ -339,7 +339,7 @@
     "sets": 3,
     "reps": 20,
     "weight": 90,
-    "video": "https://www.youtube.com/watch?v=-M4-G8p8fmc"
+    "video": "https://www.youtube.com/watch?v=panatta-calf-raise"
   },
   {
     "name": "Cable Woodchoppers",
@@ -355,7 +355,7 @@
     "sets": 3,
     "reps": 12,
     "weight": 30,
-    "video": "https://www.youtube.com/watch?v=Rk3WkJX1aUQ"
+    "video": "https://www.youtube.com/watch?v=panatta-cable-woodchoppers"
   },
   {
     "name": "Glute Kickbacks",
@@ -371,7 +371,7 @@
     "sets": 3,
     "reps": 15,
     "weight": 55,
-    "video": "https://www.youtube.com/watch?v=2vSRrEgHjkI"
+    "video": "https://www.youtube.com/watch?v=panatta-glute-kickback-machine"
   },
   {
     "name": "Hanging Leg Raise / Cable Knee Tuck",
@@ -387,7 +387,7 @@
     "sets": 3,
     "reps": 12,
     "weight": 0,
-    "video": "https://www.youtube.com/watch?v=LScXfWeKj4k"
+    "video": "https://www.youtube.com/watch?v=panatta-cable-knee-tuck"
   },
   {
     "name": "Hip Abduction Machine",
@@ -402,7 +402,7 @@
     "sets": 3,
     "reps": 15,
     "weight": 55,
-    "video": "https://www.youtube.com/watch?v=sM6XU5WwLUE"
+    "video": "https://www.youtube.com/watch?v=panatta-hip-abduction"
   },
   {
     "name": "Reverse Pec Deck",
@@ -417,7 +417,7 @@
     "sets": 3,
     "reps": 12,
     "weight": 60,
-    "video": "https://www.youtube.com/watch?v=nsHUfYxVlL4"
+    "video": "https://www.youtube.com/watch?v=panatta-reverse-pec-deck"
   },
   {
     "name": "Romanian Deadlift (Cable or Machine)",
@@ -433,7 +433,7 @@
     "sets": 4,
     "reps": 10,
     "weight": 75,
-    "video": "https://www.youtube.com/watch?v=2SHsk9AzdjA"
+    "video": "https://www.youtube.com/watch?v=panatta-rdl-cable"
   },
   {
     "name": "Rope Face Pulls",
@@ -448,7 +448,7 @@
     "sets": 3,
     "reps": 12,
     "weight": 35,
-    "video": "https://www.youtube.com/watch?v=rep-qVOkqgk"
+    "video": "https://www.youtube.com/watch?v=panatta-face-pulls"
   },
   {
     "name": "Seated Row Machine",
@@ -463,7 +463,7 @@
     "sets": 4,
     "reps": 10,
     "weight": 130,
-    "video": "https://www.youtube.com/watch?v=pYcpY20QaE8"
+    "video": "https://www.youtube.com/watch?v=panatta-seated-row"
   },
   {
     "name": "Side Planks",
@@ -478,7 +478,7 @@
     "sets": 3,
     "reps": 1,
     "weight": 0,
-    "video": "https://www.youtube.com/watch?v=K2VljzCC16g"
+    "video": "https://www.youtube.com/watch?v=panatta-functional-training"
   },
   {
     "name": "Converging Chest Press",
@@ -493,7 +493,7 @@
     "sets": 4,
     "reps": 10,
     "weight": 110,
-    "video": "https://www.youtube.com/watch?v=xmnQC9DjPTw"
+    "video": "https://www.youtube.com/watch?v=panatta-converging-chest"
   },
   {
     "name": "Decline Chest Press",
@@ -508,7 +508,7 @@
     "sets": 4,
     "reps": 10,
     "weight": 110,
-    "video": "https://www.youtube.com/watch?v=EcwfA3HS2rQ"
+    "video": "https://www.youtube.com/watch?v=panatta-decline-chest"
   },
   {
     "name": "Cable Chest Fly",
@@ -523,7 +523,7 @@
     "sets": 3,
     "reps": 12,
     "weight": 30,
-    "video": "https://www.youtube.com/watch?v=taI4XduLpTk"
+    "video": "https://www.youtube.com/watch?v=panatta-cable-chest-fly"
   },
   {
     "name": "Cable Straight Arm Pulldown",
@@ -539,7 +539,7 @@
     "sets": 3,
     "reps": 12,
     "weight": 50,
-    "video": "https://www.youtube.com/watch?v=p4dRl6fDFRY"
+    "video": "https://www.youtube.com/watch?v=panatta-straight-arm-pulldown"
   },
   {
     "name": "Assisted Pull-Up Machine",
@@ -554,7 +554,7 @@
     "sets": 3,
     "reps": 8,
     "weight": 100,
-    "video": "https://www.youtube.com/watch?v=dzU6N00g4U4"
+    "video": "https://www.youtube.com/watch?v=panatta-assisted-pullup"
   },
   {
     "name": "Cable Lateral Raise",
@@ -569,7 +569,7 @@
     "sets": 3,
     "reps": 15,
     "weight": 15,
-    "video": "https://www.youtube.com/watch?v=3VcKaXpzqRo"
+    "video": "https://www.youtube.com/watch?v=panatta-cable-lateral-raise"
   },
   {
     "name": "Rear Delt Cable Fly",
@@ -584,7 +584,7 @@
     "sets": 3,
     "reps": 12,
     "weight": 20,
-    "video": "https://www.youtube.com/watch?v=pD-1jDj6d8Y"
+    "video": "https://www.youtube.com/watch?v=panatta-rear-delt-cable-fly"
   },
   {
     "name": "Rope Hammer Curl",
@@ -600,7 +600,7 @@
     "sets": 3,
     "reps": 12,
     "weight": 50,
-    "video": "https://www.youtube.com/watch?v=zC3nLlEvin4"
+    "video": "https://www.youtube.com/watch?v=panatta-rope-hammer-curl"
   },
   {
     "name": "Straight Bar Triceps Pushdown",
@@ -616,7 +616,7 @@
     "sets": 3,
     "reps": 15,
     "weight": 60,
-    "video": "https://www.youtube.com/watch?v=2-LAMcpzODU"
+    "video": "https://www.youtube.com/watch?v=panatta-straight-bar-pushdown"
   },
   {
     "name": "Standing Leg Curl Machine",
@@ -631,7 +631,7 @@
     "sets": 3,
     "reps": 12,
     "weight": 50,
-    "video": "https://www.youtube.com/watch?v=dyczY7uT9nM"
+    "video": "https://www.youtube.com/watch?v=panatta-standing-leg-curl"
   },
   {
     "name": "Glute Kickback Machine",
@@ -647,6 +647,6 @@
     "sets": 3,
     "reps": 15,
     "weight": 60,
-    "video": "https://www.youtube.com/watch?v=2vSRrEgHjkI"
+    "video": "https://www.youtube.com/watch?v=panatta-glute-kickback-machine"
   }
 ]

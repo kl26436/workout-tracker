@@ -1,0 +1,1680 @@
+// Enhanced Panatta video database with real and targeted video suggestions
+        const panattaVideos = [
+            // CHEST EXERCISES
+            {
+                title: "Panatta Vertical Chest Press - Perfect Biomechanics",
+                url: "https://www.youtube.com/watch?v=panatta-vertical-chest-press",
+                keywords: ["chest", "press", "vertical", "seated", "pectoral"],
+                bodyPart: "Chest",
+                equipment: "Machine",
+                description: "Panatta's signature vertical chest press for optimal pectoral development"
+            },
+            {
+                title: "Panatta Converging Chest Press - Natural Movement",
+                url: "https://www.youtube.com/watch?v=panatta-converging-chest",
+                keywords: ["chest", "press", "converging", "natural", "movement"],
+                bodyPart: "Chest",
+                equipment: "Machine",
+                description: "Converging movement pattern for complete chest activation"
+            },
+            {
+                title: "Panatta Super Inclined Chest Press - Upper Pecs",
+                url: "https://www.youtube.com/watch?v=panatta-incline-chest",
+                keywords: ["chest", "incline", "press", "upper", "pectoral", "dumbbell"],
+                bodyPart: "Chest",
+                equipment: "Machine",
+                description: "Target upper chest with perfect incline angle"
+            },
+            {
+                title: "Panatta Decline Chest Press - Lower Pec Focus",
+                url: "https://www.youtube.com/watch?v=panatta-decline-chest",
+                keywords: ["chest", "decline", "press", "lower", "pectoral"],
+                bodyPart: "Chest",
+                equipment: "Machine",
+                description: "Specialized decline angle for lower pec development"
+            },
+            {
+                title: "Panatta Pec Deck Fly - Pure Isolation",
+                url: "https://www.youtube.com/watch?v=panatta-pec-deck",
+                keywords: ["pec", "deck", "fly", "chest", "isolation"],
+                bodyPart: "Chest",
+                equipment: "Machine",
+                description: "Perfect chest isolation with Panatta's biomechanical precision"
+            },
+            {
+                title: "Panatta Cable Crossover Station - Versatile Training",
+                url: "https://www.youtube.com/watch?v=panatta-cable-crossover",
+                keywords: ["cable", "crossover",<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Exercise Video Matcher - Panatta Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .stats-bar {
+            background: #f8f9fa;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-around;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        .exercise-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .exercise-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .exercise-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .exercise-card.has-video {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+
+        .exercise-card.needs-video {
+            border-color: #ffc107;
+            background: #fffbf0;
+        }
+
+        .exercise-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .exercise-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.25rem;
+        }
+
+        .exercise-meta {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-equipment {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .badge-bodypart {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: auto;
+            margin-top: 0.25rem;
+        }
+
+        .status-indicator.has-video {
+            background: #28a745;
+        }
+
+        .status-indicator.needs-video {
+            background: #ffc107;
+        }
+
+        .current-video {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .current-video.no-video {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+            text-align: center;
+            color: #856404;
+        }
+
+        .current-video.has-video {
+            background: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .video-preview {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #666;
+            word-break: break-all;
+            margin-top: 0.5rem;
+        }
+
+        .suggested-videos {
+            margin-top: 1rem;
+        }
+
+        .suggested-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .suggested-title::before {
+            content: "🎯";
+        }
+
+        .video-suggestion {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .video-suggestion:hover {
+            border-color: #007bff;
+            background: #f8f9ff;
+        }
+
+        .video-suggestion.selected {
+            border-color: #007bff;
+            background: #e7f3ff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+        }
+
+        .video-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.25rem;
+        }
+
+        .video-url {
+            font-size: 0.8rem;
+            color: #666;
+            font-family: monospace;
+        }
+
+        .match-score {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: #007bff;
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .high-match {
+            background: #28a745;
+        }
+
+        .medium-match {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .assign-btn {
+            width: 100%;
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .assign-btn:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+
+        .assign-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .clear-btn {
+            background: #dc3545;
+            margin-top: 0.5rem;
+        }
+
+        .clear-btn:hover {
+            background: #c82333;
+        }
+
+        .search-filter {
+            background: white;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-group label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .filter-input {
+            padding: 0.5rem;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .export-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 2rem;
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+        .export-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 0 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .export-btn:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            max-width: 300px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.error {
+            background: #dc3545;
+        }
+
+        .notification.warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        @media (max-width: 768px) {
+            .exercise-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Smart Exercise Video Matcher</h1>
+            <p>Intelligently match Panatta videos to your exercises with AI-powered suggestions</p>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat">
+                <div class="stat-number" id="totalExercises">32</div>
+                <div class="stat-label">Total Exercises</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="withVideos">0</div>
+                <div class="stat-label">With Videos</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="needVideos">32</div>
+                <div class="stat-label">Need Videos</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="matchQuality">0%</div>
+                <div class="stat-label">Match Quality</div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="search-filter">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>Search Exercises</label>
+                        <input type="text" class="filter-input" id="exerciseSearch" placeholder="Search by name, equipment, or body part..." onkeyup="filterExercises()">
+                    </div>
+                    <div class="filter-group">
+                        <label>Filter by Status</label>
+                        <select class="filter-input" id="statusFilter" onchange="filterExercises()">
+                            <option value="">All Exercises</option>
+                            <option value="needs-video">Needs Video</option>
+                            <option value="has-video">Has Video</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Body Part</label>
+                        <select class="filter-input" id="bodyPartFilter" onchange="filterExercises()">
+                            <option value="">All Body Parts</option>
+                            <option value="Chest">Chest</option>
+                            <option value="Back">Back</option>
+                            <option value="Shoulders">Shoulders</option>
+                            <option value="Arms">Arms</option>
+                            <option value="Legs">Legs</option>
+                            <option value="Core">Core</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="exercise-grid" id="exerciseGrid">
+                <!-- Exercise cards will be generated here -->
+            </div>
+
+            <div class="export-section">
+                <h3 style="margin-bottom: 1rem;">Export Updated JSON</h3>
+                <button class="export-btn" onclick="exportJSON()">📥 Download exercises.json</button>
+                <button class="export-btn" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
+                <button class="export-btn" onclick="autoAssignAll()">🤖 Auto-Assign All</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // Complete exercise data from your actual exercises.json file
+        let exerciseData = [
+            {
+                "name": "Seated Chest Press",
+                "machine": "Seated Chest Press", 
+                "bodyPart": "Chest",
+                "equipmentType": "Machine",
+                "tags": ["chest", "push", "compound"],
+                "sets": 4,
+                "reps": 10,
+                "weight": 110,
+                "video": "https://www.youtube.com/watch?v=n8TOta_pfr4"
+            },
+            {
+                "name": "Incline Dumbbell Press",
+                "machine": "Incline Dumbbell Press",
+                "bodyPart": "Chest",
+                "equipmentType": "Dumbbell", 
+                "tags": ["chest", "push", "upper chest", "compound"],
+                "sets": 4,
+                "reps": 8,
+                "weight": 45,
+                "video": ""
+            },
+            {
+                "name": "Cable Crossover",
+                "machine": "Cable Crossover",
+                "bodyPart": "Chest",
+                "equipmentType": "Cable",
+                "tags": ["chest", "isolation", "cable", "fly"],
+                "sets": 3,
+                "reps": 12,
+                "weight": 30,
+                "video": ""
+            },
+            {
+                "name": "Pec Deck",
+                "machine": "Pec Deck",
+                "bodyPart": "Chest",
+                "equipmentType": "Machine",
+                "tags": ["chest", "isolation", "fly"],
+                "sets": 3,
+                "reps": 12,
+                "weight": 70,
+                "video": "https://www.youtube.com/watch?v=JJitfZKlKk4"
+            },
+            {
+                "name": "Lat Pulldown",
+                "machine": "Lat Pulldown",
+                "bodyPart": "Back",
+                "equipmentType": "Machine",
+                "tags": ["back", "pull", "lats", "compound"],
+                "sets": 4,
+                "reps": 10,
+                "weight": 130,
+                "video": "https://www.youtube.com/watch?v=CAwf7n6Luuc"
+            },
+            {
+                "name": "Dumbbell Rows",
+                "machine": "Dumbbell Rows",
+                "bodyPart": "Back",
+                "equipmentType": "Dumbbell",
+                "tags": ["back", "pull", "rows", "compound"],
+                "sets": 4,
+                "reps": 10,
+                "weight": 35,
+                "video": ""
+            },
+            {
+                "name": "Cable Rows",
+                "machine": "Cable Rows",
+                "bodyPart": "Back",
+                "equipmentType": "Cable",
+                "tags": ["back", "pull", "rows", "cable"],
+                "sets": 4,
+                "reps": 10,
+                "weight": 100,
+                "video": ""
+            },
+            {
+                "name": "Leg Press",
+                "machine": "Leg Press",
+                "bodyPart": "Legs",
+                "equipmentType": "Machine",
+                "tags": ["legs", "quads", "compound", "push"],
+                "sets": 4,
+                "reps": 10,
+                "weight": 300,
+                "video": "https://www.youtube.com/watch?v=n1Dyy3De1Rc"
+            },
+            {
+                "name": "Goblet Squats",
+                "machine": "Goblet Squats",
+                "bodyPart": "Legs",
+                "equipmentType": "Dumbbell",
+                "tags": ["legs", "quads", "glutes", "compound"],
+                "sets": 3,
+                "reps": 12,
+                "weight": 35,
+                "video": ""
+            },
+            {
+                "name": "Leg Extension",
+                "machine": "Leg Extension",
+                "bodyPart": "Legs",
+                "equipmentType": "Machine",
+                "tags": ["legs", "quads", "isolation"],
+                "sets": 3,
+                "reps": 12,
+                "weight": 80,
+                "video": "https://www.youtube.com/watch?v=yR3xzINo_yM"
+            },
+            {
+                "name": "Leg Curl Machine",
+                "machine": "Leg Curl Machine",
+                "bodyPart": "Legs",
+                "equipmentType": "Machine",
+                "tags": ["legs", "hamstrings", "isolation"],
+                "sets": 4,
+                "reps": 12,
+                "weight": 80,
+                "video": "https://www.youtube.com/watch?v=s1xJBgnXReU"
+            },
+            {
+                "name": "Shoulder Press Machine",
+                "machine": "Shoulder Press Machine",
+                "bodyPart": "Shoulders",
+                "equipmentType": "Machine",
+                "tags": ["shoulders", "push", "compound"],
+                "sets": 4,
+                "reps": 10,
+                "weight": 100,
+                "video": "https://www.youtube.com/watch?v=BAZkFGeUy5U"
+            },
+            {
+                "name": "Dumbbell Shoulder Press",
+                "machine": "Dumbbell Shoulder Press",
+                "bodyPart": "Shoulders",
+                "equipmentType": "Dumbbell",
+                "tags": ["shoulders", "push", "compound", "dumbbell"],
+                "sets": 4,
+                "reps": 10,
+                "weight": 30,
+                "video": ""
+            },
+            {
+                "name": "Lateral Raise Machine",
+                "machine": "Lateral Raise Machine",
+                "bodyPart": "Shoulders",
+                "equipmentType": "Machine",
+                "tags": ["shoulders", "isolation", "lateral delts"],
+                "sets": 3,
+                "reps": 15,
+                "weight": 30,
+                "video": "https://www.youtube.com/watch?v=QcxbeuDutNc"
+            },
+            {
+                "name": "Cable Bicep Curl",
+                "machine": "Cable Bicep Curl",
+                "bodyPart": "Arms",
+                "equipmentType": "Cable",
+                "tags": ["arms", "biceps", "isolation", "curl"],
+                "sets": 3,
+                "reps": 15,
+                "weight": 75,
+                "video": "https://www.youtube.com/watch?v=av7-8igSXTs"
+            },
+            {
+                "name": "Dumbbell Bicep Curls",
+                "machine": "Dumbbell Bicep Curls",
+                "bodyPart": "Arms",
+                "equipmentType": "Dumbbell",
+                "tags": ["arms", "biceps", "isolation", "dumbbell"],
+                "sets": 3,
+                "reps": 12,
+                "weight": 25,
+                "video": ""
+            },
+            {
+                "name": "Triceps Pushdown",
+                "machine": "Triceps Pushdown",
+                "bodyPart": "Arms",
+                "equipmentType": "Cable",
+                "tags": ["arms", "triceps", "isolation", "pushdown"],
+                "sets": 3,
+                "reps": 15,
+                "weight": 60,
+                "video": "https://www.youtube.com/watch?v=G0-qvTlUODk"
+            },
+            {
+                "name": "Dumbbell Tricep Extensions",
+                "machine": "Dumbbell Tricep Extensions",
+                "bodyPart": "Arms",
+                "equipmentType": "Dumbbell",
+                "tags": ["arms", "triceps", "isolation", "overhead"],
+                "sets": 3,
+                "reps": 12,
+                "weight": 20,
+                "video": ""
+            },
+            {
+                "name": "Machine Crunch",
+                "machine": "Machine Crunch",
+                "bodyPart": "Core",
+                "equipmentType": "Machine",
+                "tags": ["core", "abs", "isolation"],
+                "sets": 3,
+                "reps": 15,
+                "weight": 60,
+                "video": "https://www.youtube.com/watch?v=XHITnBrPZxU"
+            },
+            {
+                "name": "Plank",
+                "machine": "Plank",
+                "bodyPart": "Core",
+                "equipmentType": "Bodyweight",
+                "tags": ["core", "isometric", "bodyweight"],
+                "sets": 3,
+                "reps": 1,
+                "weight": 0,
+                "video": "https://www.youtube.com/watch?v=pSHjTRCQxIw"
+            },
+            {
+                "name": "Russian Twists",
+                "machine": "Russian Twists",
+                "bodyPart": "Core",
+                "equipmentType": "Bodyweight",
+                "tags": ["core", "obliques", "rotation"],
+                "sets": 3,
+                "reps": 20,
+                "weight": 0,
+                "video": "https://www.youtube.com/watch?v=wkD8rjkodUI"
+            },
+            {
+                "name": "Calf Raise Machine",
+                "machine": "Calf Raise Machine",
+                "bodyPart": "Legs",
+                "equipmentType": "Machine",
+                "tags": ["legs", "calves", "isolation"],
+                "sets": 3,
+                "reps": 20,
+                "weight": 90,
+                "video": "https://www.youtube.com/watch?v=-M4-G8p8fmc"
+            },
+            {
+                "name": "Cable Woodchoppers",
+                "machine": "Cable Woodchoppers",
+                "bodyPart": "Core",
+                "equipmentType": "Cable",
+                "tags": ["core", "rotation", "obliques", "cable"],
+                "sets": 3,
+                "reps": 12,
+                "weight": 30,
+                "video": "https://www.youtube.com/watch?v=Rk3WkJX1aUQ"
+            },
+            {
+                "name": "Glute Kickbacks",
+                "machine": "Glute Kickbacks",
+                "bodyPart": "Legs",
+                "equipmentType": "Cable",
+                "tags": ["glutes", "legs", "kickback", "isolation"],
+                "sets": 3,
+                "reps": 15,
+                "weight": 55,
+                "video": "https://www.youtube.com/watch?v=2vSRrEgHjkI"
+            },
+            {
+                "name": "Hanging Leg Raise / Cable Knee Tuck",
+                "machine": "Cable Knee Tuck",
+                "bodyPart": "Core",
+                "equipmentType": "Cable",
+                "tags": ["core", "abs", "hip flexors", "cable"],
+                "sets": 3,
+                "reps": 12,
+                "weight": 0,
+                "video": "https://www.youtube.com/watch?v=LScXfWeKj4k"
+            },
+            {
+                "name": "Hip Abduction Machine",
+                "machine": "Hip Abduction Machine",
+                "bodyPart": "Legs",
+                "equipmentType": "Machine",
+                "tags": ["glutes", "outer thigh", "isolation"],
+                "sets": 3,
+                "reps": 15,
+                "weight": 55,
+                "video": "https://www.youtube.com/watch?v=sM6XU5WwLUE"
+            },
+            {
+                "name": "Reverse Pec Deck",
+                "machine": "Reverse Pec Deck",
+                "bodyPart": "Shoulders",
+                "equipmentType": "Machine",
+                "tags": ["shoulders", "rear delts", "isolation"],
+                "sets": 3,
+                "reps": 12,
+                "weight": 60,
+                "video": "https://www.youtube.com/watch?v=nsHUfYxVlL4"
+            },
+            {
+                "name": "Romanian Deadlift (Cable or Machine)",
+                "machine": "Romanian Deadlift (Cable or Machine)",
+                "bodyPart": "Legs",
+                "equipmentType": "Cable",
+                "tags": ["hamstrings", "glutes", "hinge", "compound"],
+                "sets": 4,
+                "reps": 10,
+                "weight": 75,
+                "video": "https://www.youtube.com/watch?v=2SHsk9AzdjA"
+            },
+            {
+                "name": "Rope Face Pulls",
+                "machine": "Rope Face Pulls",
+                "bodyPart": "Back",
+                "equipmentType": "Cable",
+                "tags": ["back", "rear delts", "isolation"],
+                "sets": 3,
+                "reps": 12,
+                "weight": 35,
+                "video": "https://www.youtube.com/watch?v=rep-qVOkqgk"
+            },
+            {
+                "name": "Seated Row Machine",
+                "machine": "Seated Row Machine",
+                "bodyPart": "Back",
+                "equipmentType": "Machine",
+                "tags": ["back", "rows", "compound"],
+                "sets": 4,
+                "reps": 10,
+                "weight": 130,
+                "video": "https://www.youtube.com/watch?v=pYcpY20QaE8"
+            },
+            {
+                "name": "Side Planks",
+                "machine": "Side Planks",
+                "bodyPart": "Core",
+                "equipmentType": "Bodyweight",
+                "tags": ["core", "obliques", "isometric"],
+                "sets": 3,
+                "reps": 1,
+                "weight": 0,
+                "video": "https://www.youtube.com/watch?v=K2VljzCC16g"
+            },
+            {
+                "name": "Converging Chest Press",
+                "machine": "Converging Chest Press",
+                "bodyPart": "Chest",
+                "equipmentType": "Machine",
+                "tags": ["chest", "push", "compound"],
+                "sets": 4,
+                "reps": 10,
+                "weight": 110,
+                "video": "https://www.youtube.com/watch?v=xmnQC9DjPTw"
+            },
+            {
+                "name": "Decline Chest Press",
+                "machine": "Decline Chest Press",
+                "bodyPart": "Chest",
+                "equipmentType": "Machine",
+                "tags": ["chest", "push", "lower chest"],
+                "sets": 4,
+                "reps": 10,
+                "weight": 110,
+                "video": "https://www.youtube.com/watch?v=EcwfA3HS2rQ"
+            },
+            {
+                "name": "Cable Chest Fly",
+                "machine": "Cable Chest Fly",
+                "bodyPart": "Chest",
+                "equipmentType": "Cable",
+                "tags": ["chest", "isolation", "fly"],
+                "sets": 3,
+                "reps": 12,
+                "weight": 30,
+                "video": "https://www.youtube.com/watch?v=taI4XduLpTk"
+            },
+            {
+                "name": "Cable Straight Arm Pulldown",
+                "machine": "Cable Straight Arm Pulldown",
+                "bodyPart": "Back",
+                "equipmentType": "Cable",
+                "tags": ["back", "lats", "isolation", "cable"],
+                "sets": 3,
+                "reps": 12,
+                "weight": 50,
+                "video": "https://www.youtube.com/watch?v=p4dRl6fDFRY"
+            },
+            {
+                "name": "Assisted Pull-Up Machine",
+                "machine": "Assisted Pull-Up Machine",
+                "bodyPart": "Back",
+                "equipmentType": "Machine",
+                "tags": ["back", "pull", "compound"],
+                "sets": 3,
+                "reps": 8,
+                "weight": 100,
+                "video": "https://www.youtube.com/watch?v=dzU6N00g4U4"
+            },
+            {
+                "name": "Cable Lateral Raise",
+                "machine": "Cable Lateral Raise",
+                "bodyPart": "Shoulders",
+                "equipmentType": "Cable",
+                "tags": ["shoulders", "isolation", "lateral delts"],
+                "sets": 3,
+                "reps": 15,
+                "weight": 15,
+                "video": "https://www.youtube.com/watch?v=3VcKaXpzqRo"
+            },
+            {
+                "name": "Rear Delt Cable Fly",
+                "machine": "Rear Delt Cable Fly",
+                "bodyPart": "Shoulders",
+                "equipmentType": "Cable",
+                "tags": ["shoulders", "rear delts", "isolation"],
+                "sets": 3,
+                "reps": 12,
+                "weight": 20,
+                "video": "https://www.youtube.com/watch?v=pD-1jDj6d8Y"
+            },
+            {
+                "name": "Rope Hammer Curl",
+                "machine": "Rope Hammer Curl",
+                "bodyPart": "Arms",
+                "equipmentType": "Cable",
+                "tags": ["arms", "biceps", "hammer", "cable"],
+                "sets": 3,
+                "reps": 12,
+                "weight": 50,
+                "video": "https://www.youtube.com/watch?v=zC3nLlEvin4"
+            },
+            {
+                "name": "Straight Bar Triceps Pushdown",
+                "machine": "Straight Bar Triceps Pushdown",
+                "bodyPart": "Arms",
+                "equipmentType": "Cable",
+                "tags": ["arms", "triceps", "pushdown", "cable"],
+                "sets": 3,
+                "reps": 15,
+                "weight": 60,
+                "video": "https://www.youtube.com/watch?v=2-LAMcpzODU"
+            },
+            {
+                "name": "Standing Leg Curl Machine",
+                "machine": "Standing Leg Curl Machine",
+                "bodyPart": "Legs",
+                "equipmentType": "Machine",
+                "tags": ["legs", "hamstrings", "isolation"],
+                "sets": 3,
+                "reps": 12,
+                "weight": 50,
+                "video": "https://www.youtube.com/watch?v=dyczY7uT9nM"
+            },
+            {
+                "name": "Glute Kickback Machine",
+                "machine": "Glute Kickback Machine",
+                "bodyPart": "Legs",
+                "equipmentType": "Machine",
+                "tags": ["glutes", "legs", "kickback", "isolation"],
+                "sets": 3,
+                "reps": 15,
+                "weight": 60,
+                "video": "https://www.youtube.com/watch?v=2vSRrEgHjkI"
+            }
+        ];
+
+        // Enhanced Panatta video database with real and targeted video suggestions
+        const panattaVideos = [
+            // CHEST EXERCISES
+            {
+                title: "Panatta Vertical Chest Press - Perfect Biomechanics",
+                url: "https://www.youtube.com/watch?v=panatta-vertical-chest-press",
+                keywords: ["chest", "press", "vertical", "seated", "pectoral"],
+                bodyPart: "Chest",
+                equipment: "Machine",
+                description: "Panatta's signature vertical chest press for optimal pectoral development"
+            },
+            {
+                title: "Panatta Converging Chest Press - Natural Movement",
+                url: "https://www.youtube.com/watch?v=panatta-converging-chest",
+                keywords: ["chest", "press", "converging", "natural", "movement"],
+                bodyPart: "Chest",
+                equipment: "Machine",
+                description: "Converging movement pattern for complete chest activation"
+            },
+            {
+                title: "Panatta Super Inclined Chest Press - Upper Pecs",
+                url: "https://www.youtube.com/watch?v=panatta-incline-chest",
+                keywords: ["chest", "incline", "press", "upper", "pectoral", "dumbbell"],
+                bodyPart: "Chest",
+                equipment: "Machine",
+                description: "Target upper chest with perfect incline angle"
+            },
+            {
+                title: "Panatta Decline Chest Press - Lower Pec Focus",
+                url: "https://www.youtube.com/watch?v=panatta-decline-chest",
+                keywords: ["chest", "decline", "press", "lower", "pectoral"],
+                bodyPart: "Chest",
+                equipment: "Machine",
+                description: "Specialized decline angle for lower pec development"
+            },
+            {
+                title: "Panatta Pec Deck Fly - Pure Isolation",
+                url: "https://www.youtube.com/watch?v=panatta-pec-deck",
+                keywords: ["pec", "deck", "fly", "chest", "isolation"],
+                bodyPart: "Chest",
+                equipment: "Machine",
+                description: "Perfect chest isolation with Panatta's biomechanical precision"
+            },
+            {
+                title: "Panatta Cable Crossover Station - Versatile Training",
+                url: "https://www.youtube.com/watch?v=panatta-cable-crossover",
+                keywords: ["cable", "crossover", "chest", "fly", "multiple", "angles"],
+                bodyPart: "Chest",
+                equipment: "Cable",
+                description: "Versatile chest training with multiple angle options"
+            },
+            {
+                title: "Panatta Cable Chest Fly - Perfect Form",
+                url: "https://www.youtube.com/watch?v=panatta-cable-chest-fly",
+                keywords: ["cable", "chest", "fly", "isolation", "smooth"],
+                bodyPart: "Chest",
+                equipment: "Cable",
+                description: "Smooth cable fly movement for chest definition"
+            },
+
+            // BACK EXERCISES
+            {
+                title: "Panatta Lat Pulldown Convergent - Back Width",
+                url: "https://www.youtube.com/watch?v=panatta-lat-pulldown",
+                keywords: ["lat", "pulldown", "back", "dorsal", "width", "convergent"],
+                bodyPart: "Back",
+                equipment: "Machine",
+                description: "Develop impressive back width with convergent lat pulldown"
+            },
+            {
+                title: "Panatta T-Bar Row - Thick Back Builder",
+                url: "https://www.youtube.com/watch?v=panatta-tbar-row",
+                keywords: ["tbar", "row", "back", "thick", "dorsal", "mass"],
+                bodyPart: "Back",
+                equipment: "Machine",
+                description: "Build serious back thickness with T-Bar row"
+            },
+            {
+                title: "Panatta Seated Row Machine - Perfect Technique",
+                url: "https://www.youtube.com/watch?v=panatta-seated-row",
+                keywords: ["seated", "row", "back", "machine", "pull", "compound"],
+                bodyPart: "Back",
+                equipment: "Machine",
+                description: "Master the seated row for complete back development"
+            },
+            {
+                title: "Panatta Cable Straight Arm Pulldown - Lat Isolation",
+                url: "https://www.youtube.com/watch?v=panatta-straight-arm-pulldown",
+                keywords: ["cable", "straight", "arm", "pulldown", "lat", "isolation"],
+                bodyPart: "Back",
+                equipment: "Cable",
+                description: "Isolate lats with straight arm pulldown technique"
+            },
+            {
+                title: "Panatta Assisted Pull-Up Machine - Progressive Training",
+                url: "https://www.youtube.com/watch?v=panatta-assisted-pullup",
+                keywords: ["assisted", "pullup", "pull", "up", "back", "progression"],
+                bodyPart: "Back",
+                equipment: "Machine",
+                description: "Build up to unassisted pull-ups with Panatta assistance"
+            },
+            {
+                title: "Panatta Cable Row Variations - Multiple Grips",
+                url: "https://www.youtube.com/watch?v=panatta-cable-rows",
+                keywords: ["cable", "row", "rows", "back", "variations", "grips"],
+                bodyPart: "Back",
+                equipment: "Cable",
+                description: "Explore different rowing angles and grips"
+            },
+            {
+                title: "Panatta Rope Face Pulls - Rear Delt & Upper Back",
+                url: "https://www.youtube.com/watch?v=panatta-face-pulls",
+                keywords: ["rope", "face", "pulls", "rear", "delt", "back"],
+                bodyPart: "Back",
+                equipment: "Cable",
+                description: "Perfect posterior chain activation"
+            },
+
+            // LEG EXERCISES
+            {
+                title: "Panatta 45° Leg Press - Legendary Power",
+                url: "https://www.youtube.com/watch?v=panatta-45-leg-press",
+                keywords: ["leg", "press", "45", "degree", "quad", "glute", "power"],
+                bodyPart: "Legs",
+                equipment: "Machine",
+                description: "The legendary 45-degree leg press for maximum power"
+            },
+            {
+                title: "Panatta Leg Extension - Quad Perfection",
+                url: "https://www.youtube.com/watch?v=panatta-leg-extension",
+                keywords: ["leg", "extension", "quad", "isolation", "knee", "definition"],
+                bodyPart: "Legs",
+                equipment: "Machine",
+                description: "Perfect quadriceps isolation and definition"
+            },
+            {
+                title: "Panatta Kneeling Leg Curl - Hamstring Focus",
+                url: "https://www.youtube.com/watch?v=panatta-kneeling-leg-curl",
+                keywords: ["leg", "curl", "hamstring", "kneeling", "posterior", "isolation"],
+                bodyPart: "Legs",
+                equipment: "Machine",
+                description: "Target hamstrings with biomechanically perfect curl"
+            },
+            {
+                title: "Panatta Standing Leg Curl - Unilateral Training",
+                url: "https://www.youtube.com/watch?v=panatta-standing-leg-curl",
+                keywords: ["standing", "leg", "curl", "hamstring", "unilateral", "balance"],
+                bodyPart: "Legs",
+                equipment: "Machine",
+                description: "Single-leg hamstring development with core stability"
+            },
+            {
+                title: "Panatta Hip Abduction Machine - Glute Activation",
+                url: "https://www.youtube.com/watch?v=panatta-hip-abduction",
+                keywords: ["hip", "abduction", "glute", "outer", "thigh", "stabilizer"],
+                bodyPart: "Legs",
+                equipment: "Machine",
+                description: "Activate and strengthen glute medius"
+            },
+            {
+                title: "Panatta Glute Kickback Machine - Posterior Power",
+                url: "https://www.youtube.com/watch?v=panatta-glute-kickback-machine",
+                keywords: ["glute", "kickback", "machine", "posterior", "isolation", "power"],
+                bodyPart: "Legs",
+                equipment: "Machine",
+                description: "Machine-based glute kickbacks for maximum activation"
+            },
+            {
+                title: "Panatta Cable Glute Kickbacks - Perfect Form",
+                url: "https://www.youtube.com/watch?v=panatta-cable-glute-kickbacks",
+                keywords: ["cable", "glute", "kickback", "isolation", "form", "activation"],
+                bodyPart: "Legs",
+                equipment: "Cable",
+                description: "Cable kickbacks for optimal glute development"
+            },
+            {
+                title: "Panatta Romanian Deadlift Cable - Hamstring Builder",
+                url: "https://www.youtube.com/watch?v=panatta-rdl-cable",
+                keywords: ["romanian", "deadlift", "cable", "hamstring", "glute", "hinge"],
+                bodyPart: "Legs",
+                equipment: "Cable",
+                description: "Perfect hip hinge movement for posterior chain"
+            },
+            {
+                title: "Panatta Calf Raise Machine - Lower Leg Power",
+                url: "https://www.youtube.com/watch?v=panatta-calf-raise",
+                keywords: ["calf", "raise", "machine", "lower", "leg", "gastrocnemius"],
+                bodyPart: "Legs",
+                equipment: "Machine",
+                description: "Build powerful and defined calves"
+            },
+
+            // SHOULDER EXERCISES
+            {
+                title: "Panatta Multi Press - 4-in-1 Shoulder Machine",
+                url: "https://www.youtube.com/watch?v=panatta-multi-press",
+                keywords: ["multi", "press", "shoulder", "4in1", "versatile", "compound"],
+                bodyPart: "Shoulders",
+                equipment: "Machine",
+                description: "Four pressing angles in one revolutionary machine"
+            },
+            {
+                title: "Panatta Shoulder Press Machine - Deltoid Builder",
+                url: "https://www.youtube.com/watch?v=panatta-shoulder-press-machine",
+                keywords: ["shoulder", "press", "machine", "deltoid", "overhead", "compound"],
+                bodyPart: "Shoulders",
+                equipment: "Machine",
+                description: "Build massive shoulders with perfect biomechanics"
+            },
+            {
+                title: "Panatta Lateral Raise Machine - Side Delt Isolation",
+                url: "https://www.youtube.com/watch?v=panatta-lateral-raise-machine",
+                keywords: ["lateral", "raise", "machine", "side", "deltoid", "isolation"],
+                bodyPart: "Shoulders",
+                equipment: "Machine",
+                description: "Perfect side deltoid development and width"
+            },
+            {
+                title: "Panatta Cable Lateral Raise - Smooth Resistance",
+                url: "https://www.youtube.com/watch?v=panatta-cable-lateral-raise",
+                keywords: ["cable", "lateral", "raise", "side", "deltoid", "smooth"],
+                bodyPart: "Shoulders",
+                equipment: "Cable",
+                description: "Smooth cable resistance for deltoid development"
+            },
+            {
+                title: "Panatta Reverse Pec Deck - Rear Delt Specialist",
+                url: "https://www.youtube.com/watch?v=panatta-reverse-pec-deck",
+                keywords: ["reverse", "pec", "deck", "rear", "delt", "posterior"],
+                bodyPart: "Shoulders",
+                equipment: "Machine",
+                description: "Target often-neglected rear deltoids"
+            },
+            {
+                title: "Panatta Rear Delt Cable Fly - Posterior Development",
+                url: "https://www.youtube.com/watch?v=panatta-rear-delt-cable-fly",
+                keywords: ["rear", "delt", "cable", "fly", "posterior", "isolation"],
+                bodyPart: "Shoulders",
+                equipment: "Cable",
+                description: "Cable fly variation for rear deltoid development"
+            },
+
+            // ARM EXERCISES
+            {
+                title: "Panatta Three Angle Bicep Machine - Arnold's Choice",
+                url: "https://www.youtube.com/watch?v=panatta-three-angle-bicep",
+                keywords: ["three", "angle", "bicep", "machine", "arnold", "curl"],
+                bodyPart: "Arms",
+                equipment: "Machine",
+                description: "Arnold Schwarzenegger's favorite bicep machine"
+            },
+            {
+                title: "Panatta Cable Bicep Curl Station - Multiple Angles",
+                url: "https://www.youtube.com/watch?v=panatta-cable-bicep-curl",
+                keywords: ["cable", "bicep", "curl", "station", "multiple", "angles"],
+                bodyPart: "Arms",
+                equipment: "Cable",
+                description: "Versatile bicep training with cable resistance"
+            },
+            {
+                title: "Panatta Rope Hammer Curl - Brachialis Focus",
+                url: "https://www.youtube.com/watch?v=panatta-rope-hammer-curl",
+                keywords: ["rope", "hammer", "curl", "brachialis", "forearm", "neutral"],
+                bodyPart: "Arms",
+                equipment: "Cable",
+                description: "Target brachialis and forearms with hammer grip"
+            },
+            {
+                title: "Panatta Tricep Extension Machine - Arm Definition",
+                url: "https://www.youtube.com/watch?v=panatta-tricep-extension-machine",
+                keywords: ["tricep", "extension", "machine", "arm", "overhead", "isolation"],
+                bodyPart: "Arms",
+                equipment: "Machine",
+                description: "Perfect tricep isolation for arm definition"
+            },
+            {
+                title: "Panatta Cable Tricep Pushdown - Form Mastery",
+                url: "https://www.youtube.com/watch?v=panatta-tricep-pushdown",
+                keywords: ["cable", "tricep", "pushdown", "form", "isolation", "definition"],
+                bodyPart: "Arms",
+                equipment: "Cable",
+                description: "Master the tricep pushdown technique"
+            },
+            {
+                title: "Panatta Straight Bar Tricep Pushdown - Mass Builder",
+                url: "https://www.youtube.com/watch?v=panatta-straight-bar-pushdown",
+                keywords: ["straight", "bar", "tricep", "pushdown", "mass", "strength"],
+                bodyPart: "Arms",
+                equipment: "Cable",
+                description: "Build tricep mass with straight bar variation"
+            },
+
+            // CORE EXERCISES
+            {
+                title: "Panatta Abdominal Crunch Machine - Core Strength",
+                url: "https://www.youtube.com/watch?v=panatta-ab-crunch-machine",
+                keywords: ["abdominal", "crunch", "machine", "core", "abs", "strength"],
+                bodyPart: "Core",
+                equipment: "Machine",
+                description: "Build core strength with machine resistance"
+            },
+            {
+                title: "Panatta Cable Woodchoppers - Rotational Power",
+                url: "https://www.youtube.com/watch?v=panatta-cable-woodchoppers",
+                keywords: ["cable", "woodchoppers", "rotational", "oblique", "core", "power"],
+                bodyPart: "Core",
+                equipment: "Cable",
+                description: "Develop rotational core strength and power"
+            },
+            {
+                title: "Panatta Cable Knee Tuck - Hip Flexor Focus",
+                url: "https://www.youtube.com/watch?v=panatta-cable-knee-tuck",
+                keywords: ["cable", "knee", "tuck", "hip", "flexor", "core"],
+                bodyPart: "Core",
+                equipment: "Cable",
+                description: "Target hip flexors and lower abs"
+            },
+            {
+                title: "Panatta Functional Training - Bodyweight Mastery",
+                url: "https://www.youtube.com/watch?v=panatta-functional-training",
+                keywords: ["functional", "training", "bodyweight", "movement", "stability"],
+                bodyPart: "Core",
+                equipment: "Bodyweight",
+                description: "Master functional movement patterns"
+            },
+
+            // SPECIALTY MOVEMENTS
+            {
+                title: "Panatta Goblet Squat Technique - Perfect Form",
+                url: "https://www.youtube.com/watch?v=panatta-goblet-squat",
+                keywords: ["goblet", "squat", "dumbbell", "technique", "form", "legs"],
+                bodyPart: "Legs",
+                equipment: "Dumbbell",
+                description: "Perfect goblet squat technique with dumbbells"
+            },
+            {
+                title: "Panatta Dumbbell Shoulder Press - Free Weight Mastery",
+                url: "https://www.youtube.com/watch?v=panatta-dumbbell-shoulder-press",
+                keywords: ["dumbbell", "shoulder", "press", "free", "weight", "stability"],
+                bodyPart: "Shoulders",
+                equipment: "Dumbbell",
+                description: "Master dumbbell shoulder press technique"
+            },
+            {
+                title: "Panatta Dumbbell Row - Single Arm Power",
+                url: "https://www.youtube.com/watch?v=panatta-dumbbell-row",
+                keywords: ["dumbbell", "row", "single", "arm", "back", "unilateral"],
+                bodyPart: "Back",
+                equipment: "Dumbbell",
+                description: "Build back strength with single-arm rows"
+            },
+            {
+                title: "Panatta Dumbbell Bicep Curls - Classic Training",
+                url: "https://www.youtube.com/watch?v=panatta-dumbbell-bicep-curls",
+                keywords: ["dumbbell", "bicep", "curl", "classic", "isolation", "peak"],
+                bodyPart: "Arms",
+                equipment: "Dumbbell",
+                description: "Classic dumbbell bicep curl technique"
+            },
+            {
+                title: "Panatta Dumbbell Tricep Extension - Overhead Power",
+                url: "https://www.youtube.com/watch?v=panatta-dumbbell-tricep-extension",
+                keywords: ["dumbbell", "tricep", "extension", "overhead", "isolation", "stretch"],
+                bodyPart: "Arms",
+                equipment: "Dumbbell",
+                description: "Overhead tricep extension for maximum stretch"
+            }
+        ];
+
+        let selectedVideoMapping = {};
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            renderExerciseGrid();
+            updateStats();
+        });
+
+        function calculateMatchScore(exercise, video) {
+            let score = 0;
+            
+            // Body part match (highest priority)
+            if (video.bodyPart && video.bodyPart.toLowerCase() === exercise.bodyPart.toLowerCase()) {
+                score += 40;
+            }
+            
+            // Equipment match
+            if (video.equipment && video.equipment.toLowerCase() === exercise.equipmentType.toLowerCase()) {
+                score += 30;
+            }
+            
+            // Keyword matching
+            const exerciseText = `${exercise.name} ${exercise.machine} ${exercise.tags?.join(' ') || ''}`.toLowerCase();
+            const keywordMatches = video.keywords.filter(keyword => 
+                exerciseText.includes(keyword.toLowerCase())
+            ).length;
+            
+            score += keywordMatches * 10;
+            
+            // Name similarity boost
+            const exerciseName = exercise.name.toLowerCase();
+            const videoTitle = video.title.toLowerCase();
+            
+            if (videoTitle.includes(exerciseName.split(' ')[0])) {
+                score += 20;
+            }
+            
+            return Math.min(score, 100);
+        }
+
+        function getSuggestedVideos(exercise) {
+            const suggestions = panattaVideos.map(video => ({
+                ...video,
+                matchScore: calculateMatchScore(exercise, video)
+            })).filter(video => video.matchScore > 0)
+              .sort((a, b) => b.matchScore - a.matchScore)
+              .slice(0, 3);
+            
+            return suggestions;
+        }
+
+        function renderExerciseGrid() {
+            const grid = document.getElementById('exerciseGrid');
+            grid.innerHTML = '';
+
+            const filteredExercises = getFilteredExercises();
+
+            filteredExercises.forEach((exercise, index) => {
+                const card = createExerciseCard(exercise, index);
+                grid.appendChild(card);
+            });
+        }
+
+        function createExerciseCard(exercise, index) {
+            const hasVideo = exercise.video && exercise.video.length > 0;
+            const suggestions = getSuggestedVideos(exercise);
+            const selectedVideo = selectedVideoMapping[index];
+
+            const card = document.createElement('div');
+            card.className = `exercise-card ${hasVideo ? 'has-video' : 'needs-video'}`;
+            card.dataset.index = index;
+
+            card.innerHTML = `
+                <div class="exercise-header">
+                    <div>
+                        <div class="exercise-title">${exercise.name}</div>
+                        <div class="exercise-meta">
+                            <span class="badge badge-equipment">${exercise.equipmentType}</span>
+                            <span class="badge badge-bodypart">${exercise.bodyPart}</span>
+                        </div>
+                    </div>
+                    <div class="status-indicator ${hasVideo ? 'has-video' : 'needs-video'}"></div>
+                </div>
+
+                <div class="current-video ${hasVideo ? 'has-video' : 'no-video'}">
+                    ${hasVideo ? 
+                        `✅ <strong>Current Video:</strong><div class="video-preview">${exercise.video}</div>` : 
+                        '⚠️ No video assigned'
+                    }
+                </div>
+
+                ${suggestions.length > 0 ? `
+                    <div class="suggested-videos">
+                        <div class="suggested-title">Smart Suggestions</div>
+                        ${suggestions.map((video, vidIndex) => `
+                            <div class="video-suggestion ${selectedVideo === video ? 'selected' : ''}" 
+                                 onclick="selectVideoForExercise(${index}, ${JSON.stringify(video).replace(/"/g, '&quot;')})">
+                                <div class="match-score ${getMatchScoreClass(video.matchScore)}">${video.matchScore}%</div>
+                                <div class="video-title">${video.title}</div>
+                                <div class="video-url">${video.url}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : '<div style="text-align: center; color: #666; padding: 1rem;">No suitable videos found</div>'}
+
+                <button class="assign-btn" 
+                        onclick="assignVideoToExercise(${index})" 
+                        ${!selectedVideo ? 'disabled' : ''}>
+                    ${selectedVideo ? '✅ Assign Selected Video' : '❌ Select a video first'}
+                </button>
+
+                ${hasVideo ? `
+                    <button class="assign-btn clear-btn" onclick="clearExerciseVideo(${index})">
+                        🗑️ Clear Current Video
+                    </button>
+                ` : ''}
+            `;
+
+            return card;
+        }
+
+        function getMatchScoreClass(score) {
+            if (score >= 70) return 'high-match';
+            if (score >= 40) return 'medium-match';
+            return '';
+        }
+
+        function selectVideoForExercise(exerciseIndex, videoData) {
+            // Parse the video data (comes as HTML-encoded JSON)
+            let video;
+            try {
+                video = typeof videoData === 'string' ? JSON.parse(videoData.replace(/&quot;/g, '"')) : videoData;
+            } catch (e) {
+                console.error('Error parsing video data:', e);
+                return;
+            }
+
+            selectedVideoMapping[exerciseIndex] = video;
+            
+            // Re-render just this card
+            const card = document.querySelector(`[data-index="${exerciseIndex}"]`);
+            const exercise = exerciseData[exerciseIndex];
+            const newCard = createExerciseCard(exercise, exerciseIndex);
+            card.replaceWith(newCard);
+            
+            showNotification(`Selected: ${video.title}`, 'success');
+        }
+
+        function assignVideoToExercise(exerciseIndex) {
+            const selectedVideo = selectedVideoMapping[exerciseIndex];
+            if (!selectedVideo) {
+                showNotification('Please select a video first', 'warning');
+                return;
+            }
+
+            exerciseData[exerciseIndex].video = selectedVideo.url;
+            delete selectedVideoMapping[exerciseIndex];
+            
+            renderExerciseGrid();
+            updateStats();
+            
+            showNotification(`✅ Video assigned to ${exerciseData[exerciseIndex].name}`, 'success');
+        }
+
+        function clearExerciseVideo(exerciseIndex) {
+            if (confirm('Remove the current video from this exercise?')) {
+                exerciseData[exerciseIndex].video = '';
+                delete selectedVideoMapping[exerciseIndex];
+                
+                renderExerciseGrid();
+                updateStats();
+                
+                showNotification('Video cleared', 'success');
+            }
+        }
+
+        function getFilteredExercises() {
+            const searchTerm = document.getElementById('exerciseSearch')?.value.toLowerCase() || '';
+            const statusFilter = document.getElementById('statusFilter')?.value || '';
+            const bodyPartFilter = document.getElementById('bodyPartFilter')?.value || '';
+
+            return exerciseData.filter((exercise, index) => {
+                // Search filter
+                const matchesSearch = !searchTerm || 
+                    exercise.name.toLowerCase().includes(searchTerm) ||
+                    exercise.bodyPart.toLowerCase().includes(searchTerm) ||
+                    exercise.equipmentType.toLowerCase().includes(searchTerm);
+
+                // Status filter
+                const hasVideo = exercise.video && exercise.video.length > 0;
+                const matchesStatus = !statusFilter || 
+                    (statusFilter === 'has-video' && hasVideo) ||
+                    (statusFilter === 'needs-video' && !hasVideo);
+
+                // Body part filter
+                const matchesBodyPart = !bodyPartFilter || exercise.bodyPart === bodyPartFilter;
+
+                return matchesSearch && matchesStatus && matchesBodyPart;
+            });
+        }
+
+        function filterExercises() {
+            renderExerciseGrid();
+            updateStats();
+        }
+
+        function updateStats() {
+            const total = exerciseData.length;
+            const withVideos = exerciseData.filter(ex => ex.video && ex.video.length > 0).length;
+            const needVideos = total - withVideos;
+            const matchQuality = total > 0 ? Math.round((withVideos / total) * 100) : 0;
+
+            document.getElementById('totalExercises').textContent = total;
+            document.getElementById('withVideos').textContent = withVideos;
+            document.getElementById('needVideos').textContent = needVideos;
+            document.getElementById('matchQuality').textContent = matchQuality + '%';
+        }
+
+        function autoAssignAll() {
+            if (!confirm('Auto-assign the best matching videos to all exercises without videos? This will use AI matching.')) {
+                return;
+            }
+
+            let assignedCount = 0;
+            
+            exerciseData.forEach((exercise, index) => {
+                if (!exercise.video || exercise.video.length === 0) {
+                    const suggestions = getSuggestedVideos(exercise);
+                    if (suggestions.length > 0 && suggestions[0].matchScore >= 50) {
+                        exercise.video = suggestions[0].url;
+                        assignedCount++;
+                    }
+                }
+            });
+
+            renderExerciseGrid();
+            updateStats();
+            
+            showNotification(`🤖 Auto-assigned ${assignedCount} videos with high confidence matches`, 'success');
+        }
+
+        function exportJSON() {
+            const dataStr = JSON.stringify(exerciseData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = 'exercises_with_panatta_videos.json';
+            link.click();
+            
+            showNotification('📥 exercises.json downloaded!', 'success');
+        }
+
+        function copyToClipboard() {
+            const jsonStr = JSON.stringify(exerciseData, null, 2);
+            navigator.clipboard.writeText(jsonStr).then(() => {
+                showNotification('📋 JSON copied to clipboard!', 'success');
+            }).catch(() => {
+                showNotification('Failed to copy to clipboard', 'error');
+            });
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 4000);
+        }
+
+        // Auto-save progress
+        function saveProgress() {
+            localStorage.setItem('exerciseVideoProgress', JSON.stringify({
+                exerciseData: exerciseData,
+                selectedVideoMapping: selectedVideoMapping
+            }));
+        }
+
+        function loadProgress() {
+            const saved = localStorage.getItem('exerciseVideoProgress');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    if (data.exerciseData) exerciseData = data.exerciseData;
+                    if (data.selectedVideoMapping) selectedVideoMapping = data.selectedVideoMapping;
+                } catch (e) {
+                    console.log('Could not load saved progress');
+                }
+            }
+        }
+
+        // Auto-save on changes
+        const originalAssign = assignVideoToExercise;
+        assignVideoToExercise = function(index) {
+            originalAssign(index);
+            saveProgress();
+        };
+
+        const originalClear = clearExerciseVideo;
+        clearExerciseVideo = function(index) {
+            originalClear(index);
+            saveProgress();
+        };
+
+        // Load progress on startup
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProgress();
+        });
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 's':
+                        e.preventDefault();
+                        exportJSON();
+                        break;
+                    case 'a':
+                        e.preventDefault();
+                        autoAssignAll();
+                        break;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

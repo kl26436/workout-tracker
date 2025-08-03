@@ -2284,3 +2284,40 @@ body {
         transform: scale(1) translateY(0);
     }
 }
+/* Exercise card enhancements */
+.exercise-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* History styles */
+.workout-history-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.workout-history-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.status-completed { color: var(--success); }
+.status-cancelled { color: var(--danger); }
+.status-incomplete { color: var(--warning); }
+
+/* Enhanced exercise cards */
+.exercise-actions .btn {
+    margin-right: 0.25rem;
+}
+
+.exercise-actions .btn-success {
+    background: var(--success);
+    color: white;
+    border: none;
+}

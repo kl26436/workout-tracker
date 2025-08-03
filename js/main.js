@@ -58,31 +58,87 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initializeWorkoutApp() {
     // Initialize exercise library BEFORE auth (so it's always available)
-    exerciseLibrary = getExerciseLibrary(AppState);
-    exerciseLibrary.initialize();
-    window.exerciseLibrary = exerciseLibrary;
+    try {
+        exerciseLibrary = getExerciseLibrary(AppState);
+        exerciseLibrary.initialize();
+        window.exerciseLibrary = exerciseLibrary;
+        
+        // Initialize workout history
+        workoutHistory = getWorkoutHistory(AppState);
+        workoutHistory.initialize();
+        window.workoutHistory = workoutHistory;
+    } catch (error) {
+        console.error('❌ Error initializing modules:', error);
+    }
     
-    // Initialize workout history
-    workoutHistory = getWorkoutHistory(AppState);
-    workoutHistory.initialize();
-    window.workoutHistory = workoutHistory;
-    
-    // Set up auth state listener
+    // Set up auth state listener with error handling
     onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            AppState.currentUser = user;
-            showUserInfo(user);
-            await loadWorkoutPlans(AppState);
-            
-            // Check for in-progress workout and show options
-            await checkAndShowInProgressWorkout();
-            
-        } else {
-            AppState.currentUser = null;
-            showSignInButton();
-            showWorkoutSelector(); // Show selector if not signed in
+        try {
+            if (user) {
+                AppState.currentUser = user;
+                showUserInfo(user);
+                await loadWorkoutPlans(AppState);
+                
+                // Validate user data with delay to ensure everything is loaded
+                setTimeout(() => {
+                    try {
+                        validateUserData();
+                    } catch (error) {
+                        console.error('❌ Error in validateUserData:', error);
+                    }
+                }, 2000);
+                
+                // Check for in-progress workout and show options
+                await checkAndShowInProgressWorkout();
+                
+            } else {
+                AppState.currentUser = null;
+                showSignInButton();
+                showWorkoutSelector(); // Show selector if not signed in
+            }
+        } catch (error) {
+            console.error('❌ Error in auth state change:', error);
+            showNotification('Error during sign in process', 'error');
         }
     });
+}
+
+async function validateUserData() {
+    if (!AppState.currentUser) return;
+    
+    console.log('🔍 Validating user data...');
+    
+    try {
+        // Import Firebase functions that were missing
+        const { collection, query, orderBy, limit, getDocs } = await import('./core/firebase-config.js');
+        const { db } = await import('./core/firebase-config.js');
+        
+        // Check workout templates
+        const { WorkoutManager } = await import('./core/workout/workout-manager.js');
+        const workoutManager = new WorkoutManager(AppState);
+        const templates = await workoutManager.getUserWorkoutTemplates();
+        
+        // Check custom exercises
+        const exercises = await workoutManager.getExerciseLibrary();
+        const customExercises = exercises.filter(ex => ex.isCustom);
+        
+        // Check recent workouts
+        const workoutsRef = collection(db, "users", AppState.currentUser.uid, "workouts");
+        const recentWorkouts = await getDocs(query(workoutsRef, orderBy("lastUpdated", "desc"), limit(10)));
+        
+        console.log(`✅ User data validation:
+        - Templates: ${templates.length}
+        - Custom exercises: ${customExercises.length}  
+        - Recent workouts: ${recentWorkouts.size}
+        - User ID: ${AppState.currentUser.uid}`);
+        
+        // Show data summary to user
+        showNotification(`Data loaded: ${templates.length} templates, ${customExercises.length} custom exercises, ${recentWorkouts.size} recent workouts`, 'info');
+        
+    } catch (error) {
+        console.error('❌ Error validating user data:', error);
+        showNotification('Warning: Some user data may not have loaded correctly', 'warning');
+    }
 }
 
 async function checkAndShowInProgressWorkout() {
@@ -90,9 +146,24 @@ async function checkAndShowInProgressWorkout() {
         const todaysData = await loadTodaysWorkout(AppState);
         
         if (todaysData && todaysData.workoutType && !todaysData.completedAt) {
-            // There's an in-progress workout
-            inProgressWorkout = todaysData;
-            showInProgressWorkoutPrompt();
+            // Check if it's a known workout type
+            let workout = AppState.workoutPlans.find(w => w.day === todaysData.workoutType);
+            
+            // If not found, try to find it in custom templates
+            if (!workout) {
+                workout = await handleUnknownWorkout(todaysData);
+            }
+            
+            if (workout) {
+                // There's a valid in-progress workout
+                inProgressWorkout = todaysData;
+                showInProgressWorkoutPrompt();
+            } else {
+                // Invalid workout - clear it and start fresh
+                console.log('🧹 Clearing invalid in-progress workout');
+                inProgressWorkout = null;
+                showWorkoutSelector();
+            }
         } else {
             // No in-progress workout, show normal selector
             inProgressWorkout = null;
@@ -172,10 +243,51 @@ async function continueInProgressWorkout() {
     const prompt = document.querySelector('.in-progress-prompt');
     if (prompt) prompt.remove();
     
-    // Load the in-progress workout
-    await selectWorkout(inProgressWorkout.workoutType, inProgressWorkout);
-    
-    showNotification('Continuing your workout!', 'success');
+    try {
+        // Ensure workout plan exists
+        const workoutPlan = AppState.workoutPlans.find(w => w.day === inProgressWorkout.workoutType);
+        if (!workoutPlan) {
+            throw new Error(`Workout plan "${inProgressWorkout.workoutType}" not found`);
+        }
+        
+        // Restore the full workout structure
+        AppState.currentWorkout = {
+            day: inProgressWorkout.workoutType,
+            exercises: [...workoutPlan.exercises] // Clone the exercises
+        };
+        
+        // Restore all saved data
+        AppState.savedData = { ...inProgressWorkout };
+        AppState.workoutStartTime = new Date(inProgressWorkout.startTime);
+        
+        // Restore exercise units
+        if (inProgressWorkout.exerciseUnits) {
+            AppState.exerciseUnits = { ...inProgressWorkout.exerciseUnits };
+        } else {
+            // Initialize with global unit
+            AppState.currentWorkout.exercises.forEach((exercise, index) => {
+                AppState.exerciseUnits[index] = AppState.globalUnit;
+            });
+        }
+        
+        // Update UI
+        updateWorkoutDisplay(inProgressWorkout.workoutType);
+        document.getElementById('workout-selector')?.classList.add('hidden');
+        document.getElementById('active-workout')?.classList.remove('hidden');
+        
+        renderExercises();
+        startWorkoutDurationTimer();
+        
+        showNotification('Continuing your workout!', 'success');
+        
+    } catch (error) {
+        console.error('Error continuing workout:', error);
+        showNotification('Error loading workout. Starting fresh.', 'error');
+        
+        // Fallback: start fresh workout
+        inProgressWorkout = null;
+        showWorkoutSelector();
+    }
 }
 
 // NEW FUNCTION: Discard in-progress workout
@@ -213,6 +325,16 @@ async function discardInProgressWorkout() {
     } catch (error) {
         console.error('Error discarding workout:', error);
         showNotification('Error discarding workout. Please try again.', 'error');
+    }
+}
+
+function renderExerciseLibraryForTemplate() {
+    // This function is now handled by the enhanced exercise library
+    // Redirect to the new system
+    if (window.exerciseLibrary) {
+        window.exerciseLibrary.renderExercises();
+    } else {
+        console.warn('Exercise library not initialized');
     }
 }
 
@@ -327,6 +449,50 @@ async function signOutUser() {
         showNotification('Sign out failed', 'error');
     }
 }
+
+async function handleUnknownWorkout(workoutData) {
+    console.log('🔍 Handling unknown workout type:', workoutData.workoutType);
+    
+    // Check if it's a custom template that was saved
+    if (AppState.currentUser) {
+        try {
+            const { WorkoutManager } = await import('./core/workout/workout-manager.js');
+            const workoutManager = new WorkoutManager(AppState);
+            const templates = await workoutManager.getUserWorkoutTemplates();
+            
+            // Look for a template with matching name
+            const customTemplate = templates.find(t => 
+                t.name === workoutData.workoutType || 
+                t.id === workoutData.workoutType
+            );
+            
+            if (customTemplate) {
+                console.log('✅ Found matching custom template:', customTemplate.name);
+                
+                // Convert template to workout format
+                const customWorkout = {
+                    day: customTemplate.name,
+                    exercises: customTemplate.exercises.map(ex => ({
+                        machine: ex.name,
+                        sets: ex.sets || 3,
+                        reps: ex.reps || 10,
+                        weight: ex.weight || 50,
+                        video: ex.video || ''
+                    }))
+                };
+                
+                return customWorkout;
+            }
+        } catch (error) {
+            console.error('❌ Error checking custom templates:', error);
+        }
+    }
+    
+    // If we can't find the workout, return null
+    console.warn('⚠️ Could not find workout plan for:', workoutData.workoutType);
+    return null;
+}
+
 
 // Workout functions
 async function showWorkoutSelector() {
@@ -746,6 +912,9 @@ function createExerciseCard(exercise, index) {
         <div class="exercise-header">
             <h3 class="exercise-title">${exercise.machine}</h3>
             <div class="exercise-actions">
+                <button class="btn btn-success btn-small" onclick="addExerciseToActiveWorkout(${index})" title="Add exercise after this one">
+                    <i class="fas fa-plus"></i>
+                </button>
                 <button class="btn btn-secondary btn-small" onclick="swapExercise(${index})" title="Swap this exercise">
                     <i class="fas fa-exchange-alt"></i>
                 </button>
@@ -761,6 +930,7 @@ function createExerciseCard(exercise, index) {
 
     return card;
 }
+
 
 function generateSetPreview(exercise, exerciseIndex, unit) {
     const sets = AppState.savedData.exercises?.[`exercise_${exerciseIndex}`]?.sets || [];
@@ -1324,6 +1494,8 @@ function startModalRestTimer(exerciseIndex, setIndex) {
     
     let timeLeft = 90;
     let isPaused = false;
+    let startTime = Date.now();
+    let pausedTime = 0;
     
     const updateDisplay = () => {
         const minutes = Math.floor(timeLeft / 60);
@@ -1331,34 +1503,62 @@ function startModalRestTimer(exerciseIndex, setIndex) {
         timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
     };
     
+    const checkTime = () => {
+        if (isPaused) return;
+        
+        const elapsed = Math.floor((Date.now() - startTime - pausedTime) / 1000);
+        timeLeft = Math.max(0, 90 - elapsed);
+        
+        updateDisplay();
+        
+        if (timeLeft === 0) {
+            timerDisplay.textContent = 'Ready!';
+            timerDisplay.style.color = 'var(--success)';
+            
+            // Vibration and notification
+            if ('vibrate' in navigator) {
+                navigator.vibrate([200, 100, 200]);
+            }
+            
+            // Show notification even if page is hidden
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('Rest complete!', {
+                    body: 'Time for your next set 💪',
+                    icon: '/BigSurf.png'
+                });
+            }
+            
+            showNotification('Rest period complete! 💪', 'success');
+            
+            setTimeout(() => {
+                modalTimer.classList.add('hidden');
+                timerDisplay.style.color = 'var(--primary)';
+            }, 5000);
+            
+            return;
+        }
+    };
+    
     updateDisplay();
     
+    // Use requestAnimationFrame for better performance
+    const timerLoop = () => {
+        checkTime();
+        if (timeLeft > 0) {
+            modalTimer.timerData.animationFrame = requestAnimationFrame(timerLoop);
+        }
+    };
+    
     modalTimer.timerData = {
-        interval: setInterval(() => {
-            if (!isPaused && timeLeft > 0) {
-                timeLeft--;
-                updateDisplay();
-                
-                if (timeLeft === 0) {
-                    timerDisplay.textContent = 'Ready!';
-                    timerDisplay.style.color = 'var(--success)';
-                    
-                    if ('vibrate' in navigator) {
-                        navigator.vibrate([200, 100, 200]);
-                    }
-                    
-                    showNotification('Rest period complete! 💪', 'success');
-                    
-                    setTimeout(() => {
-                        modalTimer.classList.add('hidden');
-                        timerDisplay.style.color = 'var(--primary)';
-                    }, 5000);
-                }
-            }
-        }, 1000),
+        animationFrame: requestAnimationFrame(timerLoop),
         
         pause: () => {
             isPaused = !isPaused;
+            if (isPaused) {
+                pausedTime += Date.now() - startTime;
+            } else {
+                startTime = Date.now();
+            }
             const pauseBtn = modalTimer.querySelector('.modal-rest-controls .btn:first-child');
             if (pauseBtn) {
                 pauseBtn.innerHTML = isPaused ? '<i class="fas fa-play"></i>' : '<i class="fas fa-pause"></i>';
@@ -1366,11 +1566,18 @@ function startModalRestTimer(exerciseIndex, setIndex) {
         },
         
         skip: () => {
-            clearInterval(modalTimer.timerData.interval);
+            if (modalTimer.timerData.animationFrame) {
+                cancelAnimationFrame(modalTimer.timerData.animationFrame);
+            }
             modalTimer.classList.add('hidden');
             timerDisplay.style.color = 'var(--primary)';
         }
     };
+    
+    // Request notification permission if not granted
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
 }
 
 function toggleRestTimer() {
@@ -1414,7 +1621,9 @@ function clearGlobalRestTimer() {
 function clearModalRestTimer(exerciseIndex) {
     const modalTimer = document.getElementById(`modal-rest-timer-${exerciseIndex}`);
     if (modalTimer && modalTimer.timerData) {
-        clearInterval(modalTimer.timerData.interval);
+        if (modalTimer.timerData.animationFrame) {
+            cancelAnimationFrame(modalTimer.timerData.animationFrame);
+        }
         modalTimer.timerData = null;
         modalTimer.classList.add('hidden');
     }
@@ -1744,27 +1953,59 @@ async function quickAddExercise() {
     };
     
     try {
-        // If we're in swap mode, use the exercise immediately
-        if (AppState.swappingExerciseIndex !== null && AppState.swappingExerciseIndex !== undefined) {
-            await confirmExerciseSwap(name, exerciseData);
-            hideQuickAddExercise();
-            return;
-        }
-        
-        // Otherwise, add to library and show success
+        // Save to library first if user is signed in
         if (AppState.currentUser) {
             const { WorkoutManager } = await import('./core/workout/workout-manager.js');
             const workoutManager = new WorkoutManager(AppState);
             await workoutManager.createExercise(exerciseData);
         }
         
+        // Handle different contexts
+        if (AppState.swappingExerciseIndex !== null && AppState.swappingExerciseIndex !== undefined) {
+            // Swap mode
+            await confirmExerciseSwap(name, exerciseData);
+            hideQuickAddExercise();
+            return;
+        } else if (AppState.addingExerciseToWorkout) {
+            // Adding to active workout
+            await confirmExerciseAddToWorkout(name, exerciseData);
+            hideQuickAddExercise();
+            return;
+        } else if (currentEditingTemplate) {
+            // Adding to template being edited
+            const templateExercise = {
+                name: exerciseData.name,
+                bodyPart: exerciseData.bodyPart,
+                equipmentType: exerciseData.equipmentType,
+                sets: exerciseData.sets,
+                reps: exerciseData.reps,
+                weight: exerciseData.weight,
+                video: exerciseData.video
+            };
+            
+            currentEditingTemplate.exercises = currentEditingTemplate.exercises || [];
+            currentEditingTemplate.exercises.push(templateExercise);
+            
+            // Immediately refresh template editor
+            renderTemplateEditorExercises();
+            hideQuickAddExercise();
+            closeExerciseLibraryForTemplate();
+            
+            showNotification(`Added "${name}" to template and library!`, 'success');
+            return;
+        }
+        
+        // Default: just add to library
         showNotification(`Exercise "${name}" added to library!`, 'success');
         hideQuickAddExercise();
         
         // Refresh library if open
         const modal = document.getElementById('exercise-library-modal');
         if (modal && !modal.classList.contains('hidden')) {
-            location.reload();
+            // Refresh the exercise library display
+            if (exerciseLibrary && exerciseLibrary.refresh) {
+                await exerciseLibrary.refresh();
+            }
         }
         
     } catch (error) {
@@ -2341,6 +2582,102 @@ async function createNewExerciseEnhanced(event) {
     }
 }
 
+// 1. FIX: Add exercise to active workout (not just swap)
+async function addExerciseToActiveWorkout(exerciseIndex = null) {
+    if (!AppState.currentUser) {
+        showNotification('Please sign in to add exercises', 'warning');
+        return;
+    }
+    
+    if (!AppState.currentWorkout) {
+        showNotification('No active workout to add exercises to', 'warning');
+        return;
+    }
+    
+    // Set context for adding (not swapping)
+    AppState.addingExerciseToWorkout = true;
+    AppState.insertAfterIndex = exerciseIndex; // null means add to end
+    
+    await exerciseLibrary.openForWorkoutAdd();
+}
+
+// 2. FIX: Exercise library context for workout addition
+async function confirmExerciseAddToWorkout(exerciseName, exerciseData) {
+    if (!AppState.currentWorkout || !AppState.addingExerciseToWorkout) return;
+    
+    let newExercise;
+    try {
+        newExercise = typeof exerciseData === 'string' ? JSON.parse(exerciseData) : exerciseData;
+    } catch (e) {
+        console.error('Error parsing exercise data:', e);
+        return;
+    }
+    
+    const workoutExercise = {
+        machine: newExercise.name || newExercise.machine,
+        sets: newExercise.sets || 3,
+        reps: newExercise.reps || 10,
+        weight: newExercise.weight || 50,
+        video: newExercise.video || ''
+    };
+    
+    // Add to workout
+    if (AppState.insertAfterIndex !== null) {
+        // Insert after specific exercise
+        AppState.currentWorkout.exercises.splice(AppState.insertAfterIndex + 1, 0, workoutExercise);
+    } else {
+        // Add to end
+        AppState.currentWorkout.exercises.push(workoutExercise);
+    }
+    
+    // Initialize exercise units for new exercise
+    const newIndex = AppState.insertAfterIndex !== null ? 
+        AppState.insertAfterIndex + 1 : 
+        AppState.currentWorkout.exercises.length - 1;
+    
+    AppState.exerciseUnits[newIndex] = AppState.globalUnit;
+    
+    // Reindex exercise units if we inserted in middle
+    if (AppState.insertAfterIndex !== null) {
+        const newUnits = {};
+        AppState.currentWorkout.exercises.forEach((exercise, index) => {
+            if (index <= AppState.insertAfterIndex) {
+                newUnits[index] = AppState.exerciseUnits[index] || AppState.globalUnit;
+            } else if (index === AppState.insertAfterIndex + 1) {
+                newUnits[index] = AppState.globalUnit; // New exercise
+            } else {
+                newUnits[index] = AppState.exerciseUnits[index - 1] || AppState.globalUnit;
+            }
+        });
+        AppState.exerciseUnits = newUnits;
+        
+        // Reindex saved exercise data
+        const newExercises = {};
+        Object.keys(AppState.savedData.exercises || {}).forEach(key => {
+            const exerciseIndex = parseInt(key.split('_')[1]);
+            if (exerciseIndex <= AppState.insertAfterIndex) {
+                newExercises[key] = AppState.savedData.exercises[key];
+            } else {
+                newExercises[`exercise_${exerciseIndex + 1}`] = AppState.savedData.exercises[key];
+            }
+        });
+        AppState.savedData.exercises = newExercises;
+    }
+    
+    // Save changes
+    await saveWorkoutData(AppState);
+    
+    // Update UI
+    renderExercises();
+    closeExerciseLibraryEnhanced();
+    
+    // Reset state
+    AppState.addingExerciseToWorkout = false;
+    AppState.insertAfterIndex = null;
+    
+    showNotification(`Added "${workoutExercise.machine}" to workout!`, 'success');
+}
+
 // Enhanced Exercise Library Functions with Proper Context Handling
 let currentExerciseLibraryContext = null; // 'template', 'swap', or null
 let currentExerciseLibrary = [];
@@ -2428,13 +2765,14 @@ function addExerciseToTemplateFromLibrary(exerciseName, exerciseDataString) {
     currentEditingTemplate.exercises = currentEditingTemplate.exercises || [];
     currentEditingTemplate.exercises.push(templateExercise);
     
-    // Re-render exercises
+    // IMMEDIATE UI update - don't wait for close
     renderTemplateEditorExercises();
     
-    // Close library
-    closeExerciseLibraryForTemplate();
-    
+    // Show success immediately
     showNotification(`Added "${templateExercise.name}" to template`, 'success');
+    
+    // Keep library open for multiple additions
+    // User can close manually when done
 }
 
 // Close Exercise Library for Template
@@ -2761,6 +3099,73 @@ async function addExerciseToManualWorkout() {
     
     // Open exercise library
     await exerciseLibrary.openForManualWorkout();
+}
+
+// 7. FIX: Enhanced workout history with proper exercise names
+async function saveWorkoutWithProperNames(state) {
+    if (!state.currentUser || !state.currentWorkout) return;
+    
+    const saveDate = state.savedData.date || state.getTodayDateString();
+    state.savedData.date = saveDate;
+    state.savedData.exerciseUnits = state.exerciseUnits;
+    
+    // IMPORTANT: Store exercise names mapping for history
+    const exerciseNames = {};
+    state.currentWorkout.exercises.forEach((exercise, index) => {
+        exerciseNames[`exercise_${index}`] = exercise.machine;
+    });
+    state.savedData.exerciseNames = exerciseNames;
+    
+    // Store the original workout structure for reconstruction
+    state.savedData.originalWorkout = {
+        day: state.currentWorkout.day,
+        exercises: state.currentWorkout.exercises.map(ex => ({
+            machine: ex.machine,
+            sets: ex.sets,
+            reps: ex.reps,
+            weight: ex.weight,
+            video: ex.video || ''
+        }))
+    };
+    
+    // Convert weights to pounds for storage
+    const normalizedData = { ...state.savedData };
+    if (normalizedData.exercises) {
+        Object.keys(normalizedData.exercises).forEach(exerciseKey => {
+            const exerciseData = normalizedData.exercises[exerciseKey];
+            const exerciseIndex = parseInt(exerciseKey.split('_')[1]);
+            const currentUnit = state.exerciseUnits[exerciseIndex] || state.globalUnit;
+            
+            if (exerciseData.sets) {
+                exerciseData.sets = exerciseData.sets.map(set => {
+                    if (set.weight && currentUnit === 'kg') {
+                        return {
+                            ...set,
+                            weight: Math.round(set.weight * 2.20462),
+                            originalUnit: 'kg'
+                        };
+                    }
+                    return {
+                        ...set,
+                        originalUnit: currentUnit || 'lbs'
+                    };
+                });
+            }
+        });
+    }
+    
+    try {
+        const docRef = doc(db, "users", state.currentUser.uid, "workouts", saveDate);
+        await setDoc(docRef, {
+            ...normalizedData,
+            lastUpdated: new Date().toISOString()
+        });
+        
+        console.log('💾 Enhanced workout data saved for', saveDate);
+    } catch (error) {
+        console.error('❌ Error saving workout data:', error);
+        showNotification('Failed to save workout data', 'error');
+    }
 }
 
 // Edit manual exercise (open the exercise entry modal)
@@ -3394,6 +3799,9 @@ window.addSetToManualExercise = addSetToManualExercise;
 window.removeSetFromManualExercise = removeSetFromManualExercise;
 window.markManualExerciseComplete = markManualExerciseComplete;
 window.finishManualWorkout = finishManualWorkout;
+window.addExerciseToActiveWorkout = addExerciseToActiveWorkout;
+window.confirmExerciseAddToWorkout = confirmExerciseAddToWorkout;
+window.validateUserData = validateUserData;
 
 // Workout Management Global Functions
 window.showWorkoutManagement = showWorkoutManagement;
@@ -3415,7 +3823,23 @@ window.updateExerciseProgress = updateExerciseProgress;
 window.validateSetInput = validateSetInput;
 window.updateFormCompletion = updateFormCompletion;
 window.fillTemplateValues = fillTemplateValues;
-
+window.addExerciseToActiveWorkout = addExerciseToActiveWorkout;
+window.confirmExerciseAddToWorkout = confirmExerciseAddToWorkout;
+window.validateUserData = validateUserData;
+window.renderExerciseLibraryForTemplate = renderExerciseLibraryForTemplate;
+window.handleUnknownWorkout = handleUnknownWorkout;
+window.filterWorkoutHistory = function() {
+    if (window.workoutHistory) {
+        const searchQuery = document.getElementById('history-search')?.value || '';
+        const workoutType = document.getElementById('history-workout-filter')?.value || '';
+        const startDate = document.getElementById('history-start-date')?.value || '';
+        const endDate = document.getElementById('history-end-date')?.value || '';
+        
+        const dateRange = (startDate && endDate) ? { start: startDate, end: endDate } : null;
+        
+        window.workoutHistory.filterHistory(searchQuery, workoutType, dateRange);
+    }
+};
 
 // Template Selection Functions
 window.showTemplateSelection = showTemplateSelection;
