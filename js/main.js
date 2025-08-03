@@ -413,7 +413,7 @@ async function discardInProgressWorkout() {
                 console.log('🔥 Attempting Firebase deletion...');
                 
                 // Import Firebase delete function - Add deleteDoc to imports
-                const { deleteDoc, doc, db } = await import('./js/core/firebase-config.js');
+                const { deleteDoc, doc, db } = await import('./core/firebase-config.js');
                 
                 // Delete the workout document from Firebase
                 const workoutRef = doc(db, "users", workoutToDelete.userId, "workouts", workoutToDelete.date);
