@@ -3,7 +3,7 @@ import { showNotification } from './ui-helpers.js';
 
 export function getExerciseLibrary(appState) {
     let isOpen = false;
-    let currentContext = null; // 'swap', 'template', 'workout-add'
+    let currentContext = null; // 'swap', 'template', 'workout-add', 'manual-workout'
     let currentExercises = [];
     let filteredExercises = [];
 
@@ -32,72 +32,7 @@ export function getExerciseLibrary(appState) {
             await this.loadAndShow();
         },
 
-        createExerciseCard(exercise) {
-            const card = document.createElement('div');
-            card.className = 'library-exercise-card';
-            
-            let actionButton = '';
-            const exerciseJson = JSON.stringify(exercise).replace(/"/g, '&quot;');
-            
-            switch (currentContext) {
-                case 'swap':
-                    actionButton = `
-                        <button class="btn btn-primary btn-small" onclick="confirmExerciseSwap('${exercise.name || exercise.machine}', ${exerciseJson})">
-                            <i class="fas fa-exchange-alt"></i> Swap
-                        </button>
-                    `;
-                    break;
-                    
-                case 'template':
-                    actionButton = `
-                        <button class="btn btn-primary btn-small" onclick="addToTemplateFromLibrary(${exerciseJson})">
-                            <i class="fas fa-plus"></i> Add to Template
-                        </button>
-                    `;
-                    break;
-                    
-                case 'workout-add':
-                    actionButton = `
-                        <button class="btn btn-primary btn-small" onclick="addToWorkoutFromLibrary(${exerciseJson})">
-                            <i class="fas fa-plus"></i> Add to Workout
-                        </button>
-                    `;
-                    break;
-                    
-                case 'manual-workout':
-                    actionButton = `
-                        <button class="btn btn-primary btn-small" onclick="addToManualWorkoutFromLibrary(${exerciseJson})">
-                            <i class="fas fa-plus"></i> Add Exercise
-                        </button>
-                    `;
-                    break;
-                    
-                default:
-                    actionButton = `
-                        <button class="btn btn-primary btn-small" onclick="selectExerciseGeneric(${exerciseJson})">
-                            <i class="fas fa-plus"></i> Select
-                        </button>
-                    `;
-            }
-            
-            card.innerHTML = `
-                <h5>${exercise.name || exercise.machine}</h5>
-                <div class="library-exercise-info">
-                    ${exercise.bodyPart || 'General'} • ${exercise.equipmentType || 'Machine'}
-                    ${exercise.isCustom ? ' • Custom' : ''}
-                </div>
-                <div class="library-exercise-stats">
-                    ${exercise.sets || 3} sets × ${exercise.reps || 10} reps @ ${exercise.weight || 50} lbs
-                </div>
-                <div class="library-exercise-actions">
-                    ${actionButton}
-                </div>
-            `;
-            
-            return card;
-        },
-
-
+        // ADD THE MISSING openForManualWorkout FUNCTION
         async openForManualWorkout() {
             if (!appState.currentUser) {
                 showNotification('Please sign in to add exercises', 'warning');
@@ -105,6 +40,7 @@ export function getExerciseLibrary(appState) {
             }
 
             currentContext = 'manual-workout';
+            console.log('🔧 Context set to:', currentContext);
             
             const modal = document.getElementById('exercise-library-modal');
             const modalTitle = document.querySelector('#exercise-library-modal .modal-title');
@@ -153,20 +89,19 @@ export function getExerciseLibrary(appState) {
             const modal = document.getElementById('exercise-library-modal');
             if (!modal) return;
 
+            console.log('🔧 loadAndShow called with context:', currentContext);
+
             modal.classList.remove('hidden');
             isOpen = true;
 
             try {
-                // Load exercises
                 await this.loadExercises();
                 this.renderExercises();
-                
-                // Setup search/filter handlers
-                this.setupEventHandlers();
-                
+                console.log(`📚 Loaded ${filteredExercises.length} exercises for context: ${currentContext}`);
             } catch (error) {
-                console.error('Error loading exercise library:', error);
-                showNotification('Error loading exercises', 'error');
+                console.error('Error loading exercises:', error);
+                currentExercises = appState.exerciseDatabase || [];
+                filteredExercises = [...currentExercises];
             }
         },
 
@@ -207,13 +142,16 @@ export function getExerciseLibrary(appState) {
             });
         },
 
+        // FIXED createExerciseCard function (only one version)
         createExerciseCard(exercise) {
             const card = document.createElement('div');
             card.className = 'library-exercise-card';
             
-            let actionButton = '';
-            let onClickHandler = '';
+            // Debug logging
+            console.log('🔍 Creating exercise card with context:', currentContext);
+            console.log('🔍 Exercise name:', exercise.name || exercise.machine);
             
+            let actionButton = '';
             const exerciseJson = JSON.stringify(exercise).replace(/"/g, '&quot;');
             
             switch (currentContext) {
@@ -221,6 +159,15 @@ export function getExerciseLibrary(appState) {
                     actionButton = `
                         <button class="btn btn-primary btn-small" onclick="confirmExerciseSwap('${exercise.name || exercise.machine}', '${exerciseJson}')">
                             <i class="fas fa-exchange-alt"></i> Swap
+                        </button>
+                    `;
+                    break;
+                    
+                case 'manual-workout':
+                    console.log('✅ Using manual-workout case');
+                    actionButton = `
+                        <button class="btn btn-primary btn-small" onclick="addToManualWorkoutFromLibrary(${exerciseJson})">
+                            <i class="fas fa-plus"></i> Add Exercise
                         </button>
                     `;
                     break;
@@ -242,6 +189,7 @@ export function getExerciseLibrary(appState) {
                     break;
                     
                 default:
+                    console.log('⚠️ Using default case, currentContext is:', currentContext);
                     actionButton = `
                         <button class="btn btn-secondary btn-small" onclick="selectExerciseGeneric('${exercise.name || exercise.machine}', '${exerciseJson}')">
                             <i class="fas fa-check"></i> Select
@@ -352,3 +300,49 @@ export function getExerciseLibrary(appState) {
         }
     };
 }
+
+// Missing function - add at the bottom
+function selectExerciseGeneric(exerciseDataOrName, exerciseJson) {
+    try {
+        let exercise;
+        
+        // Handle different parameter formats
+        if (arguments.length === 2) {
+            // Format: selectExerciseGeneric('Exercise Name', 'jsonString')
+            const exerciseName = exerciseDataOrName;
+            exercise = typeof exerciseJson === 'string' ? JSON.parse(exerciseJson) : exerciseJson;
+        } else if (arguments.length === 1) {
+            // Format: selectExerciseGeneric(exerciseObject) or selectExerciseGeneric('Exercise Name')
+            if (typeof exerciseDataOrName === 'string') {
+                // Just a name string - create a simple exercise object
+                exercise = { 
+                    name: exerciseDataOrName, 
+                    machine: exerciseDataOrName 
+                };
+            } else {
+                // Full exercise object
+                exercise = exerciseDataOrName;
+            }
+        } else {
+            throw new Error('Invalid parameters');
+        }
+        
+        console.log('🎯 Generic exercise selection:', exercise);
+        
+        // Close the library modal
+        const modal = document.getElementById('exercise-library-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+        
+        // Show selection feedback
+        showNotification(`Selected "${exercise.name || exercise.machine}"`, 'success');
+        
+    } catch (error) {
+        console.error('Error in selectExerciseGeneric:', error);
+        showNotification('Error selecting exercise', 'error');
+    }
+}
+
+// Make it globally available
+window.selectExerciseGeneric = selectExerciseGeneric;

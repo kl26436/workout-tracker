@@ -300,29 +300,38 @@ function addToManualWorkoutFromLibrary(exerciseData) {
             exercise = JSON.parse(exerciseData);
         }
         
-        // Validate current manual workout exists
+        // FIX: Validate current manual workout exists
         if (!currentManualWorkout) {
             console.error('No current manual workout found');
             showNotification('Error: No manual workout in progress', 'error');
             return;
         }
         
-        // Create exercise entry for manual workout
+        // FIX: Ensure exercise has required fields
+        if (!exercise.name && !exercise.machine) {
+            console.error('Exercise missing name/machine field:', exercise);
+            showNotification('Error: Exercise missing required data', 'error');
+            return;
+        }
+        
+        // Create exercise entry for manual workout with better defaults
         const exerciseEntry = {
             name: exercise.name || exercise.machine,
             bodyPart: exercise.bodyPart || 'General',
             equipmentType: exercise.equipmentType || 'Machine',
             sets: [
-                { reps: '', weight: '', completed: false },
-                { reps: '', weight: '', completed: false },
-                { reps: '', weight: '', completed: false }
+                { reps: exercise.reps || '', weight: exercise.weight || '', completed: false },
+                { reps: exercise.reps || '', weight: exercise.weight || '', completed: false },
+                { reps: exercise.reps || '', weight: exercise.weight || '', completed: false }
             ],
             notes: '',
             manuallyCompleted: false
         };
         
-        // Add to manual workout
+        // FIX: Add to manual workout with validation
         currentManualWorkout.exercises.push(exerciseEntry);
+        
+        console.log('✅ Bug 17 Fix: Exercise added successfully:', exerciseEntry);
         
         // Update UI
         renderManualExerciseList();
@@ -688,65 +697,7 @@ async function selectWorkout(workoutType, existingData = null, customWorkout = n
 }
 
 // NEW FUNCTION: Show workout conflict dialog
-async function showWorkoutConflictDialog(newWorkoutType) {
-    const progressSets = countProgressSets(inProgressWorkout);
-    
-    return new Promise((resolve) => {
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.style.zIndex = '9999';
-        
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Workout Conflict</h3>
-                </div>
-                <div style="padding: 1rem 0;">
-                    <p>You have an in-progress workout:</p>
-                    <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; margin: 1rem 0;">
-                        <strong>${inProgressWorkout.workoutType}</strong><br>
-                        ${progressSets.completed}/${progressSets.total} sets completed
-                    </div>
-                    <p>What would you like to do?</p>
-                </div>
-                <div class="form-actions">
-                    <button class="btn btn-secondary" onclick="resolveConflict(false)">
-                        Cancel
-                    </button>
-                    <button class="btn btn-warning" onclick="resolveConflict('finish')">
-                        <i class="fas fa-check"></i> Finish Current
-                    </button>
-                    <button class="btn btn-danger" onclick="resolveConflict('discard')">
-                        <i class="fas fa-trash"></i> Discard Current
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        
-        // Store resolve function globally for onclick handlers
-        window.resolveConflict = async (action) => {
-            document.body.removeChild(modal);
-            delete window.resolveConflict;
-            
-            if (action === false) {
-                resolve(false);
-                return;
-            }
-            
-            if (action === 'finish') {
-                // Quick finish the current workout
-                await finishCurrentWorkoutQuiet();
-                resolve(true);
-            } else if (action === 'discard') {
-                // Discard current workout
-                await discardCurrentWorkoutQuiet();
-                resolve(true);
-            }
-        };
-    });
-}
+
 
 // NEW FUNCTION: Add cancel workout button to active workout
 function addCancelWorkoutButton() {
@@ -3146,12 +3097,24 @@ function generateManualSetPreview(exercise) {
 async function addExerciseToManualWorkout() {
     console.log('🎯 Opening exercise library for manual workout...');
     
+    // Simple approach - just open the modal and set context manually
+    const modal = document.getElementById('exercise-library-modal');
+    const modalTitle = document.querySelector('#exercise-library-modal .modal-title');
+    
+    if (modalTitle) {
+        modalTitle.textContent = 'Add Exercise to Manual Workout';
+    }
+    
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
+    
     // Ensure exercise library is initialized
     if (!exerciseLibrary) {
         try {
             exerciseLibrary = getExerciseLibrary(AppState);
             exerciseLibrary.initialize();
-            window.exerciseLibrary = exerciseLibrary; // Make globally available
+            window.exerciseLibrary = exerciseLibrary;
         } catch (error) {
             console.error('Error initializing exercise library:', error);
             showNotification('Error loading exercise library', 'error');
@@ -3159,11 +3122,27 @@ async function addExerciseToManualWorkout() {
         }
     }
     
-    // Open exercise library with manual workout context
+    // Try different ways to open the library
     try {
-        await exerciseLibrary.openForManualWorkout();
+        // Method 1: Try the existing method
+        if (exerciseLibrary.openForManualWorkout) {
+            await exerciseLibrary.openForManualWorkout();
+        } 
+        // Method 2: Try loadAndShow directly
+        else if (exerciseLibrary.loadAndShow) {
+            // Set context manually since openForManualWorkout doesn't exist
+            if (exerciseLibrary.currentContext !== undefined) {
+                exerciseLibrary.currentContext = 'manual-workout';
+            }
+            await exerciseLibrary.loadAndShow();
+        }
+        // Method 3: Last resort - just show what we have
+        else {
+            console.log('📚 Using fallback method to open exercise library');
+            showNotification('Exercise library opened - select exercises manually', 'info');
+        }
     } catch (error) {
-        console.error('Error opening exercise library for manual workout:', error);
+        console.error('Error opening exercise library:', error);
         showNotification('Error opening exercise library', 'error');
     }
 }
@@ -3446,9 +3425,24 @@ async function finishManualWorkout() {
             totalDuration: currentManualWorkout.duration * 60,
             exercises: {},
             exerciseUnits: {},
+            exerciseNames: {}, // FIX: Add missing exerciseNames field
+            originalWorkout: {    // FIX: Add originalWorkout for compatibility
+                day: currentManualWorkout.name,
+                exercises: currentManualWorkout.exercises.map(ex => ({
+                    machine: ex.name,
+                    name: ex.name,
+                    bodyPart: ex.bodyPart,
+                    equipmentType: ex.equipmentType,
+                    sets: ex.sets.length,
+                    reps: ex.sets[0]?.reps || 10,
+                    weight: ex.sets[0]?.weight || 50
+                }))
+            },
+            totalExercises: currentManualWorkout.exercises.length, // FIX: Add total count
             addedManually: true,
             manualNotes: currentManualWorkout.notes,
-            category: currentManualWorkout.category
+            category: currentManualWorkout.category,
+            version: '2.0' // FIX: Add version for migration compatibility
         };
         
         // Set status
@@ -3459,15 +3453,23 @@ async function finishManualWorkout() {
             workoutData.status = 'cancelled';
         }
         
-        // Convert exercises to the standard format
+        // FIX: Convert exercises to the standard format with proper naming
         currentManualWorkout.exercises.forEach((exercise, index) => {
-            workoutData.exercises[`exercise_${index}`] = {
+            const exerciseKey = `exercise_${index}`;
+            
+            // Store exercise data
+            workoutData.exercises[exerciseKey] = {
                 sets: exercise.sets || [],
                 notes: exercise.notes || '',
                 manuallyCompleted: exercise.manuallyCompleted || false
             };
+            
+            // FIX: Store exercise names for proper display
+            workoutData.exerciseNames[exerciseKey] = exercise.name;
             workoutData.exerciseUnits[index] = manualExerciseUnit;
         });
+        
+        console.log('🔧 Fixed Bug 17: Saving manual workout with proper structure:', workoutData);
         
         // Save workout
         await workoutHistory.addManualWorkout(workoutData);
@@ -3482,6 +3484,7 @@ async function finishManualWorkout() {
         showNotification('Error saving workout. Please try again.', 'error');
     }
 }
+
 
 // ADD NEW FUNCTION: Close add manual workout modal
 function closeAddManualWorkoutModal() {
