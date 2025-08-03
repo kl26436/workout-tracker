@@ -350,41 +350,135 @@ function addToManualWorkoutFromLibrary(exerciseData) {
     }
 }
 
-// NEW FUNCTION: Discard in-progress workout
+// BUG 20 FIX with Enhanced Debugging - Replace your current function with this
 async function discardInProgressWorkout() {
-    if (!inProgressWorkout) return;
+    console.log('🚮 Starting discard process...', inProgressWorkout);
+    
+    if (!inProgressWorkout) {
+        console.log('❌ No in-progress workout to discard');
+        return;
+    }
     
     const confirmDiscard = confirm(
         `Are you sure you want to discard your in-progress "${inProgressWorkout.workoutType}" workout? ` +
         `This will permanently delete your progress and cannot be undone.`
     );
     
-    if (!confirmDiscard) return;
+    if (!confirmDiscard) {
+        console.log('❌ User cancelled discard');
+        return;
+    }
     
     try {
-        // Mark the workout as discarded
-        const discardedData = {
-            ...inProgressWorkout,
-            discardedAt: new Date().toISOString(),
-            status: 'discarded'
+        // 1. Store workout info BEFORE clearing variables
+        const workoutToDelete = {
+            date: inProgressWorkout.date,
+            workoutType: inProgressWorkout.workoutType,
+            userId: AppState.currentUser?.uid
         };
         
-        await saveWorkoutData({ ...AppState, savedData: discardedData });
+        console.log('📋 Workout to delete:', workoutToDelete);
         
-        // Clear state
+        // 2. DELETE the workout from Firebase FIRST (this is the key fix!)
+        try {
+            if (workoutToDelete.userId && workoutToDelete.date) {
+                console.log('🔥 Attempting Firebase deletion...');
+                
+                // Import Firebase delete function - Add deleteDoc to imports
+                const { deleteDoc, doc, db } = await import('./core/firebase-config.js');
+                
+                // Delete the workout document from Firebase
+                const workoutRef = doc(db, "users", workoutToDelete.userId, "workouts", workoutToDelete.date);
+                await deleteDoc(workoutRef);
+                
+                console.log('✅ SUCCESS: Workout deleted from Firebase:', workoutToDelete.date);
+            } else {
+                console.log('❌ Missing userId or date for Firebase deletion:', workoutToDelete);
+            }
+        } catch (firebaseError) {
+            console.error('❌ ERROR deleting workout from Firebase:', firebaseError);
+            // Continue with cleanup even if Firebase delete fails
+        }
+        
+        // 3. Clear the in-progress workout variables
+        console.log('🧹 Clearing in-progress workout variables...');
+        inProgressWorkout = null;
+        showingProgressPrompt = false;
+        
+        // 4. Reset AppState
+        console.log('🔄 Resetting AppState...');
+        AppState.reset();
+        
+        // 5. Clear localStorage as backup
+        try {
+            console.log('🗑️ Clearing localStorage...');
+            localStorage.removeItem('workoutData');
+            localStorage.removeItem('inProgressWorkout');
+            localStorage.removeItem('currentWorkout');
+            localStorage.removeItem('savedWorkoutData');
+        } catch (storageError) {
+            console.warn('⚠️ Error clearing localStorage:', storageError);
+        }
+        
+        // 6. Remove in-progress prompt UI
+        const prompt = document.querySelector('.in-progress-prompt');
+        if (prompt) {
+            console.log('🗑️ Removing in-progress prompt...');
+            prompt.remove();
+        }
+        
+        // 7. Reset UI to workout selector state
+        const activeWorkout = document.getElementById('active-workout');
+        const workoutSelector = document.getElementById('workout-selector');
+        
+        if (activeWorkout) {
+            activeWorkout.classList.add('hidden');
+        }
+        
+        if (workoutSelector) {
+            workoutSelector.classList.remove('hidden');
+        }
+        
+        // 8. Clear exercise list
+        const exerciseList = document.getElementById('exercise-list');
+        if (exerciseList) {
+            exerciseList.innerHTML = '';
+        }
+        
+        // 9. Reset workout display elements
+        const workoutTitle = document.getElementById('current-workout-title');
+        if (workoutTitle) {
+            workoutTitle.textContent = '';
+        }
+        
+        const workoutMeta = document.getElementById('workout-meta');
+        if (workoutMeta) {
+            workoutMeta.textContent = '';
+        }
+        
+        // 10. Clear any focused exercise displays
+        const focusedElements = document.querySelectorAll('.exercise-focus');
+        focusedElements.forEach(element => {
+            element.classList.add('hidden');
+        });
+        
+        // 11. Show workout selector
+        showWorkoutSelector();
+        
+        // 12. Success notification
+        showNotification('Previous workout discarded and deleted completely!', 'info');
+        
+        console.log('✅ COMPLETE: Bug 20 Fixed - In-progress workout fully discarded and deleted from Firebase');
+        
+    } catch (error) {
+        console.error('❌ CRITICAL ERROR in discardInProgressWorkout:', error);
+        showNotification('Error discarding workout. Please try again.', 'error');
+        
+        // Emergency fallback - still try to reset basic state
         inProgressWorkout = null;
         showingProgressPrompt = false;
         AppState.reset();
-        
-        // Remove prompt and show normal selector
-        const prompt = document.querySelector('.in-progress-prompt');
-        if (prompt) prompt.remove();
-        
-        showNotification('Previous workout discarded. You can start a new one!', 'info');
-        
-    } catch (error) {
-        console.error('Error discarding workout:', error);
-        showNotification('Error discarding workout. Please try again.', 'error');
+        showWorkoutSelector();
     }
 }
 
