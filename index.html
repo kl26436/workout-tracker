@@ -394,84 +394,51 @@
 
     <!-- Exercise Library Modal -->
     <div id="exercise-library-modal" class="modal hidden">
-        <div class="modal-content exercise-library-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Exercise Library</h3>
-                <button class="close-btn">
-                    <i class="fas fa-times"></i>
+    <div class="modal-content exercise-library-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Exercise Library</h3>
+            <!-- FIX: Add onclick handler to close button -->
+            <button class="close-btn" onclick="closeExerciseLibrary()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <!-- Search and Filters -->
+        <div class="library-filters">
+            <div class="filter-row">
+                <input type="text" id="exercise-library-search" class="search-input" 
+                       placeholder="Search exercises...">
+            </div>
+            <div class="filter-row">
+                <select id="body-part-filter" class="form-input">
+                    <option value="">All Body Parts</option>
+                    <option value="Chest">Chest</option>
+                    <option value="Back">Back</option>
+                    <option value="Shoulders">Shoulders</option>
+                    <option value="Arms">Arms</option>
+                    <option value="Legs">Legs</option>
+                    <option value="Core">Core</option>
+                </select>
+                <select id="equipment-filter" class="form-input">
+                    <option value="">All Equipment</option>
+                    <option value="Machine">Machine</option>
+                    <option value="Cable">Cable</option>
+                    <option value="Dumbbell">Dumbbell</option>
+                    <option value="Barbell">Barbell</option>
+                    <option value="Bodyweight">Bodyweight</option>
+                </select>
+                <button class="btn btn-primary" onclick="showCreateExerciseForm()">
+                    <i class="fas fa-plus"></i> Create New
                 </button>
             </div>
-            
-            <!-- Search and Filters -->
-            <div class="library-filters">
-                <div class="filter-row">
-                    <input type="text" id="exercise-library-search" class="search-input" 
-                           placeholder="Search exercises...">
-                </div>
-                <div class="filter-row">
-                    <select id="body-part-filter" class="form-input">
-                        <option value="">All Body Parts</option>
-                        <option value="Chest">Chest</option>
-                        <option value="Back">Back</option>
-                        <option value="Shoulders">Shoulders</option>
-                        <option value="Arms">Arms</option>
-                        <option value="Legs">Legs</option>
-                        <option value="Core">Core</option>
-                    </select>
-                    <select id="equipment-filter" class="form-input">
-                        <option value="">All Equipment</option>
-                        <option value="Machine">Machine</option>
-                        <option value="Cable">Cable</option>
-                        <option value="Dumbbell">Dumbbell</option>
-                        <option value="Barbell">Barbell</option>
-                        <option value="Bodyweight">Bodyweight</option>
-                    </select>
-                    <button class="btn btn-success" onclick="showQuickAddExercise()">
-                        <i class="fas fa-plus"></i> Quick Add
-                    </button>
-                    <button class="btn btn-primary" onclick="showCreateExerciseForm()">
-                        <i class="fas fa-plus-circle"></i> Create New
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Quick Add Exercise Section -->
-            <div id="quick-add-section" class="quick-add-section hidden">
-                <h4>Quick Add Exercise</h4>
-                <div class="quick-add-form">
-                    <div class="form-row">
-                        <input type="text" id="quick-exercise-name" class="form-input" placeholder="Exercise Name *" required>
-                        <select id="quick-body-part" class="form-input">
-                            <option value="Chest">Chest</option>
-                            <option value="Back">Back</option>
-                            <option value="Shoulders">Shoulders</option>
-                            <option value="Arms">Arms</option>
-                            <option value="Legs">Legs</option>
-                            <option value="Core">Core</option>
-                        </select>
-                        <select id="quick-equipment" class="form-input">
-                            <option value="Machine">Machine</option>
-                            <option value="Cable">Cable</option>
-                            <option value="Dumbbell">Dumbbell</option>
-                            <option value="Barbell">Barbell</option>
-                            <option value="Bodyweight">Bodyweight</option>
-                        </select>
-                    </div>
-                    <div class="form-actions">
-                        <button class="btn btn-secondary" onclick="hideQuickAddExercise()">Cancel</button>
-                        <button class="btn btn-success" onclick="quickAddExercise()">
-                            <i class="fas fa-plus"></i> Add & Use
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Exercise Grid -->
-            <div id="exercise-library-grid" class="exercise-library-grid">
-                <!-- Exercises will be loaded here -->
-            </div>
+        </div>
+        
+        <!-- Exercise Grid -->
+        <div id="exercise-library-grid" class="exercise-library-grid">
+            <!-- Exercises will be loaded here -->
         </div>
     </div>
+</div>
 
     <!-- Create Template Modal -->
     <div id="create-template-modal" class="modal hidden">
