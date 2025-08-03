@@ -290,6 +290,57 @@ async function continueInProgressWorkout() {
     }
 }
 
+function addToManualWorkoutFromLibrary(exerciseData) {
+    try {
+        console.log('🎯 Adding exercise to manual workout:', exerciseData);
+        
+        // Parse exercise data if it's a string
+        let exercise = exerciseData;
+        if (typeof exerciseData === 'string') {
+            exercise = JSON.parse(exerciseData);
+        }
+        
+        // Validate current manual workout exists
+        if (!currentManualWorkout) {
+            console.error('No current manual workout found');
+            showNotification('Error: No manual workout in progress', 'error');
+            return;
+        }
+        
+        // Create exercise entry for manual workout
+        const exerciseEntry = {
+            name: exercise.name || exercise.machine,
+            bodyPart: exercise.bodyPart || 'General',
+            equipmentType: exercise.equipmentType || 'Machine',
+            sets: [
+                { reps: '', weight: '', completed: false },
+                { reps: '', weight: '', completed: false },
+                { reps: '', weight: '', completed: false }
+            ],
+            notes: '',
+            manuallyCompleted: false
+        };
+        
+        // Add to manual workout
+        currentManualWorkout.exercises.push(exerciseEntry);
+        
+        // Update UI
+        renderManualExerciseList();
+        
+        // Close exercise library
+        if (exerciseLibrary && exerciseLibrary.close) {
+            exerciseLibrary.close();
+        }
+        
+        // Show success message
+        showNotification(`Added "${exerciseEntry.name}" to manual workout!`, 'success');
+        
+    } catch (error) {
+        console.error('Error adding exercise to manual workout:', error);
+        showNotification('Error adding exercise to manual workout', 'error');
+    }
+}
+
 // NEW FUNCTION: Discard in-progress workout
 async function discardInProgressWorkout() {
     if (!inProgressWorkout) return;
@@ -3093,12 +3144,28 @@ function generateManualSetPreview(exercise) {
 
 // Add exercise to manual workout
 async function addExerciseToManualWorkout() {
-    // Set context for exercise library
-    AppState.addingToManualWorkout = true;
-    AppState.manualWorkoutContext = currentManualWorkout;
+    console.log('🎯 Opening exercise library for manual workout...');
     
-    // Open exercise library
-    await exerciseLibrary.openForManualWorkout();
+    // Ensure exercise library is initialized
+    if (!exerciseLibrary) {
+        try {
+            exerciseLibrary = getExerciseLibrary(AppState);
+            exerciseLibrary.initialize();
+            window.exerciseLibrary = exerciseLibrary; // Make globally available
+        } catch (error) {
+            console.error('Error initializing exercise library:', error);
+            showNotification('Error loading exercise library', 'error');
+            return;
+        }
+    }
+    
+    // Open exercise library with manual workout context
+    try {
+        await exerciseLibrary.openForManualWorkout();
+    } catch (error) {
+        console.error('Error opening exercise library for manual workout:', error);
+        showNotification('Error opening exercise library', 'error');
+    }
 }
 
 // 7. FIX: Enhanced workout history with proper exercise names
@@ -3840,6 +3907,7 @@ window.filterWorkoutHistory = function() {
         window.workoutHistory.filterHistory(searchQuery, workoutType, dateRange);
     }
 };
+window.addToManualWorkoutFromLibrary = addToManualWorkoutFromLibrary;
 
 // Template Selection Functions
 window.showTemplateSelection = showTemplateSelection;

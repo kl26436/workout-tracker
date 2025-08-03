@@ -32,6 +32,90 @@ export function getExerciseLibrary(appState) {
             await this.loadAndShow();
         },
 
+        createExerciseCard(exercise) {
+            const card = document.createElement('div');
+            card.className = 'library-exercise-card';
+            
+            let actionButton = '';
+            const exerciseJson = JSON.stringify(exercise).replace(/"/g, '&quot;');
+            
+            switch (currentContext) {
+                case 'swap':
+                    actionButton = `
+                        <button class="btn btn-primary btn-small" onclick="confirmExerciseSwap('${exercise.name || exercise.machine}', ${exerciseJson})">
+                            <i class="fas fa-exchange-alt"></i> Swap
+                        </button>
+                    `;
+                    break;
+                    
+                case 'template':
+                    actionButton = `
+                        <button class="btn btn-primary btn-small" onclick="addToTemplateFromLibrary(${exerciseJson})">
+                            <i class="fas fa-plus"></i> Add to Template
+                        </button>
+                    `;
+                    break;
+                    
+                case 'workout-add':
+                    actionButton = `
+                        <button class="btn btn-primary btn-small" onclick="addToWorkoutFromLibrary(${exerciseJson})">
+                            <i class="fas fa-plus"></i> Add to Workout
+                        </button>
+                    `;
+                    break;
+                    
+                case 'manual-workout':
+                    actionButton = `
+                        <button class="btn btn-primary btn-small" onclick="addToManualWorkoutFromLibrary(${exerciseJson})">
+                            <i class="fas fa-plus"></i> Add Exercise
+                        </button>
+                    `;
+                    break;
+                    
+                default:
+                    actionButton = `
+                        <button class="btn btn-primary btn-small" onclick="selectExerciseGeneric(${exerciseJson})">
+                            <i class="fas fa-plus"></i> Select
+                        </button>
+                    `;
+            }
+            
+            card.innerHTML = `
+                <h5>${exercise.name || exercise.machine}</h5>
+                <div class="library-exercise-info">
+                    ${exercise.bodyPart || 'General'} • ${exercise.equipmentType || 'Machine'}
+                    ${exercise.isCustom ? ' • Custom' : ''}
+                </div>
+                <div class="library-exercise-stats">
+                    ${exercise.sets || 3} sets × ${exercise.reps || 10} reps @ ${exercise.weight || 50} lbs
+                </div>
+                <div class="library-exercise-actions">
+                    ${actionButton}
+                </div>
+            `;
+            
+            return card;
+        },
+
+
+        async openForManualWorkout() {
+            if (!appState.currentUser) {
+                showNotification('Please sign in to add exercises', 'warning');
+                return;
+            }
+
+            currentContext = 'manual-workout';
+            
+            const modal = document.getElementById('exercise-library-modal');
+            const modalTitle = document.querySelector('#exercise-library-modal .modal-title');
+            
+            if (modalTitle) {
+                modalTitle.textContent = 'Add Exercise to Manual Workout';
+            }
+
+            await this.loadAndShow();
+        },
+
         async openForTemplate(template) {
             currentContext = 'template';
             appState.addingToTemplate = true;

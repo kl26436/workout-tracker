@@ -252,33 +252,35 @@ export function getWorkoutHistory(appState) {
         },
 
         async deleteWorkout(workoutId) {
-            if (!appState.currentUser) return;
+    if (!appState.currentUser) return;
 
-            const workout = currentHistory.find(w => w.id === workoutId);
-            if (!workout) return;
+    const workout = currentHistory.find(w => w.id === workoutId);
+    if (!workout) return;
 
-            const confirmDelete = confirm(`Delete workout "${workout.workoutType}" from ${new Date(workout.date).toLocaleDateString()}?`);
-            if (!confirmDelete) return;
+    const confirmDelete = confirm(`Delete workout "${workout.workoutType}" from ${new Date(workout.date).toLocaleDateString()}?\n\nThis cannot be undone.`);
+    if (!confirmDelete) return;
 
-            try {
-                // Delete from Firebase
-                const { deleteDoc, doc } = await import('./firebase-config.js');
-                await deleteDoc(doc(db, "users", appState.currentUser.uid, "workouts", workoutId));
+    try {
+        // Import Firebase functions dynamically
+        const { deleteDoc, doc, db } = await import('./firebase-config.js');
+        
+        // Delete from Firebase
+        await deleteDoc(doc(db, "users", appState.currentUser.uid, "workouts", workoutId));
 
-                // Remove from local arrays
-                currentHistory = currentHistory.filter(w => w.id !== workoutId);
-                filteredHistory = filteredHistory.filter(w => w.id !== workoutId);
+        // Remove from local arrays
+        currentHistory = currentHistory.filter(w => w.id !== workoutId);
+        filteredHistory = filteredHistory.filter(w => w.id !== workoutId);
 
-                // Re-render
-                this.renderHistory();
+        // Re-render
+        this.renderHistory();
 
-                showNotification('Workout deleted successfully', 'success');
+        showNotification('Workout deleted successfully', 'success');
 
-            } catch (error) {
-                console.error('Error deleting workout:', error);
-                showNotification('Failed to delete workout', 'error');
-            }
-        },
+    } catch (error) {
+        console.error('Error deleting workout:', error);
+        showNotification('Failed to delete workout. Please try again.', 'error');
+    }
+},
 
         async repeatWorkout(workoutId) {
             const workout = currentHistory.find(w => w.id === workoutId);
