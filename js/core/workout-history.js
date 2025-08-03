@@ -18,31 +18,34 @@ export function getWorkoutHistory(appState) {
         },
 
         async loadHistory() {
-            if (!appState.currentUser) {
-                showNotification('Please sign in to view workout history', 'warning');
-                return;
-            }
+        if (!appState.currentUser) {
+            showNotification('Please sign in to view workout history', 'warning');
+            return;
+        }
 
-            console.log('📊 Loading workout history...');
+        console.log('📊 Loading workout history...');
 
-            try {
-                // Migrate old data if needed
-                await migrateWorkoutData(appState);
+        try {
+            // Migrate old data if needed
+            await migrateWorkoutData(appState);
 
-                // Load history
-                currentHistory = await loadWorkoutHistory(appState, 100);
-                filteredHistory = [...currentHistory];
-                currentPage = 1;
+            // Load history
+            const loadedData = await loadWorkoutHistory(appState, 100);
+            
+            // 🔧 FIX: Update the object properties, not just local variables
+            this.currentHistory.splice(0, this.currentHistory.length, ...loadedData);
+            this.filteredHistory.splice(0, this.filteredHistory.length, ...loadedData);
+            this.currentPage = 1;
 
-                this.renderHistory();
+            this.renderHistory();
 
-                console.log(`✅ Loaded ${currentHistory.length} workout entries`);
+            console.log(`✅ Loaded ${this.currentHistory.length} workout entries`);
 
-            } catch (error) {
-                console.error('❌ Error loading workout history:', error);
-                showNotification('Error loading workout history', 'error');
-            }
-        },
+        } catch (error) {
+            console.error('❌ Error loading workout history:', error);
+            showNotification('Error loading workout history', 'error');
+        }
+    },
 
         renderHistory() {
             const container = document.getElementById('workout-history-list');

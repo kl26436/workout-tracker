@@ -67,7 +67,7 @@ function initializeWorkoutApp() {
         workoutHistory = getWorkoutHistory(AppState);
         workoutHistory.initialize();
         window.workoutHistory = workoutHistory;
-    } catch (error) {
+        } catch (error) {
         console.error('❌ Error initializing modules:', error);
     }
     
@@ -102,6 +102,34 @@ function initializeWorkoutApp() {
         }
     });
 }
+
+function testHistoryFilters() {
+    console.log('🧪 Testing history filters...');
+    
+    // Test if elements exist
+    const filterBtns = document.querySelectorAll('.history-filter-btn');
+    const searchInput = document.getElementById('history-search');
+    const startDate = document.getElementById('history-start-date');
+    const endDate = document.getElementById('history-end-date');
+    
+    console.log('Filter buttons found:', filterBtns.length);
+    console.log('Search input found:', !!searchInput);
+    console.log('Date inputs found:', !!startDate, !!endDate);
+    console.log('Workout history object:', !!workoutHistory);
+    
+    if (workoutHistory && workoutHistory.currentHistory) {
+        console.log('Current history length:', workoutHistory.currentHistory.length);
+        console.log('Filtered history length:', workoutHistory.filteredHistory?.length || 'undefined');
+    }
+    
+    // Test a filter
+    if (filterBtns.length > 0) {
+        console.log('Testing filter button click...');
+        filterBtns[1]?.click(); // Click second filter button
+    }
+}
+
+window.testHistoryFilters = testHistoryFilters;
 
 async function validateUserData() {
     if (!AppState.currentUser) return;
@@ -385,7 +413,7 @@ async function discardInProgressWorkout() {
                 console.log('🔥 Attempting Firebase deletion...');
                 
                 // Import Firebase delete function - Add deleteDoc to imports
-                const { deleteDoc, doc, db } = await import('./core/firebase-config.js');
+                const { deleteDoc, doc, db } = await import('./js/core/firebase-config.js');
                 
                 // Delete the workout document from Firebase
                 const workoutRef = doc(db, "users", workoutToDelete.userId, "workouts", workoutToDelete.date);
@@ -3130,14 +3158,267 @@ async function showWorkoutHistory() {
     if (workoutManagement) workoutManagement.classList.add('hidden');
     if (historySection) historySection.classList.remove('hidden');
     
-    // Load history
-    await workoutHistory.loadHistory();
+    // 🔧 FIX: Ensure we're using the right workoutHistory object
+    console.log('🔍 Checking workoutHistory reference...');
+    console.log('window.workoutHistory exists:', !!window.workoutHistory);
+    console.log('global workoutHistory exists:', !!workoutHistory);
+    
+    // Use the existing global one
+    if (!window.workoutHistory && workoutHistory) {
+        window.workoutHistory = workoutHistory;
+    }
+    
+    // Load history on the correct object
+    if (window.workoutHistory) {
+        await window.workoutHistory.loadHistory();
+        console.log('✅ History loaded, currentHistory length:', window.workoutHistory.currentHistory.length);
+    }
+    
+    // Set up event listeners after a delay to ensure history is loaded
+    setTimeout(() => {
+        setupWorkoutHistoryEventListeners();
+    }, 500);
 }
 
-function showManualStep(stepNumber) {
-    document.querySelectorAll('.manual-step').forEach(step => step.classList.add('hidden'));
-    const targetStep = document.getElementById(`manual-step-${stepNumber}`);
-    if (targetStep) targetStep.classList.remove('hidden');
+// 4. ADD this emergency fix function:
+function emergencyFixFilters() {
+    console.log('🚨 Emergency filter fix - checking all references...');
+    
+    // Force reload data into the right object
+    if (workoutHistory && workoutHistory.loadHistory) {
+        workoutHistory.loadHistory().then(() => {
+            // Copy the data to window reference
+            if (window.workoutHistory && workoutHistory.currentHistory.length > 0) {
+                window.workoutHistory.currentHistory = [...workoutHistory.currentHistory];
+                window.workoutHistory.filteredHistory = [...workoutHistory.currentHistory];
+                console.log('✅ Emergency fix: Data copied to window.workoutHistory');
+                console.log('New lengths:', window.workoutHistory.currentHistory.length);
+            }
+        });
+    }
+}
+
+// Make functions globally available
+window.fixWorkoutHistoryReference = fixWorkoutHistoryReference;
+window.emergencyFixFilters = emergencyFixFilters;
+
+// 2. ADD this new function to main.js (BUG-009 FIX):
+function setupWorkoutHistoryEventListeners() {
+    console.log('🔧 Setting up workout history event listeners...');
+    
+    // Prevent duplicate listeners
+    if (window.historyListenersSetup) {
+        console.log('History listeners already set up, skipping...');
+        return;
+    }
+    
+    // 🔧 FIX: Wait a moment for workout history to fully load
+    setTimeout(() => {
+        console.log('🔧 Setting up delayed event listeners...');
+        
+        // Filter buttons event listeners (BUG-009 FIX)
+        document.querySelectorAll('.history-filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                console.log('🔘 Filter button clicked:', this.dataset.filter);
+                
+                // Remove active class from all buttons in the same section
+                const section = this.closest('.filter-section');
+                section.querySelectorAll('.history-filter-btn').forEach(b => {
+                    b.classList.remove('active');
+                });
+                
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                // Apply the filter with a small delay
+                setTimeout(() => {
+                    applyHistoryFilters();
+                }, 100);
+            });
+        });
+        
+        // Search input event listener (BUG-010 FIX)
+        const searchInput = document.getElementById('history-search');
+        if (searchInput) {
+            console.log('🔧 Setting up search input listener');
+            // Real-time search as user types
+            searchInput.addEventListener('input', debounce(applyHistoryFilters, 300));
+            
+            // Also apply on enter
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    applyHistoryFilters();
+                }
+            });
+        }
+        
+        // Date filter event listeners (BUG-010 FIX)
+        const startDateInput = document.getElementById('history-start-date');
+        const endDateInput = document.getElementById('history-end-date');
+        
+        if (startDateInput) {
+            console.log('🔧 Setting up start date listener');
+            startDateInput.addEventListener('change', applyHistoryFilters);
+        }
+        
+        if (endDateInput) {
+            console.log('🔧 Setting up end date listener');
+            endDateInput.addEventListener('change', applyHistoryFilters);
+        }
+        
+        // Mark listeners as set up to prevent duplicates
+        window.historyListenersSetup = true;
+        console.log('✅ Workout history event listeners set up successfully with delay');
+        
+    }, 500); // 500ms delay to ensure history is loaded
+}
+
+// 3. ADD this new function to main.js (BUG-009 & BUG-010 FIX):
+function applyHistoryFilters() {
+    console.log('🔍 Applying history filters...');
+    
+    // 🔧 FIX: Access the object and check for data differently
+    const historyObj = window.workoutHistory || workoutHistory;
+    
+    if (!historyObj) {
+        console.warn('❌ No workoutHistory object found');
+        return;
+    }
+    
+    // 🔧 FIX: Try to get data from data-manager if needed
+    console.log('📊 Checking history data...');
+    console.log('historyObj.currentHistory length:', historyObj.currentHistory?.length);
+    console.log('historyObj.filteredHistory length:', historyObj.filteredHistory?.length);
+    
+    // If the main arrays are empty, try to reload
+    if (!historyObj.currentHistory || historyObj.currentHistory.length === 0) {
+        console.log('🔄 No data in currentHistory, forcing reload...');
+        
+        // Try to reload and then apply filters
+        historyObj.loadHistory().then(() => {
+            console.log('🔄 History reloaded, checking data again...');
+            console.log('New currentHistory length:', historyObj.currentHistory?.length);
+            
+            // If still empty, there might be no data
+            if (!historyObj.currentHistory || historyObj.currentHistory.length === 0) {
+                console.log('❌ Still no data after reload');
+                showNotification('No workout history found', 'info');
+                return;
+            }
+            
+            // Now retry the filtering with the loaded data
+            setTimeout(() => applyHistoryFiltersWithData(historyObj), 100);
+        });
+        return;
+    }
+    
+    // If we have data, apply filters
+    applyHistoryFiltersWithData(historyObj);
+}
+
+// Separate function to apply filters when we know data exists
+function applyHistoryFiltersWithData(historyObj) {
+    console.log('📊 Applying filters with data...');
+    
+    // Get current filter values
+    const searchQuery = document.getElementById('history-search')?.value?.trim() || '';
+    const startDate = document.getElementById('history-start-date')?.value || '';
+    const endDate = document.getElementById('history-end-date')?.value || '';
+    
+    // Get active status filter
+    const activeStatusBtn = document.querySelector('.filter-section .history-filter-btn.active[data-filter]');
+    const statusFilter = activeStatusBtn?.dataset.filter || 'all';
+    
+    // Get active time filter  
+    const activeTimeBtn = document.querySelector('.filter-section:nth-child(2) .history-filter-btn.active[data-filter]');
+    const timeFilter = activeTimeBtn?.dataset.filter || null;
+    
+    console.log('🎯 Filter values:', { searchQuery, statusFilter, timeFilter, startDate, endDate });
+    
+    // Start with all workouts
+    let filtered = [...historyObj.currentHistory];
+    console.log('📊 Starting with:', filtered.length, 'workouts');
+    
+    // Apply status filter
+    if (statusFilter && statusFilter !== 'all') {
+        const beforeLength = filtered.length;
+        filtered = filtered.filter(workout => {
+            switch (statusFilter) {
+                case 'completed':
+                    return workout.completedAt && !workout.cancelledAt && !workout.status;
+                case 'cancelled':
+                    return workout.cancelledAt || workout.status === 'cancelled';
+                case 'discarded':
+                    return workout.status === 'discarded';
+                default:
+                    return true;
+            }
+        });
+        console.log(`📊 After status filter (${statusFilter}):`, filtered.length, 'workouts (was', beforeLength, ')');
+    }
+    
+    // Apply time filter
+    if (timeFilter) {
+        const beforeLength = filtered.length;
+        const now = new Date();
+        let filterDate;
+        
+        switch (timeFilter) {
+            case 'this-week':
+                filterDate = new Date(now);
+                filterDate.setDate(now.getDate() - now.getDay());
+                break;
+            case 'this-month':
+                filterDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                break;
+        }
+        
+        if (filterDate) {
+            filtered = filtered.filter(workout => {
+                const workoutDate = new Date(workout.date);
+                return workoutDate >= filterDate;
+            });
+            console.log(`📊 After time filter (${timeFilter}):`, filtered.length, 'workouts (was', beforeLength, ')');
+        }
+    }
+    
+    // Apply search filter
+    if (searchQuery) {
+        const beforeLength = filtered.length;
+        const searchLower = searchQuery.toLowerCase();
+        filtered = filtered.filter(workout => {
+            return (workout.workoutType && workout.workoutType.toLowerCase().includes(searchLower)) ||
+                   (workout.date && workout.date.includes(searchQuery)) ||
+                   (workout.exerciseNames && Object.values(workout.exerciseNames).some(name => 
+                       name && name.toLowerCase().includes(searchLower))) ||
+                   (workout.manualNotes && workout.manualNotes.toLowerCase().includes(searchLower));
+        });
+        console.log(`📊 After search filter (${searchQuery}):`, filtered.length, 'workouts (was', beforeLength, ')');
+    }
+    
+    // Apply date range filter
+    if (startDate || endDate) {
+        const beforeLength = filtered.length;
+        filtered = filtered.filter(workout => {
+            const workoutDate = new Date(workout.date);
+            if (startDate && endDate) {
+                return workoutDate >= new Date(startDate) && workoutDate <= new Date(endDate);
+            } else if (startDate) {
+                return workoutDate >= new Date(startDate);
+            } else if (endDate) {
+                return workoutDate <= new Date(endDate);
+            }
+            return true;
+        });
+        console.log(`📊 After date filter:`, filtered.length, 'workouts (was', beforeLength, ')');
+    }
+    
+    // Update the workout history object
+    historyObj.filteredHistory.splice(0, historyObj.filteredHistory.length, ...filtered);
+    historyObj.currentPage = 1;
+    historyObj.renderHistory();
+    
+    console.log(`✅ Final result: ${filtered.length} workouts shown out of ${historyObj.currentHistory.length} total`);
 }
 
 // ADD NEW FUNCTION: Show add manual workout modal
@@ -3215,6 +3496,22 @@ function proceedToExerciseSelection() {
     // Render exercise list
     renderManualExerciseList();
 }
+
+function showManualStep(stepNumber) {
+    console.log(`🔧 Switching to manual step ${stepNumber}`);
+    document.querySelectorAll('.manual-step').forEach(step => step.classList.add('hidden'));
+    const targetStep = document.getElementById(`manual-step-${stepNumber}`);
+    if (targetStep) {
+        targetStep.classList.remove('hidden');
+        console.log(`✅ Step ${stepNumber} shown successfully`);
+    } else {
+        console.error(`❌ manual-step-${stepNumber} element not found`);
+    }
+}
+
+// Also add this to your global assignments at the bottom:
+window.showManualStep = showManualStep;
+
 
 // STEP 2 -> STEP 1: Back to basic info
 function backToBasicInfo() {
@@ -4026,27 +4323,144 @@ async function submitManualWorkout(event) {
 }
 
 // ADD NEW FUNCTION: Clear history filters
-function clearHistoryFilters() {
-    // Clear search
-    const searchInput = document.getElementById('history-search');
-    if (searchInput) searchInput.value = '';
+function clearAllHistoryFilters() {
+    console.log('🧹 Clearing all history filters...');
     
-    // Clear date filters
+    // Clear search input
+    const searchInput = document.getElementById('history-search');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    
+    // Clear date inputs
     const startDate = document.getElementById('history-start-date');
     const endDate = document.getElementById('history-end-date');
     if (startDate) startDate.value = '';
     if (endDate) endDate.value = '';
     
-    // Reset to 'all' filter
+    // Reset all filter buttons to inactive
     document.querySelectorAll('.history-filter-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.filter === 'all');
+        btn.classList.remove('active');
     });
     
-    // Reload full history
+    // Activate the "All" status filter
+    const allStatusBtn = document.querySelector('.history-filter-btn[data-filter="all"]');
+    if (allStatusBtn) {
+        allStatusBtn.classList.add('active');
+    }
+    
+    // Reset workout history to show all workouts
+    if (window.workoutHistory && window.workoutHistory.currentHistory) {
+        window.workoutHistory.filteredHistory = [...window.workoutHistory.currentHistory];
+        window.workoutHistory.currentPage = 1;
+        window.workoutHistory.renderHistory();
+    }
+    
+    showNotification('Filters cleared', 'info');
+    console.log('✅ All history filters cleared');
+}
+
+// 5. ADD this utility function to main.js:
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+function debugWorkoutHistoryState() {
+    console.log('🔍 Debugging workout history state...');
+    console.log('workoutHistory object:', workoutHistory);
+    
     if (workoutHistory) {
-        workoutHistory.filteredHistory = [...workoutHistory.currentHistory];
-        workoutHistory.currentPage = 1;
-        workoutHistory.renderHistory();
+        console.log('currentHistory length:', workoutHistory.currentHistory?.length);
+        console.log('filteredHistory length:', workoutHistory.filteredHistory?.length);
+        console.log('currentPage:', workoutHistory.currentPage);
+        
+        // Sample workout data structure
+        if (workoutHistory.currentHistory && workoutHistory.currentHistory.length > 0) {
+            console.log('Sample workout:', workoutHistory.currentHistory[0]);
+        }
+    }
+    
+    // Check filter UI elements
+    const filterBtns = document.querySelectorAll('.history-filter-btn');
+    const activeBtn = document.querySelector('.history-filter-btn.active');
+    console.log('Filter buttons:', filterBtns.length);
+    console.log('Active filter:', activeBtn?.dataset.filter);
+    
+    // Check if event listeners are attached
+    console.log('Event listeners setup:', window.historyListenersSetup);
+}
+
+window.debugWorkoutHistoryState = debugWorkoutHistoryState;
+
+// ===== TESTING QUICK FIX =====
+// Add this function to quickly test if the filtering logic works:
+function testFilteringLogic() {
+    console.log('🧪 Testing filtering logic...');
+    
+    if (!workoutHistory || !workoutHistory.currentHistory) {
+        console.log('❌ No workout history loaded');
+        return;
+    }
+    
+    const originalCount = workoutHistory.currentHistory.length;
+    console.log('Original workout count:', originalCount);
+    
+    // Test: Filter to only completed workouts
+    const completedWorkouts = workoutHistory.currentHistory.filter(workout => 
+        workout.completedAt && !workout.cancelledAt && !workout.status
+    );
+    
+    console.log('Completed workouts found:', completedWorkouts.length);
+    
+    // Manually apply completed filter
+    workoutHistory.filteredHistory = completedWorkouts;
+    workoutHistory.currentPage = 1;
+    workoutHistory.renderHistory();
+    
+    console.log('✅ Manual filter test applied');
+}
+
+window.testFilteringLogic = testFilteringLogic;
+
+function forceCheckHistoryData() {
+    console.log('🔍 Force checking history data...');
+    console.log('window.workoutHistory:', window.workoutHistory);
+    console.log('global workoutHistory:', workoutHistory);
+    
+    // Check both references
+    if (window.workoutHistory) {
+        console.log('window.workoutHistory.currentHistory:', window.workoutHistory.currentHistory?.length);
+        console.log('window.workoutHistory.filteredHistory:', window.workoutHistory.filteredHistory?.length);
+    }
+    
+    if (workoutHistory && workoutHistory !== window.workoutHistory) {
+        console.log('global workoutHistory.currentHistory:', workoutHistory.currentHistory?.length);  
+        console.log('global workoutHistory.filteredHistory:', workoutHistory.filteredHistory?.length);
+    }
+}
+
+window.forceCheckHistoryData = forceCheckHistoryData;
+
+function fixWorkoutHistoryReference() {
+    console.log('🔧 Attempting to fix workout history reference...');
+    
+    // Check if the data loaded into the workout-history.js module internally
+    if (window.workoutHistory && window.workoutHistory.currentHistory.length === 0) {
+        console.log('🔄 Forcing history reload on the correct object...');
+        
+        // Force reload history on the window object
+        window.workoutHistory.loadHistory().then(() => {
+            console.log('✅ History reloaded on window object');
+            console.log('Current history length:', window.workoutHistory.currentHistory.length);
+        });
     }
 }
 
@@ -4070,7 +4484,7 @@ window.showAddManualWorkoutModal = showAddManualWorkoutModal;
 window.closeAddManualWorkoutModal = closeAddManualWorkoutModal;
 window.loadWorkoutTemplate = loadWorkoutTemplate;
 window.submitManualWorkout = submitManualWorkout;
-window.clearHistoryFilters = clearHistoryFilters;
+window.clearHistoryFilters = clearAllHistoryFilters;
 window.proceedToExerciseSelection = proceedToExerciseSelection;
 window.backToBasicInfo = backToBasicInfo;
 window.addExerciseToManualWorkout = addExerciseToManualWorkout;
@@ -4086,6 +4500,8 @@ window.finishManualWorkout = finishManualWorkout;
 window.addExerciseToActiveWorkout = addExerciseToActiveWorkout;
 window.confirmExerciseAddToWorkout = confirmExerciseAddToWorkout;
 window.validateUserData = validateUserData;
+window.applyHistoryFilters = applyHistoryFilters;
+window.setupWorkoutHistoryEventListeners = setupWorkoutHistoryEventListeners;
 
 // Workout Management Global Functions
 window.showWorkoutManagement = showWorkoutManagement;
@@ -4127,6 +4543,7 @@ window.filterWorkoutHistory = function() {
 window.addToManualWorkoutFromLibrary = addToManualWorkoutFromLibrary;
 window.selectWorkout = selectWorkout;
 window.deleteExerciseFromWorkout = deleteExerciseFromWorkout;
+window.clearAllHistoryFilters = clearAllHistoryFilters;
 
 // Template Selection Functions
 window.showTemplateSelection = showTemplateSelection;
