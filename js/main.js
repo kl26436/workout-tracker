@@ -594,6 +594,37 @@ async function showWorkoutSelector() {
     }
 }
 
+function startWorkoutDurationTimer() {
+    // Clear any existing timer
+    if (AppState.workoutDurationTimer) {
+        clearInterval(AppState.workoutDurationTimer);
+        AppState.workoutDurationTimer = null;
+    }
+    
+    const updateTime = () => {
+        const metaEl = document.getElementById('workout-meta');
+        if (!AppState.workoutStartTime || !metaEl) return;
+        
+        const elapsed = Math.floor((new Date() - AppState.workoutStartTime) / 1000 / 60);
+        let timeText = 'Started now';
+        
+        if (elapsed > 0) {
+            if (elapsed >= 240) { // 4+ hours, something's wrong
+                timeText = 'Started today';
+            } else {
+                timeText = `Started ${elapsed}m ago`;
+            }
+        }
+        metaEl.textContent = timeText;
+    };
+    
+    // Update immediately
+    updateTime();
+    
+    // Set interval to update every minute
+    AppState.workoutDurationTimer = setInterval(updateTime, 60000);
+}
+
 async function selectWorkout(workoutType, existingData = null, customWorkout = null) {
     if (!AppState.currentUser) {
         showNotification('Please sign in to select a workout', 'warning');
@@ -3911,6 +3942,7 @@ window.filterWorkoutHistory = function() {
     }
 };
 window.addToManualWorkoutFromLibrary = addToManualWorkoutFromLibrary;
+window.selectWorkout = selectWorkout;
 
 // Template Selection Functions
 window.showTemplateSelection = showTemplateSelection;
