@@ -154,11 +154,10 @@ export function getWorkoutHistory(appState) {
                         <button class="btn btn-secondary btn-small" onclick="viewWorkoutDetails('${workout.id}'); event.stopPropagation();">
                             <i class="fas fa-eye"></i> View Details
                         </button>
-                        ${workout.status !== 'completed' ? 
-                            `<button class="btn btn-danger btn-small" onclick="deleteWorkout('${workout.id}'); event.stopPropagation();">
-                                <i class="fas fa-trash"></i> Delete
-                            </button>` : ''
-                        }
+                        <!-- FIX: Removed conditional check - delete button now shows for ALL workouts -->
+                        <button class="btn btn-danger btn-small" onclick="deleteWorkout('${workout.id}'); event.stopPropagation();">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
                     </div>
                 </div>
             `;

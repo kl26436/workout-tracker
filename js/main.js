@@ -916,10 +916,32 @@ function renderExercises() {
     
     container.innerHTML = '';
 
+    // BUG 14 FIX: Add single "Add Exercise" button at the top
+    const addExerciseHeader = document.createElement('div');
+    addExerciseHeader.className = 'add-exercise-header';
+    addExerciseHeader.innerHTML = `
+        <button class="btn btn-primary" onclick="addExerciseToActiveWorkout()" title="Add new exercise to workout">
+            <i class="fas fa-plus"></i> Add Exercise
+        </button>
+    `;
+    container.appendChild(addExerciseHeader);
+
+    // Render each exercise card
     AppState.currentWorkout.exercises.forEach((exercise, index) => {
         const card = createExerciseCard(exercise, index);
         container.appendChild(card);
     });
+    
+    // Show empty state if no exercises
+    if (AppState.currentWorkout.exercises.length === 0) {
+        container.innerHTML += `
+            <div class="empty-workout-message">
+                <i class="fas fa-dumbbell"></i>
+                <h3>No exercises in this workout</h3>
+                <p>Add some exercises to get started!</p>
+            </div>
+        `;
+    }
     
     updateProgress(AppState);
 }
@@ -941,15 +963,13 @@ function createExerciseCard(exercise, index) {
         card.classList.add('completed');
     }
 
+    // BUG 15 FIX: Replace swap button with delete button, remove individual add buttons
     card.innerHTML = `
         <div class="exercise-header">
             <h3 class="exercise-title">${exercise.machine}</h3>
             <div class="exercise-actions">
-                <button class="btn btn-success btn-small" onclick="addExerciseToActiveWorkout(${index})" title="Add exercise after this one">
-                    <i class="fas fa-plus"></i>
-                </button>
-                <button class="btn btn-secondary btn-small" onclick="swapExercise(${index})" title="Swap this exercise">
-                    <i class="fas fa-exchange-alt"></i>
+                <button class="btn btn-danger btn-small" onclick="deleteExerciseFromWorkout(${index})" title="Delete this exercise">
+                    <i class="fas fa-trash"></i>
                 </button>
                 <button class="exercise-focus-btn" onclick="focusExercise(${index})" title="Focus on this exercise">
                     <i class="fas fa-expand"></i>
@@ -986,6 +1006,75 @@ function generateSetPreview(exercise, exerciseIndex, unit) {
     
     preview += '</div>';
     return preview;
+}
+
+async function deleteExerciseFromWorkout(exerciseIndex) {
+    if (!AppState.currentWorkout || !AppState.currentWorkout.exercises[exerciseIndex]) {
+        showNotification('Exercise not found', 'error');
+        return;
+    }
+
+    const exercise = AppState.currentWorkout.exercises[exerciseIndex];
+    
+    // REMOVED: No more popup confirmation
+    // Just delete directly
+    
+    try {
+        // Remove exercise from workout
+        AppState.currentWorkout.exercises.splice(exerciseIndex, 1);
+        
+        // Clean up saved data for exercises that come after this one
+        const exerciseKeys = Object.keys(AppState.savedData.exercises || {});
+        const newExerciseData = {};
+        
+        exerciseKeys.forEach(key => {
+            const match = key.match(/exercise_(\d+)/);
+            if (match) {
+                const oldIndex = parseInt(match[1]);
+                if (oldIndex < exerciseIndex) {
+                    // Keep exercises before the deleted one
+                    newExerciseData[key] = AppState.savedData.exercises[key];
+                } else if (oldIndex > exerciseIndex) {
+                    // Shift exercises after the deleted one down by 1
+                    const newKey = `exercise_${oldIndex - 1}`;
+                    newExerciseData[newKey] = AppState.savedData.exercises[key];
+                }
+                // Skip the deleted exercise (oldIndex === exerciseIndex)
+            }
+        });
+        
+        AppState.savedData.exercises = newExerciseData;
+        
+        // FIXED: Handle exerciseUnits properly (it might be an object, not array)
+        if (AppState.exerciseUnits) {
+            if (Array.isArray(AppState.exerciseUnits)) {
+                // If it's an array, use splice
+                AppState.exerciseUnits.splice(exerciseIndex, 1);
+            } else {
+                // If it's an object, reindex it
+                const newUnits = {};
+                Object.keys(AppState.exerciseUnits).forEach(key => {
+                    const index = parseInt(key);
+                    if (index < exerciseIndex) {
+                        newUnits[index] = AppState.exerciseUnits[key];
+                    } else if (index > exerciseIndex) {
+                        newUnits[index - 1] = AppState.exerciseUnits[key];
+                    }
+                    // Skip the deleted exercise index
+                });
+                AppState.exerciseUnits = newUnits;
+            }
+        }
+        
+        // Re-render the exercise list
+        renderExercises();
+        
+        showNotification(`Deleted "${exercise.machine}" from workout`, 'success');
+        
+    } catch (error) {
+        console.error('Error deleting exercise:', error);
+        showNotification('Failed to delete exercise', 'error');
+    }
 }
 
 async function swapExercise(exerciseIndex) {
@@ -3943,6 +4032,7 @@ window.filterWorkoutHistory = function() {
 };
 window.addToManualWorkoutFromLibrary = addToManualWorkoutFromLibrary;
 window.selectWorkout = selectWorkout;
+window.deleteExerciseFromWorkout = deleteExerciseFromWorkout;
 
 // Template Selection Functions
 window.showTemplateSelection = showTemplateSelection;

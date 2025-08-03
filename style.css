@@ -2321,3 +2321,155 @@ body {
     color: white;
     border: none;
 }
+/* =============================================================================
+   ADD THESE CSS STYLES TO YOUR MAIN CSS FILE
+   ============================================================================= */
+
+/* Add Exercise Header Styling */
+.add-exercise-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.add-exercise-header .btn {
+    min-width: 150px;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+/* Empty Workout Message */
+.empty-workout-message {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    margin: 1rem 0;
+}
+
+.empty-workout-message i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-workout-message h3 {
+    margin: 0.5rem 0;
+    color: var(--text-primary);
+}
+
+.empty-workout-message p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* Delete Button Styling */
+.exercise-actions .btn-danger {
+    background: var(--danger, #dc3545);
+    color: white;
+    border: none;
+}
+
+.exercise-actions .btn-danger:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+}
+
+.exercise-actions .btn-danger:active {
+    transform: translateY(0);
+}
+
+/* Enhanced exercise actions spacing */
+.exercise-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* Improved exercise card layout */
+.exercise-card {
+    margin-bottom: 1rem;
+    transition: all 0.2s ease;
+}
+
+.exercise-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Make sure the exercise header has proper spacing */
+.exercise-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.exercise-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+/* Button sizing consistency */
+.btn-small {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    min-width: auto;
+}
+
+/* Focus button styling */
+.exercise-focus-btn {
+    background: var(--primary, #007bff);
+    color: white;
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.exercise-focus-btn:hover {
+    background: var(--primary-dark, #0056b3);
+    transform: translateY(-1px);
+}
+
+/* Ensure proper spacing in exercise list */
+.exercise-list {
+    padding: 1rem 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .add-exercise-header {
+        padding: 0.75rem;
+    }
+    
+    .add-exercise-header .btn {
+        min-width: 120px;
+        font-size: 0.9rem;
+    }
+    
+    .exercise-actions {
+        gap: 0.3rem;
+    }
+    
+    .btn-small {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.8rem;
+    }
+    
+    .exercise-header {
+        padding: 0.75rem;
+    }
+    
+    .exercise-title {
+        font-size: 1rem;
+    }
+}
