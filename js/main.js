@@ -3461,8 +3461,16 @@ function proceedToExerciseSelection() {
         return;
     }
     
+    // FIX: Properly collect and validate the date
+    const selectedDate = document.getElementById('manual-workout-date')?.value;
+    
+    if (!selectedDate) {
+        showNotification('Please select a workout date', 'warning');
+        return;
+    }
+    
     // Collect basic workout data
-    currentManualWorkout.date = document.getElementById('manual-workout-date')?.value || '';
+    currentManualWorkout.date = selectedDate; // FIX: Ensure date is set correctly
     currentManualWorkout.category = document.getElementById('manual-workout-category')?.value || '';
     currentManualWorkout.name = document.getElementById('manual-workout-name')?.value || 
                                  (currentManualWorkout.category + ' Workout');
@@ -3470,10 +3478,13 @@ function proceedToExerciseSelection() {
     currentManualWorkout.status = document.getElementById('manual-workout-status')?.value || 'completed';
     currentManualWorkout.notes = document.getElementById('manual-workout-notes')?.value || '';
     
+    // FIX: Additional validation
     if (!currentManualWorkout.date || !currentManualWorkout.category) {
         showNotification('Please fill in the required fields', 'warning');
         return;
     }
+    
+    console.log('🔧 BUG-022 FIX: Manual workout date set to:', currentManualWorkout.date);
     
     // Update step 2 display
     const titleDisplay = document.getElementById('manual-workout-title-display');
@@ -3496,6 +3507,7 @@ function proceedToExerciseSelection() {
     // Render exercise list
     renderManualExerciseList();
 }
+
 
 function showManualStep(stepNumber) {
     console.log(`🔧 Switching to manual step ${stepNumber}`);
@@ -3928,17 +3940,52 @@ async function finishManualWorkout() {
     }
     
     try {
+        // 🔧 FIX: Get the date properly and handle timezone issues
+        let workoutDate = currentManualWorkout.date || document.getElementById('manual-workout-date')?.value;
+        
+        if (!workoutDate) {
+            showNotification('Error: No workout date specified', 'error');
+            return;
+        }
+        
+        // 🔧 CRITICAL FIX: Ensure date is in YYYY-MM-DD format without timezone conversion
+        if (workoutDate.includes('T')) {
+            // If it somehow got converted to ISO string, extract just the date part
+            workoutDate = workoutDate.split('T')[0];
+        }
+        
+        // 🔧 VALIDATION: Ensure it's a valid date format
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(workoutDate)) {
+            console.error('❌ Invalid date format:', workoutDate);
+            showNotification('Error: Invalid date format', 'error');
+            return;
+        }
+        
+        console.log('🔧 BUG-022 FIX: Final workout date to save:', workoutDate);
+        
+        // Check if workout already exists for this date
+        if (workoutHistory && workoutHistory.currentHistory) {
+            const existingWorkout = workoutHistory.currentHistory.find(w => w.date === workoutDate);
+            if (existingWorkout) {
+                const confirmOverwrite = confirm(
+                    `A workout already exists for ${new Date(workoutDate + 'T12:00:00').toLocaleDateString()}. Do you want to overwrite it?`
+                );
+                if (!confirmOverwrite) return;
+            }
+        }
+        
         // Build workout data in the same format as live workouts
         const workoutData = {
-            date: currentManualWorkout.date,
-            workoutType: currentManualWorkout.name,
-            startTime: new Date(currentManualWorkout.date + 'T09:00:00').toISOString(),
+            date: workoutDate, // 🔧 FIX: Use clean date string
+            workoutType: currentManualWorkout.name || 'Manual Workout',
+            startTime: new Date(workoutDate + 'T09:00:00').toISOString(),
             totalDuration: currentManualWorkout.duration * 60,
             exercises: {},
             exerciseUnits: {},
-            exerciseNames: {}, // FIX: Add missing exerciseNames field
-            originalWorkout: {    // FIX: Add originalWorkout for compatibility
-                day: currentManualWorkout.name,
+            exerciseNames: {},
+            originalWorkout: {
+                day: currentManualWorkout.name || 'Manual Workout',
                 exercises: currentManualWorkout.exercises.map(ex => ({
                     machine: ex.name,
                     name: ex.name,
@@ -3949,53 +3996,68 @@ async function finishManualWorkout() {
                     weight: ex.sets[0]?.weight || 50
                 }))
             },
-            totalExercises: currentManualWorkout.exercises.length, // FIX: Add total count
+            totalExercises: currentManualWorkout.exercises.length,
             addedManually: true,
             manualNotes: currentManualWorkout.notes,
             category: currentManualWorkout.category,
-            version: '2.0' // FIX: Add version for migration compatibility
+            version: '2.0'
         };
         
-        // Set status
+        // Set status with proper timezone handling
         if (currentManualWorkout.status === 'completed') {
-            workoutData.completedAt = new Date(currentManualWorkout.date + 'T10:00:00').toISOString();
+            workoutData.completedAt = new Date(workoutDate + 'T10:00:00').toISOString();
         } else if (currentManualWorkout.status === 'cancelled') {
-            workoutData.cancelledAt = new Date(currentManualWorkout.date + 'T10:00:00').toISOString();
+            workoutData.cancelledAt = new Date(workoutDate + 'T10:00:00').toISOString();
             workoutData.status = 'cancelled';
         }
         
-        // FIX: Convert exercises to the standard format with proper naming
+        // Convert exercises to the standard format
         currentManualWorkout.exercises.forEach((exercise, index) => {
             const exerciseKey = `exercise_${index}`;
             
-            // Store exercise data
             workoutData.exercises[exerciseKey] = {
                 sets: exercise.sets || [],
                 notes: exercise.notes || '',
                 manuallyCompleted: exercise.manuallyCompleted || false
             };
             
-            // FIX: Store exercise names for proper display
             workoutData.exerciseNames[exerciseKey] = exercise.name;
-            workoutData.exerciseUnits[index] = manualExerciseUnit;
+            workoutData.exerciseUnits[index] = manualExerciseUnit || 'lbs';
         });
         
-        console.log('🔧 Fixed Bug 17: Saving manual workout with proper structure:', workoutData);
+        console.log('🔧 BUG-022 DEBUG: Final workout data to save:', {
+            date: workoutData.date,
+            workoutType: workoutData.workoutType,
+            documentId: workoutDate
+        });
         
-        // Save workout
-        await workoutHistory.addManualWorkout(workoutData);
+        // 🔧 FIX: Save directly to Firebase with the exact date as document ID
+        const { db, doc, setDoc } = await import('./core/firebase-config.js');
+        
+        const docRef = doc(db, "users", AppState.currentUser.uid, "workouts", workoutDate);
+        await setDoc(docRef, {
+            ...workoutData,
+            lastUpdated: new Date().toISOString()
+        });
+        
+        console.log('✅ BUG-022 FIXED: Manual workout saved with date as document ID:', workoutDate);
+        
+        // Force reload history to show the new workout
+        if (workoutHistory && workoutHistory.loadHistory) {
+            console.log('🔄 Reloading workout history...');
+            await workoutHistory.loadHistory();
+        }
         
         // Close modal
         closeAddManualWorkoutModal();
         
-        showNotification('Workout saved successfully!', 'success');
+        showNotification(`Workout saved for ${new Date(workoutDate + 'T12:00:00').toLocaleDateString()}!`, 'success');
         
     } catch (error) {
-        console.error('Error saving manual workout:', error);
+        console.error('❌ Error saving manual workout:', error);
         showNotification('Error saving workout. Please try again.', 'error');
     }
 }
-
 
 // ADD NEW FUNCTION: Close add manual workout modal
 function closeAddManualWorkoutModal() {
@@ -4463,6 +4525,52 @@ function fixWorkoutHistoryReference() {
         });
     }
 }
+
+function debugManualWorkoutDate() {
+    console.log('🔍 DEBUGGING MANUAL WORKOUT DATE ISSUE:');
+    console.log('currentManualWorkout.date:', currentManualWorkout.date);
+    
+    const dateInput = document.getElementById('manual-workout-date');
+    console.log('Date input value:', dateInput?.value);
+    
+    const selectedDate = dateInput?.value;
+    if (selectedDate) {
+        console.log('Selected date string:', selectedDate);
+        console.log('Date object from string:', new Date(selectedDate));
+        console.log('ISO string:', new Date(selectedDate).toISOString());
+        console.log('Local date string:', new Date(selectedDate).toLocaleDateString());
+        
+        // Check timezone offset
+        const date = new Date(selectedDate);
+        console.log('Timezone offset (minutes):', date.getTimezoneOffset());
+        console.log('UTC date:', date.toUTCString());
+    }
+}
+
+async function debugFirebaseWorkoutDates() {
+    if (!AppState.currentUser) {
+        console.log('❌ No user signed in');
+        return;
+    }
+    
+    try {
+        const { db, collection, getDocs } = await import('./core/firebase-config.js');
+        
+        const workoutsRef = collection(db, "users", AppState.currentUser.uid, "workouts");
+        const querySnapshot = await getDocs(workoutsRef);
+        
+        console.log('🔍 FIREBASE WORKOUT DATES DEBUG:');
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            console.log(`Document ID: ${doc.id}, Data date: ${data.date}, Workout: ${data.workoutType}`);
+        });
+        
+    } catch (error) {
+        console.error('Error debugging Firebase dates:', error);
+    }
+}
+
+window.debugFirebaseWorkoutDates = debugFirebaseWorkoutDates;
 
 // Global function assignments for onclick handlers
 window.focusExercise = focusExercise;

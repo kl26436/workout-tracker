@@ -18,34 +18,34 @@ export function getWorkoutHistory(appState) {
         },
 
         async loadHistory() {
-        if (!appState.currentUser) {
-            showNotification('Please sign in to view workout history', 'warning');
-            return;
-        }
+    if (!appState.currentUser) {
+        showNotification('Please sign in to view workout history', 'warning');
+        return;
+    }
 
-        console.log('📊 Loading workout history...');
+    console.log('📊 Loading workout history...');
 
-        try {
-            // Migrate old data if needed
-            await migrateWorkoutData(appState);
+    try {
+        // Migrate old data if needed
+        await migrateWorkoutData(appState);
 
-            // Load history
-            const loadedData = await loadWorkoutHistory(appState, 100);
-            
-            // 🔧 FIX: Update the object properties, not just local variables
-            this.currentHistory.splice(0, this.currentHistory.length, ...loadedData);
-            this.filteredHistory.splice(0, this.filteredHistory.length, ...loadedData);
-            this.currentPage = 1;
+        // Load history
+        const loadedData = await loadWorkoutHistory(appState, 100);
+        
+        // 🔧 FIX: Update the object properties, not just local variables
+        this.currentHistory.splice(0, this.currentHistory.length, ...loadedData);
+        this.filteredHistory.splice(0, this.filteredHistory.length, ...loadedData);
+        this.currentPage = 1;
 
-            this.renderHistory();
+        this.renderHistory();
 
-            console.log(`✅ Loaded ${this.currentHistory.length} workout entries`);
+        console.log(`✅ Loaded ${this.currentHistory.length} workout entries`);
 
-        } catch (error) {
-            console.error('❌ Error loading workout history:', error);
-            showNotification('Error loading workout history', 'error');
-        }
-    },
+    } catch (error) {
+        console.error('❌ Error loading workout history:', error);
+        showNotification('Error loading workout history', 'error');
+    }
+},
 
         renderHistory() {
             const container = document.getElementById('workout-history-list');
@@ -80,13 +80,33 @@ export function getWorkoutHistory(appState) {
         },
 
         createWorkoutHistoryCard(workout) {
-            const date = new Date(workout.date);
-            const displayDate = date.toLocaleDateString('en-US', {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric'
-            });
+            // 🔧 FIX: Handle date display properly to avoid timezone issues
+            let displayDate;
+            
+            if (workout.date) {
+                // If it's a date string in YYYY-MM-DD format, add explicit time to avoid timezone shifts
+                if (workout.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    // Create date object with explicit noon time to avoid timezone shifts
+                    const dateObj = new Date(workout.date + 'T12:00:00');
+                    displayDate = dateObj.toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                    });
+                } else {
+                    // Fallback for other date formats
+                    const dateObj = new Date(workout.date);
+                    displayDate = dateObj.toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                    });
+                }
+            } else {
+                displayDate = 'Unknown Date';
+            }
 
             const duration = workout.totalDuration ? 
                 `${Math.floor(workout.totalDuration / 60)}m` : 
@@ -157,7 +177,6 @@ export function getWorkoutHistory(appState) {
                         <button class="btn btn-secondary btn-small" onclick="viewWorkoutDetails('${workout.id}'); event.stopPropagation();">
                             <i class="fas fa-eye"></i> View Details
                         </button>
-                        <!-- FIX: Removed conditional check - delete button now shows for ALL workouts -->
                         <button class="btn btn-danger btn-small" onclick="deleteWorkout('${workout.id}'); event.stopPropagation();">
                             <i class="fas fa-trash"></i> Delete
                         </button>
@@ -165,7 +184,6 @@ export function getWorkoutHistory(appState) {
                 </div>
             `;
         },
-
         updatePagination() {
             const paginationContainer = document.getElementById('history-pagination');
             if (!paginationContainer) return;
@@ -236,16 +254,24 @@ export function getWorkoutHistory(appState) {
             }
 
             try {
-                // Save the workout data
-                const success = await saveWorkoutData({ ...appState, savedData: workoutData });
+                console.log('🔧 BUG-022 FIX: Adding manual workout with date:', workoutData.date);
                 
-                if (success) {
-                    // Reload history to include new workout
-                    await this.loadHistory();
-                    showNotification('Manual workout added successfully!', 'success');
-                } else {
-                    throw new Error('Failed to save workout data');
-                }
+                // FIX: Import Firebase functions and save directly with the correct date
+                const { db, doc, setDoc } = await import('./firebase-config.js');
+                
+                // FIX: Ensure we use the workout's date as the document ID, not auto-generated
+                const docRef = doc(db, "users", appState.currentUser.uid, "workouts", workoutData.date);
+                
+                await setDoc(docRef, {
+                    ...workoutData,
+                    lastUpdated: new Date().toISOString()
+                });
+                
+                console.log('✅ BUG-022 FIXED: Manual workout saved directly to Firebase with date:', workoutData.date);
+                
+                // Reload history to include new workout
+                await this.loadHistory();
+                showNotification('Manual workout added successfully!', 'success');
 
             } catch (error) {
                 console.error('Error adding manual workout:', error);
