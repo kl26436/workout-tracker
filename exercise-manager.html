@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Big Surf - Exercise Library Manager</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #40e0d0;
+            --secondary: #20b2aa;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --danger: #f44336;
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #1a1f2e;
+            --bg-tertiary: #2a2f3e;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b7c3;
+            --border: #3a3f4e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .manager-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .manager-header h1 {
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 2rem;
+        }
+
+        .manager-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--primary);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--bg-primary);
+            border-color: var(--primary);
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary);
+            border-color: var(--secondary);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            border-color: var(--border);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+            border-color: var(--success);
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: var(--bg-primary);
+            border-color: var(--warning);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+            border-color: var(--danger);
+        }
+
+        .btn-small {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        .search-filters {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border);
+        }
+
+        .filter-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 1rem;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .form-input {
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(64, 224, 208, 0.2);
+        }
+
+        .exercise-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .exercise-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .exercise-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 20px rgba(64, 224, 208, 0.1);
+        }
+
+        .exercise-card.custom {
+            border-left: 4px solid var(--primary);
+        }
+
+        .exercise-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .exercise-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .exercise-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .exercise-stats {
+            margin-bottom: 1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+        }
+
+        .stat-value {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .exercise-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-secondary);
+            grid-column: 1 / -1;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--border);
+        }
+
+        .empty-state h3 {
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 500px;
+            border: 1px solid var(--border);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Notification Styles */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 2000;
+            max-width: 400px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: var(--success);
+        }
+
+        .notification.warning {
+            background: var(--warning);
+        }
+
+        .notification.error {
+            background: var(--danger);
+        }
+
+        .notification.info {
+            background: var(--primary);
+            color: var(--bg-primary);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .manager-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+
+            .manager-actions {
+                justify-content: center;
+            }
+
+            .filter-row {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .exercise-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="manager-header">
+            <h1>
+                <i class="fas fa-dumbbell"></i>
+                Exercise Library Manager
+            </h1>
+            <div class="manager-actions">
+                <button class="btn btn-secondary" onclick="refreshExercises()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+                <button class="btn btn-primary" onclick="showAddExerciseModal()">
+                    <i class="fas fa-plus"></i> Add Exercise
+                </button>
+                <button class="btn btn-secondary" onclick="goBackToApp()">
+                    <i class="fas fa-arrow-left"></i> Back to App
+                </button>
+            </div>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="search-filters">
+            <div class="filter-row">
+                <div class="form-group">
+                    <label for="search-input">Search Exercises</label>
+                    <input type="text" id="search-input" class="form-input" 
+                           placeholder="Search by name, body part, or equipment...">
+                </div>
+                
+                <div class="form-group">
+                    <label for="body-part-filter">Body Part</label>
+                    <select id="body-part-filter" class="form-input">
+                        <option value="">All Body Parts</option>
+                        <option value="Chest">Chest</option>
+                        <option value="Back">Back</option>
+                        <option value="Legs">Legs</option>
+                        <option value="Shoulders">Shoulders</option>
+                        <option value="Arms">Arms</option>
+                        <option value="Core">Core</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="equipment-filter">Equipment</label>
+                    <select id="equipment-filter" class="form-input">
+                        <option value="">All Equipment</option>
+                        <option value="Machine">Machine</option>
+                        <option value="Cable">Cable</option>
+                        <option value="Dumbbell">Dumbbell</option>
+                        <option value="Barbell">Barbell</option>
+                        <option value="Bodyweight">Bodyweight</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <button class="btn btn-secondary" onclick="clearFilters()">
+                        <i class="fas fa-times"></i> Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exercise Grid -->
+        <div id="exercise-grid" class="exercise-grid">
+            <!-- Exercises will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Add/Edit Exercise Modal -->
+    <div id="exercise-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add New Exercise</h3>
+                <button class="modal-close" onclick="closeExerciseModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="exercise-form" onsubmit="saveExercise(event)">
+                <div class="form-group">
+                    <label for="exercise-name">Exercise Name *</label>
+                    <input type="text" id="exercise-name" class="form-input" required
+                           placeholder="e.g., Bench Press">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="exercise-body-part">Body Part</label>
+                        <select id="exercise-body-part" class="form-input">
+                            <option value="Chest">Chest</option>
+                            <option value="Back">Back</option>
+                            <option value="Legs">Legs</option>
+                            <option value="Shoulders">Shoulders</option>
+                            <option value="Arms">Arms</option>
+                            <option value="Core">Core</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="exercise-equipment">Equipment</label>
+                        <select id="exercise-equipment" class="form-input">
+                            <option value="Machine">Machine</option>
+                            <option value="Cable">Cable</option>
+                            <option value="Dumbbell">Dumbbell</option>
+                            <option value="Barbell">Barbell</option>
+                            <option value="Bodyweight">Bodyweight</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="exercise-sets">Default Sets</label>
+                        <input type="number" id="exercise-sets" class="form-input" 
+                               value="3" min="1" max="10">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="exercise-reps">Default Reps</label>
+                        <input type="number" id="exercise-reps" class="form-input" 
+                               value="10" min="1" max="50">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="exercise-weight">Default Weight (lbs)</label>
+                    <input type="number" id="exercise-weight" class="form-input" 
+                           value="50" min="0" max="1000">
+                </div>
+                
+                <div class="form-group">
+                    <label for="exercise-video">Video URL (optional)</label>
+                    <input type="url" id="exercise-video" class="form-input" 
+                           placeholder="https://youtube.com/watch?v=...">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn" onclick="closeExerciseModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Exercise
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let allExercises = [];
+        let filteredExercises = [];
+        let currentEditingExercise = null;
+        let parentExerciseData = null;
+        let parentAppState = null;
+
+        // Set up message listener to receive data from parent
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'PARENT_EXERCISE_DATA') {
+                console.log('📡 Received exercise data from parent window!');
+                parentExerciseData = event.data.exercises;
+                parentAppState = event.data.currentUser;
+                loadExercisesFromParentData();
+            } else if (event.data && event.data.type === 'EXERCISE_DATA_RESPONSE') {
+                console.log('📡 Received exercise data response from parent!');
+                parentExerciseData = event.data.exercises;
+                parentAppState = event.data.currentUser;
+                loadExercisesFromParentData();
+            }
+        });
+
+        // Initialize the exercise manager
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Exercise Manager starting up...');
+            console.log('🔍 Checking for parent window:', !!window.opener);
+            console.log('🔍 Checking for shared data:', !!window.sharedExerciseData);
+            
+            // Set up event listeners for search and filters
+            const searchInput = document.getElementById('search-input');
+            const bodyPartFilter = document.getElementById('body-part-filter');
+            const equipmentFilter = document.getElementById('equipment-filter');
+            
+            if (searchInput) {
+                searchInput.addEventListener('input', filterExercises);
+            }
+            if (bodyPartFilter) {
+                bodyPartFilter.addEventListener('change', filterExercises);
+            }
+            if (equipmentFilter) {
+                equipmentFilter.addEventListener('change', filterExercises);
+            }
+            
+            // Load exercises
+            await loadExercises();
+            
+            console.log('✅ Exercise Manager initialized successfully');
+        });
+
+        async function loadExercises() {
+    console.log('🔄 Loading exercises...');
+    
+    // Method 1: Check URL parameters for user info
+    const urlParams = new URLSearchParams(window.location.search);
+    const userEmail = urlParams.get('user');
+    
+    if (userEmail) {
+        console.log(`✅ Found user in URL: ${userEmail}`);
+        try {
+            // Try to connect to Firebase directly
+            await loadExercisesFromFirebase(userEmail);
+            return;
+        } catch (error) {
+            console.error('❌ Error loading from Firebase:', error);
+        }
+    }
+    
+    // Method 2: Check for parent window (traditional approach)
+    console.log('🔍 Checking parent window:', !!window.opener);
+    console.log('🔍 Checking parent AppState:', !!window.opener?.AppState);
+    
+    if (window.opener && window.opener.AppState && window.opener.AppState.currentUser) {
+        console.log(`✅ Found parent window with user: ${window.opener.AppState.currentUser.email}`);
+        try {
+            // Try to get exercise database from parent
+            if (window.opener.AppState.exerciseDatabase && window.opener.AppState.exerciseDatabase.length > 0) {
+                console.log('📚 Using exercise database from parent AppState');
+                const exercises = window.opener.AppState.exerciseDatabase;
+                loadExercisesFromData(exercises);
+                return;
+            } else {
+                console.log('🔄 Parent exercise database empty, loading fresh data...');
+                const { WorkoutManager } = await window.opener.import('./js/core/workout/workout-manager.js');
+                const workoutManager = new WorkoutManager(window.opener.AppState);
+                const exercises = await workoutManager.getExerciseLibrary();
+                loadExercisesFromData(exercises);
+                return;
+            }
+        } catch (error) {
+            console.error('❌ Error loading from parent:', error);
+        }
+    }
+    
+    // Method 3: Try to access Firebase directly (if we can detect a user)
+    try {
+        // Check if we can access the main app's Firebase
+        if (window.opener && window.opener.AppState?.currentUser) {
+            await loadExercisesFromFirebase(window.opener.AppState.currentUser.email);
+            return;
+        }
+    } catch (error) {
+        console.error('❌ Direct Firebase access failed:', error);
+    }
+    
+    // Method 4: Fallback to sample data
+    console.log('❌ All methods failed, loading fallback exercises...');
+    loadFallbackExercises();
+}
+
+async function loadExercisesFromFirebase(userEmail) {
+    console.log(`🔥 Attempting direct Firebase load for user: ${userEmail}`);
+    
+    try {
+        // Try to import Firebase and WorkoutManager from parent
+        if (window.opener) {
+            const { WorkoutManager } = await window.opener.import('./js/core/workout/workout-manager.js');
+            const { AppState } = await window.opener.import('./js/core/app-state.js');
+            
+            // Create a temporary AppState-like object
+            const tempAppState = {
+                currentUser: { email: userEmail },
+                exerciseDatabase: []
+            };
+            
+            const workoutManager = new WorkoutManager(tempAppState);
+            const exercises = await workoutManager.getExerciseLibrary();
+            
+            loadExercisesFromData(exercises);
+            console.log(`✅ Successfully loaded ${exercises.length} exercises from Firebase`);
+        }
+    } catch (error) {
+        console.error('❌ Firebase direct load failed:', error);
+        throw error;
+    }
+}
+
+function loadExercisesFromData(exerciseData) {
+    if (!exerciseData || exerciseData.length === 0) {
+        console.log('❌ No exercise data provided');
+        loadFallbackExercises();
+        return;
+    }
+    
+    console.log(`📚 Processing ${exerciseData.length} exercises`);
+    
+    allExercises = exerciseData.map(ex => ({
+        id: ex.id || `ex_${Date.now()}_${Math.random()}`,
+        name: ex.name || ex.machine,
+        machine: ex.machine || ex.name,
+        bodyPart: ex.bodyPart || 'General',
+        equipmentType: ex.equipmentType || 'Machine',
+        sets: ex.sets || 3,
+        reps: ex.reps || 10,
+        weight: ex.weight || 50,
+        video: ex.video || '',
+        isCustom: ex.isCustom || false,
+        tags: ex.tags || []
+    }));
+    
+    filteredExercises = [...allExercises];
+    
+    const customCount = allExercises.filter(ex => ex.isCustom).length;
+    console.log(`✅ Loaded ${allExercises.length} exercises (${customCount} custom)`);
+    
+    renderExercises();
+    
+    if (customCount > 0) {
+        showNotification(`✅ Loaded ${customCount} custom exercises from your library!`, 'success');
+    } else {
+        showNotification(`✅ Loaded ${allExercises.length} exercises (no custom exercises found)`, 'info');
+    }
+}
+
+function loadFallbackExercises() {
+    console.log('📁 Loading fallback exercises...');
+    allExercises = getSampleExercises();
+    
+    // Add sample custom exercises for testing
+    const sampleCustomExercises = [
+        {
+            id: 'custom_sample_1',
+            name: 'Custom Cable Crossovers',
+            bodyPart: 'Chest',
+            equipmentType: 'Cable',
+            sets: 3,
+            reps: 12,
+            weight: 30,
+            video: '',
+            isCustom: true,
+            tags: ['chest', 'cable']
+        },
+        {
+            id: 'custom_sample_2', 
+            name: 'Custom Bulgarian Split Squats',
+            bodyPart: 'Legs',
+            equipmentType: 'Bodyweight',
+            sets: 3,
+            reps: 10,
+            weight: 0,
+            video: '',
+            isCustom: true,
+            tags: ['legs', 'bodyweight']
+        }
+    ];
+    
+    allExercises.push(...sampleCustomExercises);
+    filteredExercises = [...allExercises];
+    
+    console.log(`✅ Fallback data loaded: ${allExercises.length} exercises`);
+    renderExercises();
+    showNotification('⚠️ Using sample data - sign in to the main app and reopen to see your custom exercises', 'warning');
+}
+        // Sample exercises for demonstration
+        function getSampleExercises() {
+            return [
+                {
+                    id: 'bench_press',
+                    name: 'Bench Press',
+                    bodyPart: 'Chest',
+                    equipmentType: 'Barbell',
+                    sets: 4,
+                    reps: 8,
+                    weight: 185,
+                    video: '',
+                    isCustom: false
+                },
+                {
+                    id: 'squat',
+                    name: 'Squat',
+                    bodyPart: 'Legs',
+                    equipmentType: 'Barbell',
+                    sets: 4,
+                    reps: 10,
+                    weight: 225,
+                    video: '',
+                    isCustom: false
+                },
+                {
+                    id: 'lat_pulldown',
+                    name: 'Lat Pulldown',
+                    bodyPart: 'Back',
+                    equipmentType: 'Machine',
+                    sets: 4,
+                    reps: 10,
+                    weight: 130,
+                    video: '',
+                    isCustom: false
+                },
+                {
+                    id: 'shoulder_press',
+                    name: 'Shoulder Press Machine',
+                    bodyPart: 'Shoulders',
+                    equipmentType: 'Machine',
+                    sets: 3,
+                    reps: 12,
+                    weight: 90,
+                    video: '',
+                    isCustom: false
+                },
+                {
+                    id: 'leg_press',
+                    name: 'Leg Press',
+                    bodyPart: 'Legs',
+                    equipmentType: 'Machine',
+                    sets: 4,
+                    reps: 12,
+                    weight: 300,
+                    video: '',
+                    isCustom: false
+                }
+            ];
+        }
+
+        // Render exercises to the grid
+        function renderExercises() {
+            const grid = document.getElementById('exercise-grid');
+            
+            if (filteredExercises.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <h3>No Exercises Found</h3>
+                        <p>Try adjusting your search filters or add a new exercise.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = '';
+            filteredExercises.forEach(exercise => {
+                const card = createExerciseCard(exercise);
+                grid.appendChild(card);
+            });
+        }
+
+        // Create exercise card element
+        function createExerciseCard(exercise) {
+            const card = document.createElement('div');
+            card.className = `exercise-card ${exercise.isCustom ? 'custom' : ''}`;
+            
+            card.innerHTML = `
+                <div class="exercise-header">
+                    <div>
+                        <div class="exercise-title">${exercise.name}</div>
+                        <div class="exercise-meta">
+                            <i class="fas fa-tag"></i>
+                            ${exercise.bodyPart} • ${exercise.equipmentType}
+                            ${exercise.isCustom ? '<span style="color: var(--primary);">Custom</span>' : ''}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="exercise-stats">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value">${exercise.sets}</div>
+                            <div class="stat-label">Sets</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${exercise.reps}</div>
+                            <div class="stat-label">Reps</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${exercise.weight}</div>
+                            <div class="stat-label">lbs</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="exercise-actions">
+                    <button class="btn btn-small" onclick="editExercise('${exercise.id}')">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    ${exercise.video ? 
+                        `<button class="btn btn-small" onclick="showVideo('${exercise.video}', '${exercise.name}')">
+                            <i class="fas fa-play"></i> Video
+                        </button>` : ''
+                    }
+                    <button class="btn btn-danger btn-small" onclick="deleteExercise('${exercise.id}')">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Filter exercises based on search and filters
+        function filterExercises() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const bodyPartFilter = document.getElementById('body-part-filter').value;
+            const equipmentFilter = document.getElementById('equipment-filter').value;
+
+            filteredExercises = allExercises.filter(exercise => {
+                const matchesSearch = !searchTerm || 
+                    exercise.name.toLowerCase().includes(searchTerm) ||
+                    exercise.bodyPart.toLowerCase().includes(searchTerm) ||
+                    exercise.equipmentType.toLowerCase().includes(searchTerm);
+
+                const matchesBodyPart = !bodyPartFilter || exercise.bodyPart === bodyPartFilter;
+                const matchesEquipment = !equipmentFilter || exercise.equipmentType === equipmentFilter;
+
+                return matchesSearch && matchesBodyPart && matchesEquipment;
+            });
+
+            renderExercises();
+        }
+
+        // Clear all filters
+        function clearFilters() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('body-part-filter').value = '';
+            document.getElementById('equipment-filter').value = '';
+            filteredExercises = [...allExercises];
+            renderExercises();
+        }
+
+        // Show add exercise modal
+        function showAddExerciseModal() {
+            currentEditingExercise = null;
+            document.getElementById('exercise-modal').classList.add('active');
+            document.querySelector('.modal-title').textContent = 'Add New Exercise';
+            document.getElementById('exercise-form').reset();
+            document.getElementById('exercise-name').focus();
+        }
+
+        // Edit exercise
+        function editExercise(exerciseId) {
+            const exercise = allExercises.find(ex => ex.id === exerciseId);
+            if (!exercise) return;
+
+            currentEditingExercise = exercise;
+            
+            // Populate form
+            document.getElementById('exercise-name').value = exercise.name;
+            document.getElementById('exercise-body-part').value = exercise.bodyPart;
+            document.getElementById('exercise-equipment').value = exercise.equipmentType;
+            document.getElementById('exercise-sets').value = exercise.sets;
+            document.getElementById('exercise-reps').value = exercise.reps;
+            document.getElementById('exercise-weight').value = exercise.weight;
+            document.getElementById('exercise-video').value = exercise.video || '';
+
+            document.querySelector('.modal-title').textContent = 'Edit Exercise';
+            document.getElementById('exercise-modal').classList.add('active');
+            document.getElementById('exercise-name').focus();
+        }
+
+        // Delete exercise
+        async function deleteExercise(exerciseId) {
+            const exercise = allExercises.find(ex => ex.id === exerciseId);
+            if (!exercise) return;
+
+            if (confirm(`Are you sure you want to delete "${exercise.name}"? This cannot be undone.`)) {
+                try {
+                    // Try to delete through parent window's Firebase connection
+                    if (window.opener && window.opener.AppState && window.opener.AppState.currentUser && exercise.isCustom) {
+                        const { db, doc, deleteDoc } = await window.opener.import('./js/core/firebase-config.js');
+                        
+                        // Delete from Firebase
+                        const docRef = doc(db, "users", window.opener.AppState.currentUser.uid, "customExercises", exerciseId);
+                        await deleteDoc(docRef);
+                        
+                        // Refresh parent window's exercise library
+                        const { WorkoutManager } = await window.opener.import('./js/core/workout/workout-manager.js');
+                        const workoutManager = new WorkoutManager(window.opener.AppState);
+                        window.opener.AppState.exerciseDatabase = await workoutManager.getExerciseLibrary();
+                        
+                        showNotification(`Deleted "${exercise.name}" from Firebase`, 'success');
+                    } else {
+                        showNotification(`Deleted "${exercise.name}" (local only)`, 'warning');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error deleting from Firebase:', error);
+                    showNotification(`Error deleting from Firebase, removed locally`, 'warning');
+                }
+                
+                // Remove from local array regardless
+                allExercises = allExercises.filter(ex => ex.id !== exerciseId);
+                filterExercises();
+            }
+        }
+
+        // Save exercise (add or edit)
+        async function saveExercise(event) {
+            event.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('exercise-name').value.trim(),
+                bodyPart: document.getElementById('exercise-body-part').value,
+                equipmentType: document.getElementById('exercise-equipment').value,
+                sets: parseInt(document.getElementById('exercise-sets').value) || 3,
+                reps: parseInt(document.getElementById('exercise-reps').value) || 10,
+                weight: parseInt(document.getElementById('exercise-weight').value) || 50,
+                video: document.getElementById('exercise-video').value.trim()
+            };
+
+            if (!formData.name) {
+                showNotification('Please enter an exercise name', 'warning');
+                return;
+            }
+
+            try {
+                if (currentEditingExercise) {
+                    // Update existing exercise
+                    const index = allExercises.findIndex(ex => ex.id === currentEditingExercise.id);
+                    if (index !== -1) {
+                        allExercises[index] = { ...allExercises[index], ...formData };
+                        
+                        // Update in Firebase if it's a custom exercise
+                        if (currentEditingExercise.isCustom && window.opener && window.opener.AppState?.currentUser) {
+                            const { WorkoutManager } = await window.opener.import('./js/core/workout/workout-manager.js');
+                            const workoutManager = new WorkoutManager(window.opener.AppState);
+                            await workoutManager.updateCustomExercise(currentEditingExercise.id, formData);
+                            
+                            // Refresh parent window's exercise database
+                            window.opener.AppState.exerciseDatabase = await workoutManager.getExerciseLibrary();
+                        }
+                        
+                        showNotification(`Updated "${formData.name}"`, 'success');
+                    }
+                } else {
+                    // Create new custom exercise
+                    const newExercise = {
+                        id: `custom_${Date.now()}`,
+                        ...formData,
+                        isCustom: true,
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    // Save to Firebase if parent window is available and user is signed in
+                    if (window.opener && window.opener.AppState?.currentUser) {
+                        const { WorkoutManager } = await window.opener.import('./js/core/workout/workout-manager.js');
+                        const workoutManager = new WorkoutManager(window.opener.AppState);
+                        
+                        // Save to Firebase
+                        await workoutManager.saveCustomExercise(newExercise);
+                        
+                        // Refresh parent window's exercise database
+                        window.opener.AppState.exerciseDatabase = await workoutManager.getExerciseLibrary();
+                        
+                        showNotification(`Created "${formData.name}" and saved to your library!`, 'success');
+                    } else {
+                        showNotification(`Created "${formData.name}" (local only - sign in to save permanently)`, 'warning');
+                    }
+                    
+                    // Add to local array
+                    allExercises.push(newExercise);
+                }
+                
+                // Reset form and refresh UI
+                currentEditingExercise = null;
+                closeExerciseModal();
+                filterExercises();
+                
+            } catch (error) {
+                console.error('Error saving exercise:', error);
+                showNotification('Error saving exercise', 'error');
+            }
+        }
+
+        // Close exercise modal
+        function closeExerciseModal() {
+            document.getElementById('exercise-modal').classList.remove('active');
+            currentEditingExercise = null;
+        }
+
+        // Show exercise video
+        function showVideo(videoUrl, exerciseName) {
+            if (videoUrl) {
+                window.open(videoUrl, '_blank');
+            } else {
+                showNotification('No video available for this exercise', 'info');
+            }
+        }
+
+        // Refresh exercises
+        async function refreshExercises() {
+            showNotification('Refreshing exercises...', 'info');
+            await loadExercises();
+            showNotification('Exercises refreshed!', 'success');
+        }
+
+        // Go back to main app
+        function goBackToApp() {
+            if (confirm('Go back to the main app? Any unsaved changes will be lost.')) {
+                if (window.opener && !window.opener.closed) {
+                    window.close();
+                } else {
+                    window.location.href = './index.html';
+                }
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.classList.add('show'), 100);
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeExerciseModal();
+            } else if (e.ctrlKey && e.key === 'n') {
+                e.preventDefault();
+                showAddExerciseModal();
+            }
+        });
+    </script>
+</body>
+</html>

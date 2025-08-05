@@ -3141,45 +3141,6 @@ async function useTemplate(templateId) {
     }
 }
 
-async function showWorkoutHistory() {
-    if (!AppState.currentUser) {
-        showNotification('Please sign in to view workout history', 'warning');
-        return;
-    }
-
-    // Hide other sections
-    const workoutSelector = document.getElementById('workout-selector');
-    const activeWorkout = document.getElementById('active-workout');
-    const workoutManagement = document.getElementById('workout-management');
-    const historySection = document.getElementById('workout-history-section');
-    
-    if (workoutSelector) workoutSelector.classList.add('hidden');
-    if (activeWorkout) activeWorkout.classList.add('hidden');
-    if (workoutManagement) workoutManagement.classList.add('hidden');
-    if (historySection) historySection.classList.remove('hidden');
-    
-    // 🔧 FIX: Ensure we're using the right workoutHistory object
-    console.log('🔍 Checking workoutHistory reference...');
-    console.log('window.workoutHistory exists:', !!window.workoutHistory);
-    console.log('global workoutHistory exists:', !!workoutHistory);
-    
-    // Use the existing global one
-    if (!window.workoutHistory && workoutHistory) {
-        window.workoutHistory = workoutHistory;
-    }
-    
-    // Load history on the correct object
-    if (window.workoutHistory) {
-        await window.workoutHistory.loadHistory();
-        console.log('✅ History loaded, currentHistory length:', window.workoutHistory.currentHistory.length);
-    }
-    
-    // Set up event listeners after a delay to ensure history is loaded
-    setTimeout(() => {
-        setupWorkoutHistoryEventListeners();
-    }, 500);
-}
-
 // 4. ADD this emergency fix function:
 function emergencyFixFilters() {
     console.log('🚨 Emergency filter fix - checking all references...');
@@ -3204,7 +3165,7 @@ window.emergencyFixFilters = emergencyFixFilters;
 
 // 2. ADD this new function to main.js (BUG-009 FIX):
 function setupWorkoutHistoryEventListeners() {
-    console.log('🔧 Setting up workout history event listeners...');
+    console.log('🔧 Setting up simplified workout history event listeners...');
     
     // Prevent duplicate listeners
     if (window.historyListenersSetup) {
@@ -3212,109 +3173,31 @@ function setupWorkoutHistoryEventListeners() {
         return;
     }
     
-    // 🔧 FIX: Wait a moment for workout history to fully load
-    setTimeout(() => {
-        console.log('🔧 Setting up delayed event listeners...');
-        
-        // Filter buttons event listeners (BUG-009 FIX)
-        document.querySelectorAll('.history-filter-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                console.log('🔘 Filter button clicked:', this.dataset.filter);
-                
-                // Remove active class from all buttons in the same section
-                const section = this.closest('.filter-section');
-                section.querySelectorAll('.history-filter-btn').forEach(b => {
-                    b.classList.remove('active');
-                });
-                
-                // Add active class to clicked button
-                this.classList.add('active');
-                
-                // Apply the filter with a small delay
-                setTimeout(() => {
-                    applyHistoryFilters();
-                }, 100);
-            });
-        });
-        
-        // Search input event listener (BUG-010 FIX)
-        const searchInput = document.getElementById('history-search');
-        if (searchInput) {
-            console.log('🔧 Setting up search input listener');
-            // Real-time search as user types
-            searchInput.addEventListener('input', debounce(applyHistoryFilters, 300));
-            
-            // Also apply on enter
-            searchInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    applyHistoryFilters();
-                }
-            });
-        }
-        
-        // Date filter event listeners (BUG-010 FIX)
-        const startDateInput = document.getElementById('history-start-date');
-        const endDateInput = document.getElementById('history-end-date');
-        
-        if (startDateInput) {
-            console.log('🔧 Setting up start date listener');
-            startDateInput.addEventListener('change', applyHistoryFilters);
-        }
-        
-        if (endDateInput) {
-            console.log('🔧 Setting up end date listener');
-            endDateInput.addEventListener('change', applyHistoryFilters);
-        }
-        
-        // Mark listeners as set up to prevent duplicates
-        window.historyListenersSetup = true;
-        console.log('✅ Workout history event listeners set up successfully with delay');
-        
-    }, 500); // 500ms delay to ensure history is loaded
+    // The event listeners are now handled directly in workout-history.js
+    // This function is kept for compatibility but most logic moved to the module
+    
+    window.historyListenersSetup = true;
+    console.log('✅ Simplified workout history event listeners setup complete');
 }
 
 // 3. ADD this new function to main.js (BUG-009 & BUG-010 FIX):
 function applyHistoryFilters() {
-    console.log('🔍 Applying history filters...');
+    console.log('🔍 Applying simplified search filter...');
     
-    // 🔧 FIX: Access the object and check for data differently
-    const historyObj = window.workoutHistory || workoutHistory;
-    
-    if (!historyObj) {
+    if (!window.workoutHistory) {
         console.warn('❌ No workoutHistory object found');
         return;
     }
     
-    // 🔧 FIX: Try to get data from data-manager if needed
-    console.log('📊 Checking history data...');
-    console.log('historyObj.currentHistory length:', historyObj.currentHistory?.length);
-    console.log('historyObj.filteredHistory length:', historyObj.filteredHistory?.length);
+    // Get search query from the simple search input
+    const searchQuery = document.getElementById('workout-search')?.value?.trim() || '';
     
-    // If the main arrays are empty, try to reload
-    if (!historyObj.currentHistory || historyObj.currentHistory.length === 0) {
-        console.log('🔄 No data in currentHistory, forcing reload...');
-        
-        // Try to reload and then apply filters
-        historyObj.loadHistory().then(() => {
-            console.log('🔄 History reloaded, checking data again...');
-            console.log('New currentHistory length:', historyObj.currentHistory?.length);
-            
-            // If still empty, there might be no data
-            if (!historyObj.currentHistory || historyObj.currentHistory.length === 0) {
-                console.log('❌ Still no data after reload');
-                showNotification('No workout history found', 'info');
-                return;
-            }
-            
-            // Now retry the filtering with the loaded data
-            setTimeout(() => applyHistoryFiltersWithData(historyObj), 100);
-        });
-        return;
-    }
+    // Apply the search filter
+    window.workoutHistory.filterHistory(searchQuery);
     
-    // If we have data, apply filters
-    applyHistoryFiltersWithData(historyObj);
+    console.log('✅ Search filter applied');
 }
+
 
 // Separate function to apply filters when we know data exists
 function applyHistoryFiltersWithData(historyObj) {
@@ -4386,40 +4269,21 @@ async function submitManualWorkout(event) {
 
 // ADD NEW FUNCTION: Clear history filters
 function clearAllHistoryFilters() {
-    console.log('🧹 Clearing all history filters...');
+    console.log('🧹 Clearing search filter...');
     
     // Clear search input
-    const searchInput = document.getElementById('history-search');
+    const searchInput = document.getElementById('workout-search');
     if (searchInput) {
         searchInput.value = '';
     }
     
-    // Clear date inputs
-    const startDate = document.getElementById('history-start-date');
-    const endDate = document.getElementById('history-end-date');
-    if (startDate) startDate.value = '';
-    if (endDate) endDate.value = '';
-    
-    // Reset all filter buttons to inactive
-    document.querySelectorAll('.history-filter-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    
-    // Activate the "All" status filter
-    const allStatusBtn = document.querySelector('.history-filter-btn[data-filter="all"]');
-    if (allStatusBtn) {
-        allStatusBtn.classList.add('active');
-    }
-    
     // Reset workout history to show all workouts
-    if (window.workoutHistory && window.workoutHistory.currentHistory) {
-        window.workoutHistory.filteredHistory = [...window.workoutHistory.currentHistory];
-        window.workoutHistory.currentPage = 1;
-        window.workoutHistory.renderHistory();
+    if (window.workoutHistory) {
+        window.workoutHistory.filterHistory('');
     }
     
-    showNotification('Filters cleared', 'info');
-    console.log('✅ All history filters cleared');
+    showNotification('Search cleared', 'info');
+    console.log('✅ Search filter cleared');
 }
 
 // 5. ADD this utility function to main.js:
@@ -4572,7 +4436,12 @@ async function debugFirebaseWorkoutDates() {
 
 window.debugFirebaseWorkoutDates = debugFirebaseWorkoutDates;
 
-// Global function assignments for onclick handlers
+// ===================================================================
+// CONSOLIDATED GLOBAL FUNCTION ASSIGNMENTS FOR MAIN.JS
+// Replace the existing global assignments section with this clean version
+// ===================================================================
+
+// Core Exercise and Workout Functions
 window.focusExercise = focusExercise;
 window.updateSet = updateSet;
 window.updateNotes = updateNotes;
@@ -4587,12 +4456,14 @@ window.confirmExerciseSwap = confirmExerciseSwap;
 window.continueInProgressWorkout = continueInProgressWorkout;
 window.discardInProgressWorkout = discardInProgressWorkout;
 window.cancelCurrentWorkout = cancelCurrentWorkout;
-window.showWorkoutHistory = showWorkoutHistory;
+window.selectWorkout = selectWorkout;
+window.deleteExerciseFromWorkout = deleteExerciseFromWorkout;
+
+// Manual Workout Functions
 window.showAddManualWorkoutModal = showAddManualWorkoutModal;
 window.closeAddManualWorkoutModal = closeAddManualWorkoutModal;
 window.loadWorkoutTemplate = loadWorkoutTemplate;
 window.submitManualWorkout = submitManualWorkout;
-window.clearHistoryFilters = clearAllHistoryFilters;
 window.proceedToExerciseSelection = proceedToExerciseSelection;
 window.backToBasicInfo = backToBasicInfo;
 window.addExerciseToManualWorkout = addExerciseToManualWorkout;
@@ -4607,51 +4478,316 @@ window.markManualExerciseComplete = markManualExerciseComplete;
 window.finishManualWorkout = finishManualWorkout;
 window.addExerciseToActiveWorkout = addExerciseToActiveWorkout;
 window.confirmExerciseAddToWorkout = confirmExerciseAddToWorkout;
-window.validateUserData = validateUserData;
-window.applyHistoryFilters = applyHistoryFilters;
-window.setupWorkoutHistoryEventListeners = setupWorkoutHistoryEventListeners;
+window.addToManualWorkoutFromLibrary = addToManualWorkoutFromLibrary;
 
-// Workout Management Global Functions
-window.showWorkoutManagement = showWorkoutManagement;
-window.createNewTemplate = createNewTemplate;
-window.editTemplate = editTemplate; // Single definition
-window.deleteTemplate = deleteTemplate;
-window.useTemplate = useTemplate;
-window.closeTemplateEditor = closeTemplateEditor;
-window.saveCurrentTemplate = saveCurrentTemplate;
-window.addExerciseToTemplate = addExerciseToTemplate;
-window.editTemplateExercise = editTemplateExercise;
-window.removeTemplateExercise = removeTemplateExercise;
-window.closeExerciseLibrary = closeExerciseLibraryEnhanced;
-window.showCreateExerciseForm = showCreateExerciseForm;
-window.closeCreateExerciseModal = closeCreateExerciseModal;
-window.createNewExercise = createNewExerciseEnhanced;
-window.AppState = AppState;
-window.updateExerciseProgress = updateExerciseProgress;
-window.validateSetInput = validateSetInput;
-window.updateFormCompletion = updateFormCompletion;
-window.fillTemplateValues = fillTemplateValues;
-window.addExerciseToActiveWorkout = addExerciseToActiveWorkout;
-window.confirmExerciseAddToWorkout = confirmExerciseAddToWorkout;
-window.validateUserData = validateUserData;
-window.renderExerciseLibraryForTemplate = renderExerciseLibraryForTemplate;
-window.handleUnknownWorkout = handleUnknownWorkout;
-window.filterWorkoutHistory = function() {
+// ===================================================================
+// SIMPLIFIED WORKOUT HISTORY FUNCTIONS (NEW APPROACH)
+// ===================================================================
+
+// Updated showWorkoutHistory function for simplified table approach
+async function showWorkoutHistory() {
+    if (!AppState.currentUser) {
+        showNotification('Please sign in to view workout history', 'warning');
+        return;
+    }
+
+    // Hide other sections
+    const workoutSelector = document.getElementById('workout-selector');
+    const activeWorkout = document.getElementById('active-workout');
+    const workoutManagement = document.getElementById('workout-management');
+    const historySection = document.getElementById('workout-history-section');
+    
+    if (workoutSelector) workoutSelector.classList.add('hidden');
+    if (activeWorkout) activeWorkout.classList.add('hidden');
+    if (workoutManagement) workoutManagement.classList.add('hidden');
+    if (historySection) historySection.classList.remove('hidden');
+    
+    // Ensure workoutHistory is available
+    if (!window.workoutHistory && workoutHistory) {
+        window.workoutHistory = workoutHistory;
+    }
+    
+    // Load history and setup table
     if (window.workoutHistory) {
-        const searchQuery = document.getElementById('history-search')?.value || '';
-        const workoutType = document.getElementById('history-workout-filter')?.value || '';
-        const startDate = document.getElementById('history-start-date')?.value || '';
-        const endDate = document.getElementById('history-end-date')?.value || '';
-        
-        const dateRange = (startDate && endDate) ? { start: startDate, end: endDate } : null;
-        
-        window.workoutHistory.filterHistory(searchQuery, workoutType, dateRange);
+        await window.workoutHistory.loadHistory();
+        console.log('✅ History loaded with simplified table interface');
+    }
+}
+
+// Simplified History Functions (replaces complex filtering)
+window.showWorkoutHistory = showWorkoutHistory;
+
+// Table Action Functions - these are called from the table buttons
+window.viewWorkoutDetails = function(workoutId) {
+    if (!window.workoutHistory) return;
+    
+    const workout = window.workoutHistory.getWorkoutDetails(workoutId);
+    if (!workout) return;
+
+    // Create a simple details display
+    const status = window.workoutHistory.getWorkoutStatus(workout);
+    const duration = window.workoutHistory.formatDuration(window.workoutHistory.getWorkoutDuration(workout));
+    
+    const details = `
+Workout: ${workout.workoutType}
+Date: ${new Date(workout.date).toLocaleDateString()}
+Status: ${status.charAt(0).toUpperCase() + status.slice(1)}
+Duration: ${duration}
+Progress: ${workout.progress?.completedSets || 0}/${workout.progress?.totalSets || 0} sets (${workout.progress?.percentage || 0}%)
+${workout.manualNotes ? `\nNotes: ${workout.manualNotes}` : ''}
+    `.trim();
+    
+    alert(details);
+};
+
+window.repeatWorkout = function(workoutId) {
+    if (window.workoutHistory) {
+        window.workoutHistory.repeatWorkout(workoutId);
     }
 };
-window.addToManualWorkoutFromLibrary = addToManualWorkoutFromLibrary;
-window.selectWorkout = selectWorkout;
-window.deleteExerciseFromWorkout = deleteExerciseFromWorkout;
-window.clearAllHistoryFilters = clearAllHistoryFilters;
+
+window.deleteWorkout = function(workoutId) {
+    if (window.workoutHistory) {
+        window.workoutHistory.deleteWorkout(workoutId);
+    }
+};
+
+// BUG-029 TARGETED FIX: Missing switchTemplateCategory function
+// This fixes the specific ReferenceError: switchTemplateCategory is not defined
+
+console.log('🔧 BUG-029: Applying targeted fix for switchTemplateCategory');
+
+// 1. Add the missing switchTemplateCategory function to window object
+window.switchTemplateCategory = function(category) {
+    console.log('🔧 BUG-029: Switching template category to:', category);
+    
+    // Store current category globally
+    window.currentTemplateCategory = category;
+    
+    // Update tab appearance
+    document.querySelectorAll('.category-tab').forEach(tab => {
+        if (tab.dataset.category === category) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+    
+    // Show/hide content grids
+    const defaultGrid = document.getElementById('default-templates');
+    const customGrid = document.getElementById('custom-templates');
+    
+    if (defaultGrid && customGrid) {
+        if (category === 'default') {
+            defaultGrid.classList.remove('hidden');
+            customGrid.classList.add('hidden');
+        } else if (category === 'custom') {
+            defaultGrid.classList.add('hidden');
+            customGrid.classList.remove('hidden');
+        }
+    }
+    
+    // Load templates for this category
+    loadTemplatesByCategory(category);
+};
+
+// 2. Add the missing loadTemplatesByCategory function if it doesn't exist
+if (typeof window.loadTemplatesByCategory === 'undefined') {
+    window.loadTemplatesByCategory = async function(category) {
+        console.log('🔧 BUG-029: Loading templates for category:', category);
+        
+        const defaultGrid = document.getElementById('default-templates');
+        const customGrid = document.getElementById('custom-templates');
+        
+        if (!defaultGrid || !customGrid) {
+            console.warn('❌ BUG-029: Template grids not found');
+            return;
+        }
+        
+        try {
+            if (category === 'default') {
+                // Load default templates
+                defaultGrid.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading default templates...</span></div>';
+                
+                const defaultTemplates = window.AppState?.workoutPlans || [];
+                
+                if (defaultTemplates.length === 0) {
+                    defaultGrid.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-clipboard-list"></i>
+                            <h3>No Default Templates</h3>
+                            <p>Default workout templates are loading...</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                defaultGrid.innerHTML = '';
+                defaultTemplates.forEach(template => {
+                    const card = createTemplateCard(template, true);
+                    defaultGrid.appendChild(card);
+                });
+                
+            } else if (category === 'custom') {
+                // Load custom templates
+                customGrid.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading custom templates...</span></div>';
+                
+                if (!window.AppState?.currentUser) {
+                    customGrid.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <h3>Sign In Required</h3>
+                            <p>Please sign in to view your custom templates</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Load custom templates from Firebase
+                try {
+                    const { WorkoutManager } = await import('./core/workout/workout-manager.js');
+                    const workoutManager = new WorkoutManager(window.AppState);
+                    const customTemplates = await workoutManager.getUserWorkoutTemplates() || [];
+                    
+                    if (customTemplates.length === 0) {
+                        customGrid.innerHTML = `
+                            <div class="empty-state">
+                                <i class="fas fa-plus-circle"></i>
+                                <h3>No Custom Templates</h3>
+                                <p>Create your first custom workout template!</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    customGrid.innerHTML = '';
+                    customTemplates.forEach(template => {
+                        const card = createTemplateCard(template, false);
+                        customGrid.appendChild(card);
+                    });
+                    
+                } catch (error) {
+                    console.error('❌ BUG-029: Error loading custom templates:', error);
+                    customGrid.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h3>Error Loading Templates</h3>
+                            <p>Please try again later.</p>
+                        </div>
+                    `;
+                }
+            }
+            
+        } catch (error) {
+            console.error('❌ BUG-029: Error in loadTemplatesByCategory:', error);
+        }
+    };
+}
+
+// 3. Add the createTemplateCard function if it doesn't exist
+if (typeof window.createTemplateCard === 'undefined') {
+    window.createTemplateCard = function(template, isDefault = false) {
+        const card = document.createElement('div');
+        card.className = 'template-card';
+        
+        const exerciseCount = template.exercises?.length || 0;
+        const exercisePreview = template.exercises?.slice(0, 3).map(ex => 
+            ex.name || ex.machine
+        ).join(', ') || 'No exercises';
+        const moreText = exerciseCount > 3 ? ` and ${exerciseCount - 3} more...` : '';
+        
+        // Use template.id for custom templates, template.day for default templates
+        const templateId = template.id || template.day;
+        
+        card.innerHTML = `
+            <h4>${template.name || template.day}</h4>
+            <div class="template-category">${getWorkoutCategory(template.day || template.category)}</div>
+            <div class="template-exercises-preview">
+                ${exerciseCount} exercises: ${exercisePreview}${moreText}
+            </div>
+            <div class="template-actions">
+                <button class="btn btn-primary btn-small" onclick="useTemplateFromManagement('${templateId}', ${isDefault})">
+                    <i class="fas fa-play"></i> Use Today
+                </button>
+                <button class="btn btn-secondary btn-small" onclick="${isDefault ? `customizeDefaultTemplate('${template.day}')` : `editTemplate('${template.id}')`}">
+                    <i class="fas fa-${isDefault ? 'copy' : 'edit'}"></i> ${isDefault ? 'Customize' : 'Edit'}
+                </button>
+                ${!isDefault ? 
+                    `<button class="btn btn-danger btn-small" onclick="deleteTemplate('${template.id}')">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>` : ''
+                }
+            </div>
+        `;
+        
+        return card;
+    };
+}
+
+// 4. Add missing helper functions
+if (typeof window.getWorkoutCategory === 'undefined') {
+    window.getWorkoutCategory = function(workoutName) {
+        if (!workoutName) return 'Other';
+        const name = workoutName.toLowerCase();
+        if (name.includes('chest') || name.includes('push')) return 'Push';
+        if (name.includes('back') || name.includes('pull')) return 'Pull';
+        if (name.includes('legs') || name.includes('leg')) return 'Legs';
+        if (name.includes('cardio') || name.includes('core')) return 'Cardio';
+        return 'Other';
+    };
+}
+
+// 5. Ensure other missing functions are available
+if (typeof window.useTemplateFromManagement === 'undefined') {
+    window.useTemplateFromManagement = async function(templateId, isDefault) {
+        console.log('🔧 BUG-029: useTemplateFromManagement called:', { templateId, isDefault });
+        
+        try {
+            // Hide management UI
+            const workoutManagement = document.getElementById('workout-management');
+            if (workoutManagement) {
+                workoutManagement.classList.add('hidden');
+            }
+            
+            // Show workout selector
+            const workoutSelector = document.getElementById('workout-selector');
+            if (workoutSelector) {
+                workoutSelector.classList.remove('hidden');
+            }
+            
+            // Call selectTemplate if it exists
+            if (typeof window.selectTemplate === 'function') {
+                await window.selectTemplate(templateId, isDefault);
+            } else {
+                console.error('❌ BUG-029: selectTemplate function not found');
+                showNotification('Error: Template selection not available', 'error');
+            }
+            
+        } catch (error) {
+            console.error('❌ BUG-029: Error in useTemplateFromManagement:', error);
+            showNotification('Error starting template', 'error');
+        }
+    };
+}
+
+// 7. Initialize with default templates when management is shown
+const originalShowWorkoutManagement = window.showWorkoutManagement;
+if (typeof originalShowWorkoutManagement === 'function') {
+    window.showWorkoutManagement = function() {
+        // Call original function
+        const result = originalShowWorkoutManagement.apply(this, arguments);
+        
+        // Ensure default category is loaded
+        setTimeout(() => {
+            if (typeof window.switchTemplateCategory === 'function') {
+                window.switchTemplateCategory('default');
+            }
+        }, 200);
+        
+        return result;
+    };
+}
+
 
 // Template Selection Functions
 window.showTemplateSelection = showTemplateSelection;
@@ -4668,12 +4804,21 @@ window.showQuickAddExercise = showQuickAddExercise;
 window.hideQuickAddExercise = hideQuickAddExercise;
 window.quickAddExercise = quickAddExercise;
 
-// Template Management Functions
-window.showCreateTemplateModal = showCreateTemplateModal;
-window.closeCreateTemplateModal = closeCreateTemplateModal;
-window.createTemplate = createTemplate;
-window.switchTemplateCategory = switchTemplateCategory;
-window.useTemplateFromManagement = useTemplateFromManagement;
+// Workout Management Functions
+window.showWorkoutManagement = showWorkoutManagement;
+window.createNewTemplate = createNewTemplate;
+window.editTemplate = editTemplate;
+window.deleteTemplate = deleteTemplate;
+window.useTemplate = useTemplate;
+window.closeTemplateEditor = closeTemplateEditor;
+window.saveCurrentTemplate = saveCurrentTemplate;
+window.addExerciseToTemplate = addExerciseToTemplate;
+window.editTemplateExercise = editTemplateExercise;
+window.removeTemplateExercise = removeTemplateExercise;
+window.closeExerciseLibrary = closeExerciseLibraryEnhanced;
+window.showCreateExerciseForm = showCreateExerciseForm;
+window.closeCreateExerciseModal = closeCreateExerciseModal;
+window.createNewExercise = createNewExerciseEnhanced;
 
 // Template Editor Functions
 window.showTemplateEditorWithData = showTemplateEditorWithData;
@@ -4688,5 +4833,31 @@ window.renderExerciseLibraryForTemplate = renderExerciseLibraryForTemplate;
 window.createExerciseLibraryCardForTemplate = createExerciseLibraryCardForTemplate;
 window.addExerciseToTemplateFromLibrary = addExerciseToTemplateFromLibrary;
 window.closeExerciseLibraryForTemplate = closeExerciseLibraryForTemplate;
+
+// Validation and State Functions
+window.AppState = AppState;
+window.updateExerciseProgress = updateExerciseProgress;
+window.validateSetInput = validateSetInput;
+window.updateFormCompletion = updateFormCompletion;
+window.fillTemplateValues = fillTemplateValues;
+window.validateUserData = validateUserData;
+window.handleUnknownWorkout = handleUnknownWorkout;
+
+// BUG-029 SIMPLE FIX: Expose existing functions to window for HTML onclick
+window.switchTemplateCategory = switchTemplateCategory;
+window.loadTemplatesByCategory = loadTemplatesByCategory;
+window.showCreateTemplateModal = showCreateTemplateModal;
+window.closeCreateTemplateModal = closeCreateTemplateModal
+window.createTemplate = createTemplate;
+
+// ===================================================================
+// REMOVED FUNCTIONS (No longer needed with simplified approach)
+// ===================================================================
+// window.applyHistoryFilters = applyHistoryFilters; // REMOVED - handled in workout-history.js
+// window.setupWorkoutHistoryEventListeners = setupWorkoutHistoryEventListeners; // REMOVED - handled in workout-history.js  
+// window.clearHistoryFilters = clearAllHistoryFilters; // REMOVED - now just clear search
+// window.filterWorkoutHistory = filterWorkoutHistory; // REMOVED - simplified to search only
+
+console.log('✅ Simplified Big Surf Workout Tracker loaded successfully!');
 
 console.log('✅ Enhanced Big Surf Workout Tracker loaded successfully!');

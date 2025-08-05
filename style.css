@@ -1578,34 +1578,6 @@ body {
     font-size: 1rem;
 }
 
-.filter-buttons {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
-
-.history-filter-btn {
-    padding: 0.5rem 1rem;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 0.875rem;
-}
-
-.history-filter-btn:hover {
-    border-color: var(--primary);
-    color: var(--text-primary);
-}
-
-.history-filter-btn.active {
-    background: var(--primary);
-    color: var(--bg-primary);
-    border-color: var(--primary);
-}
-
 .search-filters {
     display: grid;
     grid-template-columns: 2fr 1fr 1fr auto;
@@ -2472,3 +2444,419 @@ body {
         font-size: 1rem;
     }
 }
+/* Updated History Filters */
+/* Simple Search */
+.simple-search {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+/* Workout Table */
+.workout-table-container {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.workout-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-secondary);
+}
+
+.workout-table th {
+    background: var(--bg-tertiary);
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--border);
+    position: relative;
+}
+
+.workout-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s ease;
+}
+
+.workout-table th.sortable:hover {
+    background: var(--primary);
+    color: var(--bg-primary);
+}
+
+.workout-table th.sortable.sort-asc i:after {
+    content: "\f0de"; /* fa-sort-up */
+}
+
+.workout-table th.sortable.sort-desc i:after {
+    content: "\f0dd"; /* fa-sort-down */
+}
+
+.workout-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+}
+
+.workout-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.workout-table tbody tr:hover {
+    background: var(--bg-tertiary);
+}
+
+/* Status badges in table */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.completed {
+    background: rgba(35, 134, 54, 0.2);
+    color: var(--success);
+    border: 1px solid rgba(35, 134, 54, 0.3);
+}
+
+.status-badge.incomplete {
+    background: rgba(255, 193, 7, 0.2);
+    color: #f39c12;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.status-badge.cancelled {
+    background: rgba(220, 53, 69, 0.2);
+    color: var(--danger);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+}
+
+/* Progress bar in table */
+.progress-bar {
+    width: 80px;
+    height: 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-right: 0.5rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--primary);
+    transition: width 0.3s ease;
+}
+
+.progress-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Action buttons in table */
+.table-actions {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.table-actions .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .workout-table {
+        font-size: 0.875rem;
+    }
+    
+    .workout-table th,
+    .workout-table td {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .table-actions {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .simple-search {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+/* Sortable table header improvements */
+.workout-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.workout-table th.sortable:hover {
+    background: var(--primary);
+    color: var(--bg-primary);
+}
+
+.workout-table th.sortable i {
+    margin-left: 0.5rem;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.workout-table th.sortable:hover i {
+    opacity: 1;
+}
+
+/* Sort direction indicators */
+.workout-table th.sortable.sort-asc i:before {
+    content: "\f0de"; /* fa-sort-up */
+    color: var(--primary);
+}
+
+.workout-table th.sortable.sort-desc i:before {
+    content: "\f0dd"; /* fa-sort-down */
+    color: var(--primary);
+}
+
+.workout-table th.sortable.sort-asc,
+.workout-table th.sortable.sort-desc {
+    background: rgba(64, 224, 208, 0.1);
+    color: var(--primary);
+}
+
+/* Workout row improvements */
+.workout-row {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.workout-row:hover {
+    background: var(--bg-tertiary);
+    transform: translateY(-1px);
+}
+
+/* Workout name cell styling */
+.workout-name-main {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.manual-indicator {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.manual-indicator i {
+    color: var(--warning);
+}
+
+/* Progress cell styling */
+.progress-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 120px;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), #20b2aa);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* Table action buttons */
+.table-actions {
+    display: flex;
+    gap: 0.25rem;
+    justify-content: center;
+}
+
+.table-actions .btn {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+    min-width: auto;
+}
+
+.table-actions .btn i {
+    font-size: 0.875rem;
+}
+
+/* Responsive table improvements */
+@media (max-width: 768px) {
+    .workout-table {
+        font-size: 0.875rem;
+    }
+    
+    .workout-table th,
+    .workout-table td {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .table-actions {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .table-actions .btn {
+        padding: 0.25rem 0.375rem;
+        font-size: 0.7rem;
+    }
+    
+    .progress-cell {
+        min-width: 80px;
+    }
+    
+    .progress-text {
+        font-size: 0.75rem;
+    }
+}
+
+/* Empty state styling */
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-secondary);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+    color: var(--primary);
+}
+
+.empty-state h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* Status badge improvements */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.status-badge.completed {
+    background: rgba(35, 134, 54, 0.15);
+    color: var(--success);
+    border: 1px solid rgba(35, 134, 54, 0.3);
+}
+
+.status-badge.incomplete {
+    background: rgba(255, 193, 7, 0.15);
+    color: #f39c12;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.status-badge.cancelled {
+    background: rgba(220, 53, 69, 0.15);
+    color: var(--danger);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+}
+
+/* Search bar improvements */
+.simple-search {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+.simple-search .form-input {
+    flex: 1;
+    max-width: 400px;
+}
+
+#clear-search {
+    white-space: nowrap;
+}
+
+/* Table container improvements */
+.workout-table-container {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.workout-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-secondary);
+}
+
+/* Date column styling */
+.workout-date {
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+/* Duration column styling */
+.workout-duration {
+    font-weight: 500;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+

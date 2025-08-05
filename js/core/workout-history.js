@@ -6,80 +6,216 @@ export function getWorkoutHistory(appState) {
     let currentHistory = [];
     let filteredHistory = [];
     let currentPage = 1;
-    const itemsPerPage = 10;
+    let currentSort = { column: 'date', direction: 'desc' };
+    const itemsPerPage = 20;
 
     return {
         currentHistory,
         filteredHistory,
         currentPage,
+        currentSort,
 
         initialize() {
             console.log('📊 Workout History initialized');
+            this.setupEventListeners();
+        },
+
+        setupEventListeners() {
+            // Search functionality
+            const searchInput = document.getElementById('workout-search');
+            const clearSearchBtn = document.getElementById('clear-search');
+
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    this.filterHistory(e.target.value);
+                });
+            }
+
+            if (clearSearchBtn) {
+                clearSearchBtn.addEventListener('click', () => {
+                    if (searchInput) searchInput.value = '';
+                    this.filterHistory('');
+                });
+            }
+
+            // Setup sorting functionality
+            this.setupSorting();
+        },
+
+        setupSorting() {
+            const sortableHeaders = document.querySelectorAll('.workout-table th.sortable');
+            
+            sortableHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    const sortColumn = header.dataset.sort;
+                    this.sortTable(sortColumn);
+                });
+            });
+        },
+
+        sortTable(column) {
+            // Toggle direction if same column, otherwise default to desc
+            if (this.currentSort.column === column) {
+                this.currentSort.direction = this.currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                this.currentSort.column = column;
+                this.currentSort.direction = 'desc';
+            }
+
+            // Update header visual indicators
+            this.updateSortIndicators();
+
+            // Sort the filtered history
+            this.applySorting();
+
+            // Re-render
+            this.renderHistory();
+        },
+
+        updateSortIndicators() {
+            // Remove existing sort classes
+            document.querySelectorAll('.workout-table th.sortable').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+            });
+
+            // Add class to current sort column
+            const currentHeader = document.querySelector(`[data-sort="${this.currentSort.column}"]`);
+            if (currentHeader) {
+                currentHeader.classList.add(`sort-${this.currentSort.direction}`);
+            }
+        },
+
+        applySorting() {
+            this.filteredHistory.sort((a, b) => {
+                let aValue, bValue;
+
+                switch (this.currentSort.column) {
+                    case 'date':
+                        aValue = new Date(a.date);
+                        bValue = new Date(b.date);
+                        break;
+                    case 'workout':
+                        aValue = a.workoutType.toLowerCase();
+                        bValue = b.workoutType.toLowerCase();
+                        break;
+                    case 'status':
+                        aValue = this.getWorkoutStatus(a);
+                        bValue = this.getWorkoutStatus(b);
+                        break;
+                    case 'duration':
+                        aValue = this.getWorkoutDuration(a);
+                        bValue = this.getWorkoutDuration(b);
+                        break;
+                    case 'progress':
+                        aValue = a.progress?.percentage || 0;
+                        bValue = b.progress?.percentage || 0;
+                        break;
+                    default:
+                        return 0;
+                }
+
+                if (aValue < bValue) {
+                    return this.currentSort.direction === 'asc' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return this.currentSort.direction === 'asc' ? 1 : -1;
+                }
+                return 0;
+            });
+        },
+
+        getWorkoutStatus(workout) {
+            if (workout.completedAt && !workout.cancelledAt) return 'completed';
+            if (workout.cancelledAt || workout.status === 'cancelled') return 'cancelled';
+            if (workout.status === 'discarded') return 'discarded';
+            if (workout.startedAt && !workout.completedAt) return 'in-progress';
+            return 'unknown';
+        },
+
+        getWorkoutDuration(workout) {
+            if (workout.completedAt && workout.startedAt) {
+                return new Date(workout.completedAt) - new Date(workout.startedAt);
+            }
+            return 0;
+        },
+
+        formatDuration(durationMs) {
+            if (!durationMs || durationMs <= 0) return 'N/A';
+            
+            const minutes = Math.floor(durationMs / 60000);
+            const hours = Math.floor(minutes / 60);
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes % 60}m`;
+            }
+            return `${minutes}m`;
         },
 
         async loadHistory() {
-    if (!appState.currentUser) {
-        showNotification('Please sign in to view workout history', 'warning');
-        return;
-    }
-
-    console.log('📊 Loading workout history...');
-
-    try {
-        // Migrate old data if needed
-        await migrateWorkoutData(appState);
-
-        // Load history
-        const loadedData = await loadWorkoutHistory(appState, 100);
-        
-        // 🔧 FIX: Update the object properties, not just local variables
-        this.currentHistory.splice(0, this.currentHistory.length, ...loadedData);
-        this.filteredHistory.splice(0, this.filteredHistory.length, ...loadedData);
-        this.currentPage = 1;
-
-        this.renderHistory();
-
-        console.log(`✅ Loaded ${this.currentHistory.length} workout entries`);
-
-    } catch (error) {
-        console.error('❌ Error loading workout history:', error);
-        showNotification('Error loading workout history', 'error');
-    }
-},
-
-        renderHistory() {
-            const container = document.getElementById('workout-history-list');
-            if (!container) return;
-
-            if (filteredHistory.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-history"></i>
-                        <h3>No Workout History</h3>
-                        <p>Complete some workouts to see them here!</p>
-                    </div>
-                `;
+            if (!appState.currentUser) {
+                showNotification('Please sign in to view workout history', 'warning');
                 return;
             }
 
-            // Calculate pagination
-            const startIndex = (currentPage - 1) * itemsPerPage;
-            const endIndex = startIndex + itemsPerPage;
-            const pageWorkouts = filteredHistory.slice(startIndex, endIndex);
+            console.log('📊 Loading workout history...');
 
-            let historyHTML = '';
+            try {
+                // Migrate old data if needed
+                await migrateWorkoutData(appState);
 
-            pageWorkouts.forEach(workout => {
-                historyHTML += this.createWorkoutHistoryCard(workout);
-            });
+                // Load history
+                const loadedData = await loadWorkoutHistory(appState, 100);
+                
+                // Update the object properties
+                this.currentHistory.splice(0, this.currentHistory.length, ...loadedData);
+                this.filteredHistory.splice(0, this.filteredHistory.length, ...loadedData);
+                this.currentPage = 1;
 
-            container.innerHTML = historyHTML;
+                // Apply initial sorting (by date, newest first)
+                this.applySorting();
 
-            // Update pagination
-            this.updatePagination();
+                this.renderHistory();
+
+                console.log(`✅ Loaded ${this.currentHistory.length} workout entries`);
+
+            } catch (error) {
+                console.error('❌ Error loading workout history:', error);
+                showNotification('Error loading workout history', 'error');
+            }
         },
 
-        createWorkoutHistoryCard(workout) {
+        renderHistory() {
+            const container = document.getElementById('workout-table-body');
+            const emptyState = document.getElementById('empty-workouts');
+            
+            if (!container) return;
+
+            if (this.filteredHistory.length === 0) {
+                container.innerHTML = '';
+                if (emptyState) emptyState.classList.remove('hidden');
+                return;
+            }
+
+            if (emptyState) emptyState.classList.add('hidden');
+
+            // Calculate pagination
+            const startIndex = (this.currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageWorkouts = this.filteredHistory.slice(startIndex, endIndex);
+
+            let tableHTML = '';
+
+            pageWorkouts.forEach(workout => {
+                tableHTML += this.createWorkoutTableRow(workout);
+            });
+
+            container.innerHTML = tableHTML;
+
+            // Update pagination info if needed
+            this.updatePaginationInfo();
+        },
+
+        createWorkoutTableRow(workout) {
             // 🔧 FIX: Handle date display properly to avoid timezone issues
             let displayDate;
             
@@ -108,210 +244,150 @@ export function getWorkoutHistory(appState) {
                 displayDate = 'Unknown Date';
             }
 
-            const duration = workout.totalDuration ? 
-                `${Math.floor(workout.totalDuration / 60)}m` : 
-                'Unknown';
-
+            const duration = this.formatDuration(this.getWorkoutDuration(workout));
+            const status = this.getWorkoutStatus(workout);
+            const statusClass = status.toLowerCase().replace('-', '');
+            
             let statusBadge = '';
-            let statusClass = '';
-
-            switch (workout.status) {
+            switch (status) {
                 case 'completed':
-                    statusBadge = '<i class="fas fa-check-circle"></i> Completed';
-                    statusClass = 'status-completed';
+                    statusBadge = '<span class="status-badge completed"><i class="fas fa-check"></i> Completed</span>';
                     break;
                 case 'cancelled':
-                    statusBadge = '<i class="fas fa-times-circle"></i> Cancelled';
-                    statusClass = 'status-cancelled';
+                    statusBadge = '<span class="status-badge cancelled"><i class="fas fa-times"></i> Cancelled</span>';
+                    break;
+                case 'in-progress':
+                    statusBadge = '<span class="status-badge incomplete"><i class="fas fa-clock"></i> In Progress</span>';
+                    break;
+                case 'discarded':
+                    statusBadge = '<span class="status-badge cancelled"><i class="fas fa-trash"></i> Discarded</span>';
                     break;
                 default:
-                    statusBadge = '<i class="fas fa-clock"></i> Incomplete';
-                    statusClass = 'status-incomplete';
+                    statusBadge = '<span class="status-badge incomplete"><i class="fas fa-question"></i> Unknown</span>';
             }
 
-            // Generate exercise summary
-            let exerciseSummary = '';
-            if (workout.exerciseNames && Object.keys(workout.exerciseNames).length > 0) {
-                const exerciseList = Object.values(workout.exerciseNames).slice(0, 3);
-                exerciseSummary = exerciseList.join(', ');
-                if (Object.keys(workout.exerciseNames).length > 3) {
-                    exerciseSummary += ` and ${Object.keys(workout.exerciseNames).length - 3} more...`;
-                }
-            } else if (workout.originalWorkout && workout.originalWorkout.exercises) {
-                const exerciseList = workout.originalWorkout.exercises.slice(0, 3).map(ex => ex.machine);
-                exerciseSummary = exerciseList.join(', ');
-                if (workout.originalWorkout.exercises.length > 3) {
-                    exerciseSummary += ` and ${workout.originalWorkout.exercises.length - 3} more...`;
-                }
-            } else {
-                exerciseSummary = 'No exercise details available';
-            }
+            const progressPercentage = workout.progress?.percentage || 0;
+            const completedSets = workout.progress?.completedSets || 0;
+            const totalSets = workout.progress?.totalSets || 0;
 
             return `
-                <div class="workout-history-card ${statusClass}" onclick="expandWorkoutDetails('${workout.id}')">
-                    <div class="workout-history-header">
-                        <div class="workout-history-main">
-                            <h4>${workout.workoutType}</h4>
-                            <div class="workout-history-meta">
-                                <span class="workout-date">${displayDate}</span>
-                                <span class="workout-duration">${duration}</span>
-                                <span class="workout-progress">${workout.progress.completedSets}/${workout.progress.totalSets} sets</span>
+                <tr class="workout-row" onclick="viewWorkoutDetails('${workout.id}')">
+                    <td class="workout-date">${displayDate}</td>
+                    <td class="workout-name">
+                        <div class="workout-name-main">${workout.workoutType}</div>
+                        ${workout.addedManually ? '<div class="manual-indicator"><i class="fas fa-edit"></i> Manual</div>' : ''}
+                    </td>
+                    <td class="workout-status">${statusBadge}</td>
+                    <td class="workout-duration">${duration}</td>
+                    <td class="workout-progress">
+                        <div class="progress-cell">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${progressPercentage}%"></div>
                             </div>
+                            <span class="progress-text">${completedSets}/${totalSets}</span>
                         </div>
-                        <div class="workout-history-status">
-                            <span class="status-badge ${statusClass}">${statusBadge}</span>
-                            <div class="progress-circle">
-                                <span>${workout.progress.percentage}%</span>
-                            </div>
+                    </td>
+                    <td class="workout-actions">
+                        <div class="table-actions">
+                            <button class="btn btn-secondary btn-small" onclick="repeatWorkout('${workout.id}'); event.stopPropagation();" title="Repeat Workout">
+                                <i class="fas fa-redo"></i>
+                            </button>
+                            <button class="btn btn-secondary btn-small" onclick="viewWorkoutDetails('${workout.id}'); event.stopPropagation();" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-danger btn-small" onclick="deleteWorkout('${workout.id}'); event.stopPropagation();" title="Delete Workout">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </div>
-                    </div>
-                    <div class="workout-history-exercises">
-                        ${exerciseSummary}
-                    </div>
-                    ${workout.addedManually ? '<div class="manual-indicator"><i class="fas fa-edit"></i> Added manually</div>' : ''}
-                    ${workout.manualNotes ? `<div class="manual-notes">${workout.manualNotes}</div>` : ''}
-                    <div class="workout-history-actions">
-                        <button class="btn btn-secondary btn-small" onclick="repeatWorkout('${workout.id}'); event.stopPropagation();">
-                            <i class="fas fa-redo"></i> Repeat
-                        </button>
-                        <button class="btn btn-secondary btn-small" onclick="viewWorkoutDetails('${workout.id}'); event.stopPropagation();">
-                            <i class="fas fa-eye"></i> View Details
-                        </button>
-                        <button class="btn btn-danger btn-small" onclick="deleteWorkout('${workout.id}'); event.stopPropagation();">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
-                    </div>
-                </div>
+                    </td>
+                </tr>
             `;
         },
-        updatePagination() {
-            const paginationContainer = document.getElementById('history-pagination');
-            if (!paginationContainer) return;
 
-            const totalPages = Math.ceil(filteredHistory.length / itemsPerPage);
-
-            if (totalPages <= 1) {
-                paginationContainer.innerHTML = '';
-                return;
-            }
-
-            let paginationHTML = `
-                <div class="pagination">
-                    <button class="btn btn-secondary" ${currentPage === 1 ? 'disabled' : ''} 
-                            onclick="workoutHistory.goToPage(${currentPage - 1})">
-                        <i class="fas fa-chevron-left"></i> Previous
-                    </button>
-                    <span class="pagination-info">Page ${currentPage} of ${totalPages}</span>
-                    <button class="btn btn-secondary" ${currentPage === totalPages ? 'disabled' : ''} 
-                            onclick="workoutHistory.goToPage(${currentPage + 1})">
-                        Next <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-            `;
-
-            paginationContainer.innerHTML = paginationHTML;
+        updatePaginationInfo() {
+            // Simple pagination info - could be expanded later if needed
+            const totalWorkouts = this.filteredHistory.length;
+            const startIndex = (this.currentPage - 1) * itemsPerPage + 1;
+            const endIndex = Math.min(this.currentPage * itemsPerPage, totalWorkouts);
+            
+            console.log(`Showing ${startIndex}-${endIndex} of ${totalWorkouts} workouts`);
         },
 
-        goToPage(page) {
-            const totalPages = Math.ceil(filteredHistory.length / itemsPerPage);
-            if (page >= 1 && page <= totalPages) {
-                currentPage = page;
-                this.renderHistory();
-            }
-        },
-
-        filterHistory(searchQuery = '', workoutType = '', dateRange = null) {
-            filteredHistory = currentHistory.filter(workout => {
-                // Text search
-                const matchesSearch = !searchQuery || 
-                    workout.workoutType.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    (workout.exerciseNames && Object.values(workout.exerciseNames).some(name => 
-                        name.toLowerCase().includes(searchQuery.toLowerCase())
-                    ));
-
-                // Workout type filter
-                const matchesType = !workoutType || workout.workoutType === workoutType;
-
-                // Date range filter
-                let matchesDate = true;
-                if (dateRange && dateRange.start && dateRange.end) {
-                    const workoutDate = new Date(workout.date);
-                    const startDate = new Date(dateRange.start);
-                    const endDate = new Date(dateRange.end);
-                    matchesDate = workoutDate >= startDate && workoutDate <= endDate;
+        filterHistory(searchQuery = '') {
+            this.filteredHistory = this.currentHistory.filter(workout => {
+                if (!searchQuery.trim()) return true;
+                
+                const query = searchQuery.toLowerCase();
+                
+                // Search in workout type
+                if (workout.workoutType.toLowerCase().includes(query)) return true;
+                
+                // Search in exercise names
+                if (workout.exerciseNames) {
+                    const exerciseValues = Object.values(workout.exerciseNames);
+                    if (exerciseValues.some(name => name.toLowerCase().includes(query))) return true;
+                }
+                
+                // Search in original workout exercises
+                if (workout.originalWorkout?.exercises) {
+                    if (workout.originalWorkout.exercises.some(ex => 
+                        ex.machine?.toLowerCase().includes(query) || 
+                        ex.exercise?.toLowerCase().includes(query)
+                    )) return true;
                 }
 
-                return matchesSearch && matchesType && matchesDate;
+                // Search in manual notes
+                if (workout.manualNotes?.toLowerCase().includes(query)) return true;
+
+                // Search in status
+                if (this.getWorkoutStatus(workout).toLowerCase().includes(query)) return true;
+
+                return false;
             });
 
-            currentPage = 1;
+            // Re-apply sorting
+            this.applySorting();
+
+            // Reset to first page
+            this.currentPage = 1;
+
+            // Re-render
             this.renderHistory();
         },
 
-        async addManualWorkout(workoutData) {
-            if (!appState.currentUser) {
-                throw new Error('User not signed in');
-            }
+        async deleteWorkout(workoutId) {
+            if (!appState.currentUser) return;
+
+            const workout = this.currentHistory.find(w => w.id === workoutId);
+            if (!workout) return;
+
+            const confirmDelete = confirm(`Delete workout "${workout.workoutType}" from ${new Date(workout.date).toLocaleDateString()}?\n\nThis cannot be undone.`);
+            if (!confirmDelete) return;
 
             try {
-                console.log('🔧 BUG-022 FIX: Adding manual workout with date:', workoutData.date);
+                // Import Firebase functions dynamically
+                const { deleteDoc, doc, db } = await import('./firebase-config.js');
                 
-                // FIX: Import Firebase functions and save directly with the correct date
-                const { db, doc, setDoc } = await import('./firebase-config.js');
-                
-                // FIX: Ensure we use the workout's date as the document ID, not auto-generated
-                const docRef = doc(db, "users", appState.currentUser.uid, "workouts", workoutData.date);
-                
-                await setDoc(docRef, {
-                    ...workoutData,
-                    lastUpdated: new Date().toISOString()
-                });
-                
-                console.log('✅ BUG-022 FIXED: Manual workout saved directly to Firebase with date:', workoutData.date);
-                
-                // Reload history to include new workout
-                await this.loadHistory();
-                showNotification('Manual workout added successfully!', 'success');
+                // Delete from Firebase
+                await deleteDoc(doc(db, "users", appState.currentUser.uid, "workouts", workoutId));
+
+                // Remove from local arrays
+                this.currentHistory = this.currentHistory.filter(w => w.id !== workoutId);
+                this.filteredHistory = this.filteredHistory.filter(w => w.id !== workoutId);
+
+                // Re-render
+                this.renderHistory();
+
+                showNotification('Workout deleted successfully', 'success');
 
             } catch (error) {
-                console.error('Error adding manual workout:', error);
-                throw error;
+                console.error('Error deleting workout:', error);
+                showNotification('Failed to delete workout. Please try again.', 'error');
             }
         },
 
-        async deleteWorkout(workoutId) {
-    if (!appState.currentUser) return;
-
-    const workout = currentHistory.find(w => w.id === workoutId);
-    if (!workout) return;
-
-    const confirmDelete = confirm(`Delete workout "${workout.workoutType}" from ${new Date(workout.date).toLocaleDateString()}?\n\nThis cannot be undone.`);
-    if (!confirmDelete) return;
-
-    try {
-        // Import Firebase functions dynamically
-        const { deleteDoc, doc, db } = await import('./firebase-config.js');
-        
-        // Delete from Firebase
-        await deleteDoc(doc(db, "users", appState.currentUser.uid, "workouts", workoutId));
-
-        // Remove from local arrays
-        currentHistory = currentHistory.filter(w => w.id !== workoutId);
-        filteredHistory = filteredHistory.filter(w => w.id !== workoutId);
-
-        // Re-render
-        this.renderHistory();
-
-        showNotification('Workout deleted successfully', 'success');
-
-    } catch (error) {
-        console.error('Error deleting workout:', error);
-        showNotification('Failed to delete workout. Please try again.', 'error');
-    }
-},
-
         async repeatWorkout(workoutId) {
-            const workout = currentHistory.find(w => w.id === workoutId);
+            const workout = this.currentHistory.find(w => w.id === workoutId);
             if (!workout || !workout.originalWorkout) {
                 showNotification('Cannot repeat this workout - missing workout data', 'error');
                 return;
@@ -344,49 +420,46 @@ export function getWorkoutHistory(appState) {
         },
 
         getWorkoutDetails(workoutId) {
-            return currentHistory.find(w => w.id === workoutId);
+            return this.currentHistory.find(w => w.id === workoutId);
         },
 
         getStats() {
             const stats = {
-                totalWorkouts: currentHistory.length,
-                completedWorkouts: currentHistory.filter(w => w.status === 'completed').length,
-                totalSets: currentHistory.reduce((sum, w) => sum + w.progress.completedSets, 0),
-                averageCompletion: 0,
-                favoriteWorkout: null,
-                currentStreak: 0
+                totalWorkouts: this.currentHistory.length,
+                completedWorkouts: 0,
+                totalDuration: 0,
+                currentStreak: 0,
+                averageProgress: 0
             };
 
-            // Calculate average completion rate
-            if (stats.totalWorkouts > 0) {
-                const totalCompletion = currentHistory.reduce((sum, w) => sum + w.progress.percentage, 0);
-                stats.averageCompletion = Math.round(totalCompletion / stats.totalWorkouts);
-            }
-
-            // Find favorite workout type
-            const workoutCounts = {};
-            currentHistory.forEach(w => {
-                workoutCounts[w.workoutType] = (workoutCounts[w.workoutType] || 0) + 1;
-            });
-            
-            let maxCount = 0;
-            Object.keys(workoutCounts).forEach(type => {
-                if (workoutCounts[type] > maxCount) {
-                    maxCount = workoutCounts[type];
-                    stats.favoriteWorkout = type;
+            this.currentHistory.forEach(workout => {
+                if (workout.completedAt && !workout.cancelledAt) {
+                    stats.completedWorkouts++;
+                    
+                    if (workout.startedAt && workout.completedAt) {
+                        stats.totalDuration += new Date(workout.completedAt) - new Date(workout.startedAt);
+                    }
+                }
+                
+                if (workout.progress?.percentage) {
+                    stats.averageProgress += workout.progress.percentage;
                 }
             });
 
-            // Calculate current streak (consecutive days with completed workouts)
-            const sortedCompleted = currentHistory
-                .filter(w => w.status === 'completed')
+            if (stats.totalWorkouts > 0) {
+                stats.averageProgress = Math.round(stats.averageProgress / stats.totalWorkouts);
+            }
+
+            // Calculate current streak
+            const completedWorkouts = this.currentHistory
+                .filter(w => w.completedAt && !w.cancelledAt)
                 .sort((a, b) => new Date(b.date) - new Date(a.date));
 
             let streak = 0;
             let currentDate = new Date();
             currentDate.setHours(0, 0, 0, 0);
 
-            for (const workout of sortedCompleted) {
+            for (const workout of completedWorkouts) {
                 const workoutDate = new Date(workout.date);
                 workoutDate.setHours(0, 0, 0, 0);
                 
@@ -401,7 +474,6 @@ export function getWorkoutHistory(appState) {
             }
 
             stats.currentStreak = streak;
-
             return stats;
         }
     };
@@ -412,44 +484,27 @@ window.expandWorkoutDetails = function(workoutId) {
     const workout = window.workoutHistory?.getWorkoutDetails(workoutId);
     if (!workout) return;
 
-    // Toggle expanded view
-    const card = document.querySelector(`[onclick="expandWorkoutDetails('${workoutId}')"]`);
-    if (card) {
-        card.classList.toggle('expanded');
-        
-        // Add detailed view if not already present
-        let detailsSection = card.querySelector('.workout-details-expanded');
-        if (!detailsSection && card.classList.contains('expanded')) {
-            detailsSection = document.createElement('div');
-            detailsSection.className = 'workout-details-expanded';
-            detailsSection.innerHTML = generateWorkoutDetailsHTML(workout);
-            card.appendChild(detailsSection);
-        } else if (detailsSection && !card.classList.contains('expanded')) {
-            detailsSection.remove();
-        }
-    }
+    // Toggle expanded view logic could be added here
+    console.log('Expanding workout details for:', workoutId);
 };
 
 window.viewWorkoutDetails = function(workoutId) {
     const workout = window.workoutHistory?.getWorkoutDetails(workoutId);
     if (!workout) return;
 
-    // Create modal with workout details
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>${workout.workoutType} - ${new Date(workout.date).toLocaleDateString()}</h3>
-                <button class="close-btn" onclick="this.closest('.modal').remove()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            ${generateWorkoutDetailsHTML(workout)}
-        </div>
-    `;
-
-    document.body.appendChild(modal);
+    // Create a detailed modal or expand inline
+    console.log('Viewing workout details for:', workout.workoutType);
+    
+    // For now, just show an alert with basic details
+    const details = `
+Workout: ${workout.workoutType}
+Date: ${new Date(workout.date).toLocaleDateString()}
+Status: ${window.workoutHistory.getWorkoutStatus(workout)}
+Progress: ${workout.progress?.completedSets || 0}/${workout.progress?.totalSets || 0} sets (${workout.progress?.percentage || 0}%)
+${workout.manualNotes ? `Notes: ${workout.manualNotes}` : ''}
+    `.trim();
+    
+    alert(details);
 };
 
 window.repeatWorkout = function(workoutId) {
@@ -463,86 +518,3 @@ window.deleteWorkout = function(workoutId) {
         window.workoutHistory.deleteWorkout(workoutId);
     }
 };
-
-function generateWorkoutDetailsHTML(workout) {
-    let detailsHTML = `
-        <div class="workout-details-content">
-            <div class="workout-summary">
-                <div class="detail-row">
-                    <span class="detail-label">Date:</span>
-                    <span>${new Date(workout.date).toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                    })}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Duration:</span>
-                    <span>${workout.totalDuration ? `${Math.floor(workout.totalDuration / 60)}m ${workout.totalDuration % 60}s` : 'Unknown'}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Progress:</span>
-                    <span>${workout.progress.completedSets}/${workout.progress.totalSets} sets (${workout.progress.percentage}%)</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Status:</span>
-                    <span class="status-${workout.status}">${workout.status.charAt(0).toUpperCase() + workout.status.slice(1)}</span>
-                </div>
-            </div>
-    `;
-
-    // Exercise details
-    if (workout.exercises && Object.keys(workout.exercises).length > 0) {
-        detailsHTML += '<div class="exercise-details"><h4>Exercise Details:</h4>';
-
-        Object.keys(workout.exercises).forEach(exerciseKey => {
-            const exerciseData = workout.exercises[exerciseKey];
-            const exerciseName = workout.exerciseNames?.[exerciseKey] || exerciseKey;
-
-            if (exerciseData.sets && exerciseData.sets.length > 0) {
-                const completedSets = exerciseData.sets.filter(set => set && set.reps && set.weight);
-                
-                detailsHTML += `
-                    <div class="exercise-detail-item">
-                        <h5>${exerciseName}</h5>
-                        <div class="sets-summary">
-                `;
-
-                exerciseData.sets.forEach((set, index) => {
-                    if (set.reps && set.weight) {
-                        detailsHTML += `
-                            <span class="set-badge completed">
-                                Set ${index + 1}: ${set.reps} × ${set.weight} ${set.originalUnit || 'lbs'}
-                            </span>
-                        `;
-                    }
-                });
-
-                detailsHTML += '</div>';
-
-                if (exerciseData.notes) {
-                    detailsHTML += `<div class="exercise-notes"><strong>Notes:</strong> ${exerciseData.notes}</div>`;
-                }
-
-                detailsHTML += '</div>';
-            }
-        });
-
-        detailsHTML += '</div>';
-    }
-
-    // Manual notes
-    if (workout.manualNotes) {
-        detailsHTML += `
-            <div class="manual-notes-section">
-                <h4>Notes:</h4>
-                <p>${workout.manualNotes}</p>
-            </div>
-        `;
-    }
-
-    detailsHTML += '</div>';
-
-    return detailsHTML;
-}
