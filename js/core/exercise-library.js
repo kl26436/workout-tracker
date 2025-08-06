@@ -174,7 +174,7 @@ export function getExerciseLibrary(appState) {
                     
                 case 'template':
                     actionButton = `
-                        <button class="btn btn-primary btn-small" onclick="addExerciseToTemplateFromLibrary('${exercise.name || exercise.machine}', '${exerciseJson}')">
+                        <button class="btn btn-primary btn-small" onclick="addExerciseToTemplateFromLibrary(${exerciseJson})">
                             <i class="fas fa-plus"></i> Add to Template
                         </button>
                     `;

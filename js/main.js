@@ -17,8 +17,8 @@ import {
     removeTemplateExercise,
     openExerciseLibrary,
     closeExerciseLibrary,
-    searchExerciseLibrary,
-    filterExerciseLibrary,
+    //searchExerciseLibrary,
+    //filterExerciseLibrary,
     showCreateExerciseForm,
     closeCreateExerciseModal,
     createNewExercise,
@@ -1131,7 +1131,39 @@ function createExerciseCard(exercise, index) {
     `;
 
     return card;
+
 }
+
+ // Filter exercises based on search and filters
+        function filterExercises() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const bodyPartFilter = document.getElementById('body-part-filter').value;
+            const equipmentFilter = document.getElementById('equipment-filter').value;
+
+            filteredExercises = allExercises.filter(exercise => {
+                const matchesSearch = !searchTerm || 
+                    exercise.name.toLowerCase().includes(searchTerm) ||
+                    exercise.bodyPart.toLowerCase().includes(searchTerm) ||
+                    exercise.equipmentType.toLowerCase().includes(searchTerm);
+
+                const matchesBodyPart = !bodyPartFilter || exercise.bodyPart === bodyPartFilter;
+                const matchesEquipment = !equipmentFilter || exercise.equipmentType === equipmentFilter;
+
+                return matchesSearch && matchesBodyPart && matchesEquipment;
+            });
+
+            renderExercises();
+        }
+
+    // Clear all filters
+        function clearFilters() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('body-part-filter').value = '';
+            document.getElementById('equipment-filter').value = '';
+            filteredExercises = [...allExercises];
+            renderExercises();
+        }
+
 
 
 function generateSetPreview(exercise, exerciseIndex, unit) {
@@ -2646,9 +2678,61 @@ function createTemplateEditorExerciseCard(exercise, index) {
 }
 
 async function addExerciseToCurrentTemplate() {
-    if (!currentEditingTemplate) return;
+    console.log('🎯 Opening exercise library for template...');
     
-    await exerciseLibrary.openForTemplate(currentEditingTemplate);
+    if (!currentEditingTemplate) {
+        showNotification('No template currently being edited', 'error');
+        return;
+    }
+    
+    // Simple approach - just open the modal and set context
+    const modal = document.getElementById('exercise-library-modal');
+    const modalTitle = document.querySelector('#exercise-library-modal .modal-title');
+    
+    if (modalTitle) {
+        modalTitle.textContent = 'Add Exercise to Template';
+    }
+    
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
+    
+    // Ensure exercise library is initialized
+    if (!exerciseLibrary) {
+        try {
+            exerciseLibrary = getExerciseLibrary(AppState);
+            exerciseLibrary.initialize();
+            window.exerciseLibrary = exerciseLibrary;
+        } catch (error) {
+            console.error('Error initializing exercise library:', error);
+            showNotification('Error loading exercise library', 'error');
+            return;
+        }
+    }
+    
+    // Try different ways to open the library
+    try {
+        // Method 1: Try the template-specific method
+        if (exerciseLibrary.openForTemplate) {
+            await exerciseLibrary.openForTemplate(currentEditingTemplate);
+        } 
+        // Method 2: Try loadAndShow directly
+        else if (exerciseLibrary.loadAndShow) {
+            // Set context manually since openForTemplate doesn't exist
+            if (exerciseLibrary.currentContext !== undefined) {
+                exerciseLibrary.currentContext = 'template';
+            }
+            await exerciseLibrary.loadAndShow();
+        }
+        // Method 3: Last resort - just show what we have
+        else {
+            console.log('📚 Using fallback method to open exercise library');
+            showNotification('Exercise library opened - select exercises manually', 'info');
+        }
+    } catch (error) {
+        console.error('Error opening exercise library:', error);
+        showNotification('Error opening exercise library', 'error');
+    }
 }
 
 function updateTemplateExerciseParam(exerciseIndex, param, value) {
@@ -2979,10 +3063,75 @@ async function openExerciseLibraryForTemplate() {
         
         console.log('📚 Loaded exercise library for template:', currentExerciseLibrary.length, 'exercises');
         renderExerciseLibraryWithContext();
+        
+        // ADD THIS LINE - Set up event handlers after rendering
+        setupExerciseLibraryEventHandlersForTemplate();
+        
     } catch (error) {
         console.error('Error loading exercise library:', error);
         showNotification('Error loading exercises', 'error');
     }
+}
+
+// Add this function to main.js (after the openExerciseLibraryForTemplate function):
+
+function setupExerciseLibraryEventHandlersForTemplate() {
+    console.log('🔧 Setting up exercise library event handlers for template');
+    
+    // Search functionality
+    const searchInput = document.getElementById('exercise-library-search');
+    if (searchInput) {
+        // Remove any existing listeners first
+        searchInput.removeEventListener('input', filterExerciseLibraryForTemplate);
+        searchInput.addEventListener('input', filterExerciseLibraryForTemplate);
+        console.log('✅ Search input handler attached');
+    }
+
+    // Filter dropdowns
+    const bodyPartFilter = document.getElementById('body-part-filter');
+    const equipmentFilter = document.getElementById('equipment-filter');
+    
+    if (bodyPartFilter) {
+        bodyPartFilter.removeEventListener('change', filterExerciseLibraryForTemplate);
+        bodyPartFilter.addEventListener('change', filterExerciseLibraryForTemplate);
+        console.log('✅ Body part filter handler attached');
+    }
+    
+    if (equipmentFilter) {
+        equipmentFilter.removeEventListener('change', filterExerciseLibraryForTemplate);
+        equipmentFilter.addEventListener('change', filterExerciseLibraryForTemplate);
+        console.log('✅ Equipment filter handler attached');
+    }
+}
+
+function filterExerciseLibraryForTemplate() {
+    console.log('🔍 Filtering exercises for template');
+    
+    const searchQuery = document.getElementById('exercise-library-search')?.value.toLowerCase() || '';
+    const bodyPartFilter = document.getElementById('body-part-filter')?.value || '';
+    const equipmentFilter = document.getElementById('equipment-filter')?.value || '';
+
+    currentFilteredExercises = currentExerciseLibrary.filter(exercise => {
+        // Text search
+        const matchesSearch = !searchQuery || 
+            (exercise.name && exercise.name.toLowerCase().includes(searchQuery)) ||
+            (exercise.machine && exercise.machine.toLowerCase().includes(searchQuery)) ||
+            (exercise.bodyPart && exercise.bodyPart.toLowerCase().includes(searchQuery)) ||
+            (exercise.equipmentType && exercise.equipmentType.toLowerCase().includes(searchQuery));
+
+        // Body part filter
+        const matchesBodyPart = !bodyPartFilter || 
+            (exercise.bodyPart && exercise.bodyPart.toLowerCase() === bodyPartFilter.toLowerCase());
+
+        // Equipment filter
+        const matchesEquipment = !equipmentFilter || 
+            (exercise.equipmentType && exercise.equipmentType.toLowerCase() === equipmentFilter.toLowerCase());
+
+        return matchesSearch && matchesBodyPart && matchesEquipment;
+    });
+
+    console.log(`🔍 Filtered to ${currentFilteredExercises.length} exercises from ${currentExerciseLibrary.length} total`);
+    renderExerciseLibraryWithContext();
 }
 
 // Create Exercise Library Card for Template
@@ -3010,40 +3159,83 @@ function createExerciseLibraryCardForTemplate(exercise) {
 }
 
 // Add Exercise to Template from Library
-function addExerciseToTemplateFromLibrary(exerciseName, exerciseDataString) {
-    if (!currentEditingTemplate) return;
-    
-    let exerciseData;
+function addExerciseToTemplateFromLibrary(exerciseData) {
     try {
-        exerciseData = typeof exerciseDataString === 'string' ? 
-            JSON.parse(exerciseDataString.replace(/&quot;/g, '"')) : 
-            exerciseDataString;
-    } catch (e) {
-        console.error('Error parsing exercise data:', e);
-        return;
+        console.log('🎯 Adding exercise to template:', exerciseData);
+        
+        // Parse exercise data if it's a string
+        let exercise = exerciseData;
+        if (typeof exerciseData === 'string') {
+            exercise = JSON.parse(exerciseData);
+        }
+        
+        // FIX: Validate current template exists
+        if (!currentEditingTemplate) {
+            console.error('No current template being edited');
+            showNotification('Error: No template currently being edited', 'error');
+            return;
+        }
+        
+        // FIX: Ensure exercise has required fields
+        if (!exercise.name && !exercise.machine) {
+            console.error('Exercise missing name/machine field:', exercise);
+            showNotification('Error: Exercise missing required data', 'error');
+            return;
+        }
+        
+        // FIX: Initialize exercises array if it doesn't exist
+        if (!currentEditingTemplate.exercises) {
+            currentEditingTemplate.exercises = [];
+        }
+        
+        // Check for duplicate exercises in template
+        const exerciseName = exercise.name || exercise.machine;
+        const isDuplicate = currentEditingTemplate.exercises.some(ex => 
+            ex.name === exerciseName
+        );
+        
+        if (isDuplicate) {
+            const confirmAdd = confirm(`"${exerciseName}" is already in this template. Add it again?`);
+            if (!confirmAdd) return;
+        }
+        
+        // Create exercise entry for template with better defaults
+        const templateExercise = {
+            name: exercise.name || exercise.machine,
+            bodyPart: exercise.bodyPart || 'General',
+            equipmentType: exercise.equipmentType || 'Machine',
+            sets: exercise.sets || 3,
+            reps: exercise.reps || 10,
+            weight: exercise.weight || 50,
+            restTime: exercise.restTime || 60, // seconds
+            notes: exercise.notes || '',
+            video: exercise.video || ''
+        };
+        
+        // FIX: Add to template with validation
+        currentEditingTemplate.exercises.push(templateExercise);
+        
+        console.log('✅ Template Exercise Fix: Exercise added successfully:', templateExercise);
+        
+        // Update UI
+        renderTemplateEditorExercises(); // Make sure this function exists
+        
+        // Close exercise library
+        if (exerciseLibrary && exerciseLibrary.close) {
+            exerciseLibrary.close();
+        } else {
+            // Fallback: close modal directly
+            const modal = document.getElementById('exercise-library-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+        
+        // Show success message
+        showNotification(`Added "${templateExercise.name}" to template!`, 'success');
+        
+    } catch (error) {
+        console.error('Error adding exercise to template:', error);
+        showNotification('Error adding exercise to template', 'error');
     }
-    
-    const templateExercise = {
-        name: exerciseData.name || exerciseData.machine,
-        bodyPart: exerciseData.bodyPart,
-        equipmentType: exerciseData.equipmentType,
-        sets: exerciseData.sets || 3,
-        reps: exerciseData.reps || 10,
-        weight: exerciseData.weight || 50,
-        video: exerciseData.video || ''
-    };
-    
-    currentEditingTemplate.exercises = currentEditingTemplate.exercises || [];
-    currentEditingTemplate.exercises.push(templateExercise);
-    
-    // IMMEDIATE UI update - don't wait for close
-    renderTemplateEditorExercises();
-    
-    // Show success immediately
-    showNotification(`Added "${templateExercise.name}" to template`, 'success');
-    
-    // Keep library open for multiple additions
-    // User can close manually when done
 }
 
 // Close Exercise Library for Template
@@ -4876,7 +5068,8 @@ window.loadTemplatesByCategory = loadTemplatesByCategory;
 window.showCreateTemplateModal = showCreateTemplateModal;
 window.closeCreateTemplateModal = closeCreateTemplateModal
 window.createTemplate = createTemplate;
-
+window.filterExercises = filterExercises;
+window.clearFilters = clearFilters;
 window.refreshExerciseDatabase = refreshExerciseDatabase;
 
 // ===================================================================
