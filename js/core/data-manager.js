@@ -5,7 +5,30 @@ import { showNotification, convertWeight } from './ui-helpers.js';
 export async function saveWorkoutData(state) {
     if (!state.currentUser) return;
     
-    const saveDate = state.savedData.date || state.getTodayDateString();
+    // 🔧 BUG-031 FIX: Ensure proper date handling
+    let saveDate = state.savedData.date || state.getTodayDateString();
+    
+    // Validate and clean the date to prevent timezone issues
+    if (saveDate && typeof saveDate === 'string') {
+        // If it's an ISO string, extract just the date part
+        if (saveDate.includes('T')) {
+            saveDate = saveDate.split('T')[0];
+            console.log('🔧 BUG-031: Cleaned ISO date string:', saveDate);
+        }
+        
+        // Validate YYYY-MM-DD format
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(saveDate)) {
+            console.warn('⚠️ BUG-031: Invalid date format detected, using today:', saveDate);
+            saveDate = state.getTodayDateString();
+        }
+    } else {
+        console.warn('⚠️ BUG-031: No valid date provided, using today');
+        saveDate = state.getTodayDateString();
+    }
+    
+    console.log('🔧 BUG-031 DEBUG: Final save date:', saveDate);
+    
     state.savedData.date = saveDate;
     state.savedData.exerciseUnits = state.exerciseUnits;
     
