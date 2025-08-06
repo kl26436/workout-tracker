@@ -73,6 +73,7 @@ function initializeWorkoutApp() {
     
     // Set up auth state listener with error handling
     onAuthStateChanged(auth, async (user) => {
+        await refreshExerciseDatabase()
         try {
             if (user) {
                 AppState.currentUser = user;
@@ -137,35 +138,26 @@ async function validateUserData() {
     console.log('🔍 Validating user data...');
     
     try {
-        // Import Firebase functions that were missing
-        const { collection, query, orderBy, limit, getDocs } = await import('./core/firebase-config.js');
-        const { db } = await import('./core/firebase-config.js');
+        // CRITICAL: Refresh exercise database during validation
+        await refreshExerciseDatabase();
         
-        // Check workout templates
+        // Your existing validation code...
         const { WorkoutManager } = await import('./core/workout/workout-manager.js');
         const workoutManager = new WorkoutManager(AppState);
         const templates = await workoutManager.getUserWorkoutTemplates();
         
-        // Check custom exercises
-        const exercises = await workoutManager.getExerciseLibrary();
-        const customExercises = exercises.filter(ex => ex.isCustom);
-        
-        // Check recent workouts
-        const workoutsRef = collection(db, "users", AppState.currentUser.uid, "workouts");
-        const recentWorkouts = await getDocs(query(workoutsRef, orderBy("lastUpdated", "desc"), limit(10)));
+        // Check custom exercises (should now be in AppState.exerciseDatabase)
+        const customExercises = AppState.exerciseDatabase.filter(ex => ex.isCustom);
         
         console.log(`✅ User data validation:
         - Templates: ${templates.length}
         - Custom exercises: ${customExercises.length}  
-        - Recent workouts: ${recentWorkouts.size}
-        - User ID: ${AppState.currentUser.uid}`);
+        - Total exercises: ${AppState.exerciseDatabase.length}`);
         
-        // Show data summary to user
-        showNotification(`Data loaded: ${templates.length} templates, ${customExercises.length} custom exercises, ${recentWorkouts.size} recent workouts`, 'info');
+        showNotification(`Data loaded: ${templates.length} templates, ${customExercises.length} custom exercises`, 'success');
         
     } catch (error) {
         console.error('❌ Error validating user data:', error);
-        showNotification('Warning: Some user data may not have loaded correctly', 'warning');
     }
 }
 
@@ -315,6 +307,39 @@ async function continueInProgressWorkout() {
         // Fallback: start fresh workout
         inProgressWorkout = null;
         showWorkoutSelector();
+    }
+}
+
+async function refreshExerciseDatabase() {
+    if (!AppState.currentUser) {
+        console.log('❌ No user signed in, cannot refresh exercise database');
+        return AppState.exerciseDatabase || [];
+    }
+    
+    try {
+        console.log('🔄 Refreshing exercise database in AppState...');
+        
+        const { WorkoutManager } = await import('./core/workout/workout-manager.js');
+        const workoutManager = new WorkoutManager(AppState);
+        
+        // Get fresh data from Firebase
+        const freshExercises = await workoutManager.getExerciseLibrary();
+        
+        // Update AppState with fresh data
+        AppState.exerciseDatabase = freshExercises;
+        
+        // Make WorkoutManager globally available for exercise manager
+        window.WorkoutManager = WorkoutManager;
+        
+        const customCount = freshExercises.filter(ex => ex.isCustom).length;
+        const defaultCount = freshExercises.filter(ex => !ex.isCustom).length;
+        
+        console.log(`✅ AppState exercise database refreshed: ${defaultCount} default + ${customCount} custom = ${freshExercises.length} total`);
+        
+        return freshExercises;
+    } catch (error) {
+        console.error('❌ Error refreshing exercise database:', error);
+        return AppState.exerciseDatabase || [];
     }
 }
 
@@ -584,6 +609,8 @@ async function signInWithGoogle() {
         console.error('❌ Sign in error:', error);
         showNotification('Sign in failed. Please try again.', 'error');
     }
+    await refreshExerciseDatabase()
+    
 }
 
 function showUserInfo(user) {
@@ -4850,6 +4877,8 @@ window.showCreateTemplateModal = showCreateTemplateModal;
 window.closeCreateTemplateModal = closeCreateTemplateModal
 window.createTemplate = createTemplate;
 
+window.refreshExerciseDatabase = refreshExerciseDatabase;
+
 // ===================================================================
 // REMOVED FUNCTIONS (No longer needed with simplified approach)
 // ===================================================================
@@ -4857,7 +4886,3 @@ window.createTemplate = createTemplate;
 // window.setupWorkoutHistoryEventListeners = setupWorkoutHistoryEventListeners; // REMOVED - handled in workout-history.js  
 // window.clearHistoryFilters = clearAllHistoryFilters; // REMOVED - now just clear search
 // window.filterWorkoutHistory = filterWorkoutHistory; // REMOVED - simplified to search only
-
-console.log('✅ Simplified Big Surf Workout Tracker loaded successfully!');
-
-console.log('✅ Enhanced Big Surf Workout Tracker loaded successfully!');

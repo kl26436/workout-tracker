@@ -597,169 +597,234 @@
             console.log('✅ Exercise Manager initialized successfully');
         });
 
+        // FIXED: Corrected loadExercises function
         async function loadExercises() {
-    console.log('🔄 Loading exercises...');
-    
-    // Method 1: Check URL parameters for user info
-    const urlParams = new URLSearchParams(window.location.search);
-    const userEmail = urlParams.get('user');
-    
-    if (userEmail) {
-        console.log(`✅ Found user in URL: ${userEmail}`);
-        try {
-            // Try to connect to Firebase directly
-            await loadExercisesFromFirebase(userEmail);
-            return;
-        } catch (error) {
-            console.error('❌ Error loading from Firebase:', error);
-        }
-    }
-    
-    // Method 2: Check for parent window (traditional approach)
-    console.log('🔍 Checking parent window:', !!window.opener);
-    console.log('🔍 Checking parent AppState:', !!window.opener?.AppState);
-    
-    if (window.opener && window.opener.AppState && window.opener.AppState.currentUser) {
-        console.log(`✅ Found parent window with user: ${window.opener.AppState.currentUser.email}`);
-        try {
-            // Try to get exercise database from parent
-            if (window.opener.AppState.exerciseDatabase && window.opener.AppState.exerciseDatabase.length > 0) {
-                console.log('📚 Using exercise database from parent AppState');
-                const exercises = window.opener.AppState.exerciseDatabase;
-                loadExercisesFromData(exercises);
-                return;
-            } else {
-                console.log('🔄 Parent exercise database empty, loading fresh data...');
-                const { WorkoutManager } = await window.opener.import('./js/core/workout/workout-manager.js');
-                const workoutManager = new WorkoutManager(window.opener.AppState);
-                const exercises = await workoutManager.getExerciseLibrary();
-                loadExercisesFromData(exercises);
-                return;
+            console.log('🔄 Loading exercises...');
+            
+            // Method 1: Check URL parameters for user info
+            const urlParams = new URLSearchParams(window.location.search);
+            const userEmail = urlParams.get('user');
+            
+            if (userEmail) {
+                console.log(`✅ Found user in URL: ${userEmail}`);
+                try {
+                    // Try to connect to Firebase directly
+                    await loadExercisesFromFirebase(userEmail);
+                    return;
+                } catch (error) {
+                    console.error('❌ Error loading from Firebase:', error);
+                }
             }
-        } catch (error) {
-            console.error('❌ Error loading from parent:', error);
-        }
-    }
-    
-    // Method 3: Try to access Firebase directly (if we can detect a user)
-    try {
-        // Check if we can access the main app's Firebase
-        if (window.opener && window.opener.AppState?.currentUser) {
-            await loadExercisesFromFirebase(window.opener.AppState.currentUser.email);
-            return;
-        }
-    } catch (error) {
-        console.error('❌ Direct Firebase access failed:', error);
-    }
-    
-    // Method 4: Fallback to sample data
-    console.log('❌ All methods failed, loading fallback exercises...');
-    loadFallbackExercises();
-}
-
-async function loadExercisesFromFirebase(userEmail) {
-    console.log(`🔥 Attempting direct Firebase load for user: ${userEmail}`);
-    
-    try {
-        // Try to import Firebase and WorkoutManager from parent
-        if (window.opener) {
-            const { WorkoutManager } = await window.opener.import('./js/core/workout/workout-manager.js');
-            const { AppState } = await window.opener.import('./js/core/app-state.js');
             
-            // Create a temporary AppState-like object
-            const tempAppState = {
-                currentUser: { email: userEmail },
-                exerciseDatabase: []
-            };
+            // Method 2: Check for parent window (traditional approach)
+            console.log('🔍 Checking parent window:', !!window.opener);
+            console.log('🔍 Checking parent AppState:', !!window.opener?.AppState);
             
-            const workoutManager = new WorkoutManager(tempAppState);
-            const exercises = await workoutManager.getExerciseLibrary();
+            if (window.opener && window.opener.AppState && window.opener.AppState.currentUser) {
+                console.log(`✅ Found parent window with user: ${window.opener.AppState.currentUser.email}`);
+                try {
+                    console.log('🔄 Loading fresh data from Firebase via parent...');
+                    
+                    // Check if WorkoutManager is available in parent window
+                    if (window.opener.WorkoutManager) {
+                        console.log('📚 Using WorkoutManager from parent window');
+                        const workoutManager = new window.opener.WorkoutManager(window.opener.AppState);
+                        const exercises = await workoutManager.getExerciseLibrary();
+                        
+                        console.log(`📊 Parent WorkoutManager returned ${exercises.length} exercises`);
+                        const customCount = exercises.filter(ex => ex.isCustom).length;
+                        console.log(`📊 Including ${customCount} custom exercises`);
+                        
+                        loadExercisesFromData(exercises);
+                        return;
+                    } else {
+                        // Try to use existing exercise database from parent if available
+                        if (window.opener.AppState.exerciseDatabase && window.opener.AppState.exerciseDatabase.length > 0) {
+                            console.log('📚 Using cached exercise database from parent AppState');
+                            const exercises = window.opener.AppState.exerciseDatabase;
+                            loadExercisesFromData(exercises);
+                            return;
+                        } else {
+                            console.log('⚠️ Parent WorkoutManager not available and no cached exercises');
+                        }
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading from parent:', error);
+                }
+            }
             
-            loadExercisesFromData(exercises);
-            console.log(`✅ Successfully loaded ${exercises.length} exercises from Firebase`);
+            // Method 3: Fallback to sample data
+            console.log('❌ All methods failed, loading fallback exercises...');
+            loadFallbackExercises();
         }
-    } catch (error) {
-        console.error('❌ Firebase direct load failed:', error);
-        throw error;
-    }
-}
 
-function loadExercisesFromData(exerciseData) {
-    if (!exerciseData || exerciseData.length === 0) {
-        console.log('❌ No exercise data provided');
-        loadFallbackExercises();
-        return;
-    }
-    
-    console.log(`📚 Processing ${exerciseData.length} exercises`);
-    
-    allExercises = exerciseData.map(ex => ({
-        id: ex.id || `ex_${Date.now()}_${Math.random()}`,
-        name: ex.name || ex.machine,
-        machine: ex.machine || ex.name,
-        bodyPart: ex.bodyPart || 'General',
-        equipmentType: ex.equipmentType || 'Machine',
-        sets: ex.sets || 3,
-        reps: ex.reps || 10,
-        weight: ex.weight || 50,
-        video: ex.video || '',
-        isCustom: ex.isCustom || false,
-        tags: ex.tags || []
-    }));
-    
-    filteredExercises = [...allExercises];
-    
-    const customCount = allExercises.filter(ex => ex.isCustom).length;
-    console.log(`✅ Loaded ${allExercises.length} exercises (${customCount} custom)`);
-    
-    renderExercises();
-    
-    if (customCount > 0) {
-        showNotification(`✅ Loaded ${customCount} custom exercises from your library!`, 'success');
-    } else {
-        showNotification(`✅ Loaded ${allExercises.length} exercises (no custom exercises found)`, 'info');
-    }
-}
-
-function loadFallbackExercises() {
-    console.log('📁 Loading fallback exercises...');
-    allExercises = getSampleExercises();
-    
-    // Add sample custom exercises for testing
-    const sampleCustomExercises = [
-        {
-            id: 'custom_sample_1',
-            name: 'Custom Cable Crossovers',
-            bodyPart: 'Chest',
-            equipmentType: 'Cable',
-            sets: 3,
-            reps: 12,
-            weight: 30,
-            video: '',
-            isCustom: true,
-            tags: ['chest', 'cable']
-        },
-        {
-            id: 'custom_sample_2', 
-            name: 'Custom Bulgarian Split Squats',
-            bodyPart: 'Legs',
-            equipmentType: 'Bodyweight',
-            sets: 3,
-            reps: 10,
-            weight: 0,
-            video: '',
-            isCustom: true,
-            tags: ['legs', 'bodyweight']
+        // FIXED: Corrected loadExercisesFromFirebase function
+        async function loadExercisesFromFirebase(userEmail) {
+            console.log(`🔥 Attempting direct Firebase load for user: ${userEmail}`);
+            
+            try {
+                // Check if we can access parent window's modules
+                if (window.opener && window.opener.WorkoutManager) {
+                    console.log('📚 Using WorkoutManager from parent window');
+                    
+                    // Get default exercises from parent or load from JSON
+                    let defaultExerciseDatabase = [];
+                    
+                    if (window.opener.AppState && window.opener.AppState.exerciseDatabase) {
+                        defaultExerciseDatabase = window.opener.AppState.exerciseDatabase.filter(ex => !ex.isCustom);
+                        console.log(`📚 Got ${defaultExerciseDatabase.length} default exercises from parent`);
+                    } else {
+                        // Fallback: Load default exercises from exercises.json
+                        try {
+                            const response = await fetch('./exercises.json');
+                            if (response.ok) {
+                                defaultExerciseDatabase = await response.json();
+                                console.log(`📚 Loaded ${defaultExerciseDatabase.length} default exercises from exercises.json`);
+                            }
+                        } catch (error) {
+                            console.log('⚠️ Could not load exercises.json, using minimal defaults');
+                            defaultExerciseDatabase = getMinimalDefaultExercises();
+                        }
+                    }
+                    
+                    // Create AppState-like object with actual default exercises
+                    const tempAppState = {
+                        currentUser: { 
+                            email: userEmail,
+                            uid: window.opener.AppState?.currentUser?.uid 
+                        },
+                        exerciseDatabase: defaultExerciseDatabase
+                    };
+                    
+                    console.log(`🔧 Created tempAppState with ${tempAppState.exerciseDatabase.length} default exercises`);
+                    
+                    const workoutManager = new window.opener.WorkoutManager(tempAppState);
+                    const exercises = await workoutManager.getExerciseLibrary();
+                    
+                    console.log(`✅ WorkoutManager returned ${exercises.length} total exercises`);
+                    
+                    // Debug: Count custom vs default
+                    const customCount = exercises.filter(ex => ex.isCustom).length;
+                    const defaultCount = exercises.filter(ex => !ex.isCustom).length;
+                    console.log(`📊 Breakdown: ${defaultCount} default + ${customCount} custom = ${exercises.length} total`);
+                    
+                    loadExercisesFromData(exercises);
+                    console.log(`✅ Successfully loaded ${exercises.length} exercises from Firebase`);
+                } else {
+                    throw new Error('WorkoutManager not available in parent window');
+                }
+            } catch (error) {
+                console.error('❌ Firebase direct load failed:', error);
+                throw error;
+            }
         }
-    ];
-    
-    allExercises.push(...sampleCustomExercises);
-    filteredExercises = [...allExercises];
-    
-    console.log(`✅ Fallback data loaded: ${allExercises.length} exercises`);
-    renderExercises();
-    showNotification('⚠️ Using sample data - sign in to the main app and reopen to see your custom exercises', 'warning');
-}
+
+        // Added: Fallback function for minimal default exercises
+        function getMinimalDefaultExercises() {
+            return [
+                {
+                    id: 'bench_press',
+                    name: 'Bench Press',
+                    machine: 'Bench Press',
+                    bodyPart: 'Chest',
+                    equipmentType: 'Barbell',
+                    sets: 4,
+                    reps: 8,
+                    weight: 185,
+                    video: '',
+                    isCustom: false
+                },
+                {
+                    id: 'squat',
+                    name: 'Squat',
+                    machine: 'Squat',
+                    bodyPart: 'Legs', 
+                    equipmentType: 'Barbell',
+                    sets: 4,
+                    reps: 10,
+                    weight: 225,
+                    video: '',
+                    isCustom: false
+                },
+                {
+                    id: 'lat_pulldown',
+                    name: 'Lat Pulldown',
+                    machine: 'Lat Pulldown',
+                    bodyPart: 'Back',
+                    equipmentType: 'Machine',
+                    sets: 4,
+                    reps: 10,
+                    weight: 130,
+                    video: '',
+                    isCustom: false
+                },
+                {
+                    id: 'shoulder_press',
+                    name: 'Shoulder Press',
+                    machine: 'Shoulder Press Machine',
+                    bodyPart: 'Shoulders',
+                    equipmentType: 'Machine',
+                    sets: 3,
+                    reps: 12,
+                    weight: 90,
+                    video: '',
+                    isCustom: false
+                },
+                {
+                    id: 'leg_press',
+                    name: 'Leg Press',
+                    machine: 'Leg Press',
+                    bodyPart: 'Legs',
+                    equipmentType: 'Machine',
+                    sets: 4,
+                    reps: 12,
+                    weight: 300,
+                    video: '',
+                    isCustom: false
+                }
+            ];
+        }
+
+        function loadFallbackExercises() {
+            console.log('📁 Loading fallback exercises...');
+            allExercises = getSampleExercises();
+            
+            // Add sample custom exercises for testing
+            const sampleCustomExercises = [
+                {
+                    id: 'custom_sample_1',
+                    name: 'Custom Cable Crossovers',
+                    bodyPart: 'Chest',
+                    equipmentType: 'Cable',
+                    sets: 3,
+                    reps: 12,
+                    weight: 30,
+                    video: '',
+                    isCustom: true,
+                    tags: ['chest', 'cable']
+                },
+                {
+                    id: 'custom_sample_2', 
+                    name: 'Custom Bulgarian Split Squats',
+                    bodyPart: 'Legs',
+                    equipmentType: 'Bodyweight',
+                    sets: 3,
+                    reps: 10,
+                    weight: 0,
+                    video: '',
+                    isCustom: true,
+                    tags: ['legs', 'bodyweight']
+                }
+            ];
+            
+            allExercises.push(...sampleCustomExercises);
+            filteredExercises = [...allExercises];
+            
+            console.log(`✅ Fallback data loaded: ${allExercises.length} exercises`);
+            renderExercises();
+            showNotification('⚠️ Using sample data - sign in to the main app and reopen to see your custom exercises', 'warning');
+        }
+
         // Sample exercises for demonstration
         function getSampleExercises() {
             return [
@@ -819,6 +884,57 @@ function loadFallbackExercises() {
                     isCustom: false
                 }
             ];
+        }
+
+        // DEBUG: Enhanced loadExercisesFromData with logging
+        function loadExercisesFromData(exerciseData) {
+            if (!exerciseData || exerciseData.length === 0) {
+                console.log('❌ No exercise data provided to loadExercisesFromData');
+                loadFallbackExercises();
+                return;
+            }
+            
+            console.log(`📚 loadExercisesFromData: Processing ${exerciseData.length} exercises`);
+            
+            // Debug: Check what types of exercises we received
+            const customExercisesReceived = exerciseData.filter(ex => ex.isCustom);
+            const defaultExercisesReceived = exerciseData.filter(ex => !ex.isCustom);
+            console.log(`📊 Received: ${defaultExercisesReceived.length} default + ${customExercisesReceived.length} custom`);
+            
+            // Debug: Log custom exercise names
+            if (customExercisesReceived.length > 0) {
+                console.log('🎯 Custom exercises received:');
+                customExercisesReceived.forEach(ex => {
+                    console.log(`  - ${ex.name} (${ex.bodyPart}, ${ex.equipmentType})`);
+                });
+            }
+            
+            allExercises = exerciseData.map(ex => ({
+                id: ex.id || `ex_${Date.now()}_${Math.random()}`,
+                name: ex.name || ex.machine,
+                machine: ex.machine || ex.name,
+                bodyPart: ex.bodyPart || 'General',
+                equipmentType: ex.equipmentType || 'Machine',
+                sets: ex.sets || 3,
+                reps: ex.reps || 10,
+                weight: ex.weight || 50,
+                video: ex.video || '',
+                isCustom: ex.isCustom || false,
+                tags: ex.tags || []
+            }));
+            
+            filteredExercises = [...allExercises];
+            
+            const customCount = allExercises.filter(ex => ex.isCustom).length;
+            console.log(`✅ Final result: ${allExercises.length} exercises (${customCount} custom)`);
+            
+            renderExercises();
+            
+            if (customCount > 0) {
+                showNotification(`✅ Loaded ${customCount} custom exercises from your library!`, 'success');
+            } else {
+                showNotification(`✅ Loaded ${allExercises.length} exercises (no custom exercises found)`, 'info');
+            }
         }
 
         // Render exercises to the grid
@@ -955,7 +1071,7 @@ function loadFallbackExercises() {
             document.getElementById('exercise-name').focus();
         }
 
-        // Delete exercise
+        // FIXED: Delete exercise function
         async function deleteExercise(exerciseId) {
             const exercise = allExercises.find(ex => ex.id === exerciseId);
             if (!exercise) return;
@@ -963,16 +1079,11 @@ function loadFallbackExercises() {
             if (confirm(`Are you sure you want to delete "${exercise.name}"? This cannot be undone.`)) {
                 try {
                     // Try to delete through parent window's Firebase connection
-                    if (window.opener && window.opener.AppState && window.opener.AppState.currentUser && exercise.isCustom) {
-                        const { db, doc, deleteDoc } = await window.opener.import('./js/core/firebase-config.js');
-                        
-                        // Delete from Firebase
-                        const docRef = doc(db, "users", window.opener.AppState.currentUser.uid, "customExercises", exerciseId);
-                        await deleteDoc(docRef);
+                    if (window.opener && window.opener.AppState && window.opener.AppState.currentUser && exercise.isCustom && window.opener.WorkoutManager) {
+                        const workoutManager = new window.opener.WorkoutManager(window.opener.AppState);
+                        await workoutManager.deleteCustomExercise(exerciseId);
                         
                         // Refresh parent window's exercise library
-                        const { WorkoutManager } = await window.opener.import('./js/core/workout/workout-manager.js');
-                        const workoutManager = new WorkoutManager(window.opener.AppState);
                         window.opener.AppState.exerciseDatabase = await workoutManager.getExerciseLibrary();
                         
                         showNotification(`Deleted "${exercise.name}" from Firebase`, 'success');
@@ -991,7 +1102,7 @@ function loadFallbackExercises() {
             }
         }
 
-        // Save exercise (add or edit)
+        // FIXED: Save exercise function
         async function saveExercise(event) {
             event.preventDefault();
             
@@ -1018,9 +1129,8 @@ function loadFallbackExercises() {
                         allExercises[index] = { ...allExercises[index], ...formData };
                         
                         // Update in Firebase if it's a custom exercise
-                        if (currentEditingExercise.isCustom && window.opener && window.opener.AppState?.currentUser) {
-                            const { WorkoutManager } = await window.opener.import('./js/core/workout/workout-manager.js');
-                            const workoutManager = new WorkoutManager(window.opener.AppState);
+                        if (currentEditingExercise.isCustom && window.opener && window.opener.AppState?.currentUser && window.opener.WorkoutManager) {
+                            const workoutManager = new window.opener.WorkoutManager(window.opener.AppState);
                             await workoutManager.updateCustomExercise(currentEditingExercise.id, formData);
                             
                             // Refresh parent window's exercise database
@@ -1039,9 +1149,8 @@ function loadFallbackExercises() {
                     };
                     
                     // Save to Firebase if parent window is available and user is signed in
-                    if (window.opener && window.opener.AppState?.currentUser) {
-                        const { WorkoutManager } = await window.opener.import('./js/core/workout/workout-manager.js');
-                        const workoutManager = new WorkoutManager(window.opener.AppState);
+                    if (window.opener && window.opener.AppState?.currentUser && window.opener.WorkoutManager) {
+                        const workoutManager = new window.opener.WorkoutManager(window.opener.AppState);
                         
                         // Save to Firebase
                         await workoutManager.saveCustomExercise(newExercise);

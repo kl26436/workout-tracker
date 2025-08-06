@@ -125,14 +125,11 @@ export async function loadWorkoutPlans(state) {
     try {
         console.log('📥 Loading workout data...');
         
-        // Load workout plans
+        // Your existing workout loading code...
         const workoutResponse = await fetch('./workouts.json');
         if (workoutResponse.ok) {
             state.workoutPlans = await workoutResponse.json();
             console.log('✅ Workout plans loaded:', state.workoutPlans.length);
-        } else {
-            console.error('❌ Failed to load workouts.json');
-            state.workoutPlans = getDefaultWorkouts();
         }
         
         // Load exercise database
@@ -140,16 +137,17 @@ export async function loadWorkoutPlans(state) {
         if (exerciseResponse.ok) {
             state.exerciseDatabase = await exerciseResponse.json();
             console.log('✅ Exercise database loaded:', state.exerciseDatabase.length);
-        } else {
-            console.error('❌ Failed to load exercises.json');
-            state.exerciseDatabase = getDefaultExercises();
+        }
+        
+        // CRITICAL: If user is signed in, refresh with custom exercises
+        if (state.currentUser) {
+            console.log('👤 User signed in, refreshing with custom exercises...');
+            await refreshExerciseDatabase();
         }
         
     } catch (error) {
         console.error('❌ Error loading data:', error);
         showNotification('Error loading workout data. Using defaults.', 'error');
-        state.workoutPlans = getDefaultWorkouts();
-        state.exerciseDatabase = getDefaultExercises();
     }
 }
 
