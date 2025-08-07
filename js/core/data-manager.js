@@ -118,12 +118,13 @@ export async function loadTodaysWorkout(state) {
                 !data.cancelledAt) {
                 console.log('📅 Loading today\'s in-progress workout:', data.workoutType);
                 
-                // Validate that the workout plan still exists
+                // Validate that the workout plan exists (check both default and custom)
                 const workoutPlan = state.workoutPlans?.find(w => w.day === data.workoutType);
                 if (!workoutPlan) {
-                    console.warn('⚠️ Workout plan not found for:', data.workoutType);
-                    // Don't load invalid workout
-                    return null;
+                    // Don't immediately reject - could be a custom template
+                    console.log('🔍 Workout not in default plans, will check custom templates:', data.workoutType);
+                    // Return the data anyway - let main.js handle custom template lookup
+                    return data;
                 }
                 
                 return data; // Return data to be handled by workout manager

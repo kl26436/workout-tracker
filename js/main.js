@@ -22,6 +22,7 @@ import {
     showCreateExerciseForm,
     closeCreateExerciseModal,
     createNewExercise,
+    returnToWorkoutsFromManagement,
 } from './core/workout/workout-management-ui.js';
 
 // State variables
@@ -166,26 +167,48 @@ async function checkAndShowInProgressWorkout() {
         const todaysData = await loadTodaysWorkout(AppState);
         
         if (todaysData && todaysData.workoutType && !todaysData.completedAt) {
-            // Check if it's a known workout type
+            console.log('🔍 Checking in-progress workout:', todaysData.workoutType);
+            
+            // First check if it's a known workout type
             let workout = AppState.workoutPlans.find(w => w.day === todaysData.workoutType);
             
-            // If not found, try to find it in custom templates
+            // If not found, try to find it in custom templates BEFORE showing error
             if (!workout) {
+                console.log('🔄 Workout not in default plans, checking custom templates...');
                 workout = await handleUnknownWorkout(todaysData);
             }
             
             if (workout) {
                 // There's a valid in-progress workout
+                console.log('✅ Found valid in-progress workout:', workout.day);
                 inProgressWorkout = todaysData;
                 showInProgressWorkoutPrompt();
             } else {
                 // Invalid workout - clear it and start fresh
-                console.log('🧹 Clearing invalid in-progress workout');
+                console.log('🧹 Clearing invalid in-progress workout:', todaysData.workoutType);
                 inProgressWorkout = null;
+                
+                // Clear the invalid data from storage
+                if (AppState.currentUser) {
+                    try {
+                        await saveWorkoutData({ 
+                            ...AppState, 
+                            savedData: { 
+                                date: AppState.getTodayDateString(),
+                                exercises: {} 
+                            } 
+                        });
+                        console.log('🗑️ Cleared invalid workout data from storage');
+                    } catch (error) {
+                        console.error('Error clearing invalid workout data:', error);
+                    }
+                }
+                
                 showWorkoutSelector();
             }
         } else {
             // No in-progress workout, show normal selector
+            console.log('✅ No in-progress workout found');
             inProgressWorkout = null;
             showWorkoutSelector();
         }
@@ -254,6 +277,7 @@ function showInProgressWorkoutPrompt() {
 }
 
 // NEW FUNCTION: Continue in-progress workout
+// NEW FUNCTION: Continue in-progress workout
 async function continueInProgressWorkout() {
     if (!inProgressWorkout) return;
     
@@ -264,11 +288,20 @@ async function continueInProgressWorkout() {
     if (prompt) prompt.remove();
     
     try {
-        // Ensure workout plan exists
-        const workoutPlan = AppState.workoutPlans.find(w => w.day === inProgressWorkout.workoutType);
+        // First try to find in default workout plans
+        let workoutPlan = AppState.workoutPlans.find(w => w.day === inProgressWorkout.workoutType);
+        
+        // If not found in defaults, check custom templates
         if (!workoutPlan) {
-            throw new Error(`Workout plan "${inProgressWorkout.workoutType}" not found`);
+            console.log('🔍 Workout not in default plans, checking custom templates...');
+            workoutPlan = await handleUnknownWorkout(inProgressWorkout);
         }
+        
+        if (!workoutPlan) {
+            throw new Error(`Workout plan "${inProgressWorkout.workoutType}" not found in default or custom templates`);
+        }
+        
+        console.log('✅ Found workout plan for:', workoutPlan.day);
         
         // Restore the full workout structure
         AppState.currentWorkout = {
@@ -304,8 +337,10 @@ async function continueInProgressWorkout() {
         console.error('Error continuing workout:', error);
         showNotification('Error loading workout. Starting fresh.', 'error');
         
-        // Fallback: start fresh workout
+        // Clear the problematic workout and start over
         inProgressWorkout = null;
+        showingProgressPrompt = false;
+        AppState.reset();
         showWorkoutSelector();
     }
 }
@@ -659,6 +694,7 @@ async function signOutUser() {
     }
 }
 
+// Make sure this function in main.js properly handles custom templates:
 async function handleUnknownWorkout(workoutData) {
     console.log('🔍 Handling unknown workout type:', workoutData.workoutType);
     
@@ -668,6 +704,8 @@ async function handleUnknownWorkout(workoutData) {
             const { WorkoutManager } = await import('./core/workout/workout-manager.js');
             const workoutManager = new WorkoutManager(AppState);
             const templates = await workoutManager.getUserWorkoutTemplates();
+            
+            console.log(`📋 Checking ${templates.length} custom templates for "${workoutData.workoutType}"`);
             
             // Look for a template with matching name
             const customTemplate = templates.find(t => 
@@ -691,10 +729,14 @@ async function handleUnknownWorkout(workoutData) {
                 };
                 
                 return customWorkout;
+            } else {
+                console.log('❌ No matching custom template found in', templates.map(t => t.name));
             }
         } catch (error) {
             console.error('❌ Error checking custom templates:', error);
         }
+    } else {
+        console.log('⚠️ No current user, cannot check custom templates');
     }
     
     // If we can't find the workout, return null
@@ -704,36 +746,49 @@ async function handleUnknownWorkout(workoutData) {
 
 
 // Workout functions
-async function showWorkoutSelector() {
-    // If we have an active workout, ask for confirmation
-    if (AppState.currentWorkout && AppState.savedData.workoutType) {
-        if (AppState.hasWorkoutProgress()) {
-            const confirmChange = confirm(
-                'You have progress on your current workout. Changing will save your progress but return you to workout selection. Continue?'
-            );
-            if (!confirmChange) {
-                return; // User chose to stay
-            }
-            
-            // Save current progress before switching
-            await saveWorkoutData(AppState);
+// REPLACE the existing showWorkoutSelector function in main.js with this:
+async function showWorkoutSelector(fromNavigation = false) {
+    console.log('🔄 BUG-032 FIX: showWorkoutSelector called, fromNavigation:', fromNavigation);
+    
+    // Only show workout progress warning if:
+    // 1. Not from navigation (management/history screens)
+    // 2. Has an active workout with progress
+    // 3. Not a custom template navigation scenario
+    const hasActiveCustomTemplate = checkForActiveCustomTemplate();
+    const shouldShowWarning = !fromNavigation && 
+                             !hasActiveCustomTemplate &&
+                             AppState.currentWorkout && 
+                             AppState.savedData.workoutType &&
+                             AppState.hasWorkoutProgress();
+    
+    if (shouldShowWarning) {
+        const confirmChange = confirm(
+            'You have progress on your current workout. Changing will save your progress but return you to workout selection. Continue?'
+        );
+        if (!confirmChange) {
+            return; // User chose to stay
         }
+        
+        // Save current progress before switching
+        await saveWorkoutData(AppState);
     }
     
     const workoutSelector = document.getElementById('workout-selector');
     const activeWorkout = document.getElementById('active-workout');
     const workoutManagement = document.getElementById('workout-management');
-    const historySection = document.getElementById('workout-history-section'); // ADD THIS LINE
+    const historySection = document.getElementById('workout-history-section');
     
     if (workoutSelector) workoutSelector.classList.remove('hidden');
     if (activeWorkout) activeWorkout.classList.add('hidden');
     if (workoutManagement) workoutManagement.classList.add('hidden');
-    if (historySection) historySection.classList.add('hidden'); // ADD THIS LINE
+    if (historySection) historySection.classList.add('hidden');
     
     AppState.clearTimers();
     
-    // Don't reset the data - keep it for re-selection
-    AppState.currentWorkout = null;
+    // Don't reset currentWorkout when returning from navigation with custom template
+    if (!fromNavigation || !hasActiveCustomTemplate) {
+        AppState.currentWorkout = null;
+    }
     
     // Hide workout management if it was open
     hideWorkoutManagement();
@@ -741,6 +796,20 @@ async function showWorkoutSelector() {
     if (Object.keys(AppState.savedData.exercises || {}).length > 0) {
         showNotification('Workout progress saved. You can continue where you left off.', 'info');
     }
+}
+
+// ADD this helper function to main.js:
+function checkForActiveCustomTemplate() {
+    if (!AppState.currentWorkout || !AppState.savedData.workoutType) {
+        return false;
+    }
+    
+    // Check if current workoutType is NOT in default workout plans
+    const isDefaultWorkout = AppState.workoutPlans.some(plan => 
+        plan.day === AppState.savedData.workoutType
+    );
+    
+    return !isDefaultWorkout; // If not default, it's likely a custom template
 }
 
 function startWorkoutDurationTimer() {
@@ -5038,6 +5107,7 @@ window.closeExerciseLibrary = closeExerciseLibraryEnhanced;
 window.showCreateExerciseForm = showCreateExerciseForm;
 window.closeCreateExerciseModal = closeCreateExerciseModal;
 window.createNewExercise = createNewExerciseEnhanced;
+window.returnToWorkoutsFromManagement = returnToWorkoutsFromManagement;
 
 // Template Editor Functions
 window.showTemplateEditorWithData = showTemplateEditorWithData;
