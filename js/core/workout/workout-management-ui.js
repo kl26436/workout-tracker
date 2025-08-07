@@ -409,3 +409,91 @@ export async function createNewExercise(event) {
         }
     }
 }
+
+export function returnToWorkoutsFromManagement(appState) {
+    console.log('🔄 BUG-032 FIX: Smart navigation from workout management');
+    
+    const hasActiveCustomTemplate = checkForActiveCustomTemplate(appState);
+    
+    // Hide management UI first
+    hideWorkoutManagement();
+    
+    if (hasActiveCustomTemplate) {
+        // Custom template active - navigate without popup warning
+        console.log('📋 Active custom template detected - bypassing popup warning');
+        showWorkoutSelectorSafe(appState, true);
+    } else {
+        // No active custom template - normal navigation
+        console.log('✅ Normal navigation - no active custom template');
+        showWorkoutSelectorSafe(appState, false);
+    }
+}
+
+// Helper function to detect active custom templates
+function checkForActiveCustomTemplate(appState) {
+    if (!appState.currentWorkout || !appState.savedData.workoutType) {
+        return false;
+    }
+    
+    // Check if current workoutType is NOT in default workout plans
+    const isDefaultWorkout = appState.workoutPlans.some(plan => 
+        plan.day === appState.savedData.workoutType
+    );
+    
+    return !isDefaultWorkout; // If not default, it's likely a custom template
+}
+
+// Safe wrapper for showWorkoutSelector that respects navigation context
+function showWorkoutSelectorSafe(appState, fromNavigation = false) {
+    // Only show warning popup if NOT from navigation and has real progress
+    const shouldShowWarning = !fromNavigation && 
+                             appState.hasWorkoutProgress() && 
+                             appState.currentWorkout && 
+                             appState.savedData.workoutType;
+    
+    if (shouldShowWarning) {
+        const confirmChange = confirm(
+            'You have progress on your current workout. Changing will save your progress but return you to workout selection. Continue?'
+        );
+        if (!confirmChange) {
+            // User chose to stay - show management again
+            showWorkoutManagement();
+            return;
+        }
+        
+        // Save progress before switching
+        saveWorkoutData(appState);
+    }
+    
+    // Perform navigation
+    navigateToWorkoutSelector(fromNavigation, appState);
+}
+
+// Clean navigation function
+function navigateToWorkoutSelector(fromNavigation, appState) {
+    const workoutSelector = document.getElementById('workout-selector');
+    const activeWorkout = document.getElementById('active-workout');
+    const workoutManagement = document.getElementById('workout-management');
+    const historySection = document.getElementById('workout-history-section');
+    const templateEditor = document.getElementById('template-editor-section');
+    
+    // Show/hide appropriate sections
+    if (workoutSelector) workoutSelector.classList.remove('hidden');
+    if (activeWorkout) activeWorkout.classList.add('hidden');
+    if (workoutManagement) workoutManagement.classList.add('hidden');
+    if (historySection) historySection.classList.add('hidden');
+    if (templateEditor) templateEditor.classList.add('hidden');
+    
+    // Clear timers
+    appState.clearTimers();
+    
+    // Preserve currentWorkout when returning from navigation
+    if (!fromNavigation) {
+        appState.currentWorkout = null;
+    }
+    
+    // Show in-progress workout prompt if returning with active workout
+    if (fromNavigation && appState.currentWorkout && appState.savedData.workoutType) {
+        showInProgressWorkoutPrompt(appState);
+    }
+}
