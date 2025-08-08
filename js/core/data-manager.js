@@ -101,7 +101,7 @@ export async function saveWorkoutData(state) {
 }
 
 export async function loadTodaysWorkout(state) {
-    if (!state.currentUser) return;
+    if (!state.currentUser) return null;
 
     const today = state.getTodayDateString();
     try {
@@ -118,13 +118,12 @@ export async function loadTodaysWorkout(state) {
                 !data.cancelledAt) {
                 console.log('📅 Loading today\'s in-progress workout:', data.workoutType);
                 
-                // Validate that the workout plan exists (check both default and custom)
+                // Validate that the workout plan still exists
                 const workoutPlan = state.workoutPlans?.find(w => w.day === data.workoutType);
                 if (!workoutPlan) {
-                    // Don't immediately reject - could be a custom template
-                    console.log('🔍 Workout not in default plans, will check custom templates:', data.workoutType);
-                    // Return the data anyway - let main.js handle custom template lookup
-                    return data;
+                    console.warn('⚠️ Workout plan not found for:', data.workoutType);
+                    // Don't load invalid workout
+                    return null;
                 }
                 
                 return data; // Return data to be handled by workout manager
@@ -144,34 +143,51 @@ export async function loadTodaysWorkout(state) {
         return null;
     }
 }
+import { FirebaseWorkoutManager } from './firebase-workout-manager.js';
 
 export async function loadWorkoutPlans(state) {
     try {
-        console.log('📥 Loading workout data...');
+        console.log('📥 Loading workout data from Firebase...');
         
-        // Your existing workout loading code...
-        const workoutResponse = await fetch('./workouts.json');
-        if (workoutResponse.ok) {
-            state.workoutPlans = await workoutResponse.json();
-            console.log('✅ Workout plans loaded:', state.workoutPlans.length);
-        }
+        // Import the Firebase workout manager
+        const { FirebaseWorkoutManager } = await import('./firebase-workout-manager.js');
+        const workoutManager = new FirebaseWorkoutManager(state);
         
-        // Load exercise database
-        const exerciseResponse = await fetch('./exercises.json');
-        if (exerciseResponse.ok) {
-            state.exerciseDatabase = await exerciseResponse.json();
-            console.log('✅ Exercise database loaded:', state.exerciseDatabase.length);
-        }
+        // Load workout templates from Firebase
+        state.workoutPlans = await workoutManager.getWorkoutTemplates();
+        console.log('✅ Workout plans loaded from Firebase:', state.workoutPlans.length);
         
-        // CRITICAL: If user is signed in, refresh with custom exercises
-        if (state.currentUser) {
-            console.log('👤 User signed in, refreshing with custom exercises...');
-            await refreshExerciseDatabase();
-        }
+        // Load exercise database from Firebase
+        state.exerciseDatabase = await workoutManager.getExerciseLibrary();
+        console.log('✅ Exercise database loaded from Firebase:', state.exerciseDatabase.length);
         
     } catch (error) {
-        console.error('❌ Error loading data:', error);
-        showNotification('Error loading workout data. Using defaults.', 'error');
+        console.error('❌ Error loading data from Firebase:', error);
+        showNotification('Error loading workout data from Firebase. Using fallback.', 'warning');
+        
+        // Fallback to JSON files if Firebase fails
+        try {
+            const workoutResponse = await fetch('./workouts.json');
+            if (workoutResponse.ok) {
+                state.workoutPlans = await workoutResponse.json();
+                console.log('✅ Fallback workout plans loaded:', state.workoutPlans.length);
+            } else {
+                state.workoutPlans = getDefaultWorkouts();
+            }
+            
+            const exerciseResponse = await fetch('./exercises.json');
+            if (exerciseResponse.ok) {
+                state.exerciseDatabase = await exerciseResponse.json();
+                console.log('✅ Fallback exercise database loaded:', state.exerciseDatabase.length);
+            } else {
+                state.exerciseDatabase = getDefaultExercises();
+            }
+        } catch (fallbackError) {
+            console.error('❌ Fallback also failed:', fallbackError);
+            showNotification('Error loading workout data. Please check your connection.', 'error');
+            state.workoutPlans = getDefaultWorkouts();
+            state.exerciseDatabase = getDefaultExercises();
+        }
     }
 }
 

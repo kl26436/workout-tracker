@@ -125,12 +125,23 @@ export function getWorkoutHistory(appState) {
         },
 
         getWorkoutStatus(workout) {
-            if (workout.completedAt && !workout.cancelledAt) return 'completed';
-            if (workout.cancelledAt || workout.status === 'cancelled') return 'cancelled';
-            if (workout.status === 'discarded') return 'discarded';
-            if (workout.startedAt && !workout.completedAt) return 'in-progress';
-            return 'unknown';
-        },
+            // Check completed first
+                if (workout.completedAt && !workout.cancelledAt) return 'completed';
+                if (workout.cancelledAt || workout.status === 'cancelled') return 'cancelled';
+                if (workout.status === 'discarded') return 'discarded';
+                
+                // FIXED: More intelligent incomplete detection
+                const wasStarted = workout.startedAt || workout.startTime || workout.status === 'in-progress';
+                const hasProgress = (workout.exercises && Object.keys(workout.exercises).length > 0) ||
+                                (workout.progress && workout.progress.completedSets > 0);
+                
+                // If workout was started OR has progress, and not completed, it's incomplete
+                if ((wasStarted || hasProgress) && !workout.completedAt && !workout.cancelledAt) {
+                    return 'incomplete';
+                }
+                
+                return 'unknown';
+            },
 
         getWorkoutDuration(workout) {
             if (workout.completedAt && workout.startedAt) {
@@ -258,12 +269,18 @@ export function getWorkoutHistory(appState) {
             // Determine action button based on status
             let actionButton;
             let actionClass;
-            if (status === 'incomplete') {
-                actionButton = '<i class="fas fa-play"></i>';
-                actionClass = 'action-resume';
-            } else if (status === 'completed') {
+
+            const wasStarted = workout.startedAt || workout.startTime || workout.status === 'in-progress';
+            const hasProgress = (workout.exercises && Object.keys(workout.exercises).length > 0) ||
+                            (workout.progress && workout.progress.completedSets > 0);
+
+            if (status === 'completed') {
                 actionButton = '<i class="fas fa-eye"></i>';
                 actionClass = 'action-view';
+            } else if (status === 'incomplete' || ((status === 'unknown') && (hasProgress || wasStarted))) {
+                // FIX: Allow resuming incomplete OR unknown workouts that were started/have progress
+                actionButton = '<i class="fas fa-play"></i>';
+                actionClass = 'action-resume';
             } else if (status === 'cancelled') {
                 actionButton = '<i class="fas fa-redo"></i>';
                 actionClass = 'action-retry';
@@ -335,6 +352,66 @@ export function getWorkoutHistory(appState) {
                     </td>
                 </tr>
             `;
+        },
+
+        // 1. ADD this resumeWorkout method to the workoutHistory object in workout-history.js
+        async resumeWorkout(workoutId) {
+            console.log('🔄 BUG-035 FIX: Resume workout called for:', workoutId);
+            
+            const workout = this.currentHistory.find(w => w.id === workoutId);
+            if (!workout) {
+                console.error('❌ Workout not found:', workoutId);
+                showNotification('Workout not found', 'error');
+                return;
+            }
+
+            console.log('📋 Found workout to resume:', {
+                workoutType: workout.workoutType,
+                status: workout.status,
+                hasProgress: !!workout.exercises
+            });
+
+            // Check if workout can be resumed
+            const hasProgress = workout.exercises && Object.keys(workout.exercises).length > 0;
+            const isCompleted = workout.status === 'completed';
+            
+            if (isCompleted) {
+                showNotification('This workout is already completed. Use "Repeat" to start a new one.', 'info');
+                return;
+            }
+            
+            if (!hasProgress) {
+                showNotification('No progress found for this workout. Use "Repeat" to start fresh.', 'info');
+                return;
+            }
+
+            try {
+                // Hide history section
+                document.getElementById('workout-history-section')?.classList.add('hidden');
+                
+                // Set the global inProgressWorkout variable
+                window.inProgressWorkout = {
+                    ...workout,
+                    startTime: workout.startTime || new Date().toISOString()
+                };
+                
+                // Call the enhanced restoration function
+                if (typeof window.restoreCustomWorkoutEnhanced === 'function') {
+                    await window.restoreCustomWorkoutEnhanced(workout);
+                } else {
+                    // Fallback to basic restoration
+                    await this.restoreWorkoutBasic(workout);
+                }
+                
+                showNotification(`Resumed "${workout.workoutType}" workout!`, 'success');
+                
+            } catch (error) {
+                console.error('❌ BUG-035: Error resuming workout:', error);
+                showNotification('Failed to resume workout. Please try again.', 'error');
+                
+                // Show history again on error
+                document.getElementById('workout-history-section')?.classList.remove('hidden');
+            }
         },
 
         updatePaginationInfo() {
@@ -511,6 +588,8 @@ export function getWorkoutHistory(appState) {
         }
     };
 }
+
+
 
 // Global functions for workout history
 window.expandWorkoutDetails = function(workoutId) {

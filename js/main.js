@@ -25,6 +25,8 @@ import {
     returnToWorkoutsFromManagement,
 } from './core/workout/workout-management-ui.js';
 
+
+
 // State variables
 let selectedWorkoutCategory = null;
 let currentTemplateCategory = 'default';
@@ -68,41 +70,235 @@ function initializeWorkoutApp() {
         workoutHistory = getWorkoutHistory(AppState);
         workoutHistory.initialize();
         window.workoutHistory = workoutHistory;
-        } catch (error) {
+    } catch (error) {
         console.error('❌ Error initializing modules:', error);
     }
     
-    // Set up auth state listener with error handling
+    // 🔧 BUG-036 FIX: Enhanced auth state listener with custom workout support
     onAuthStateChanged(auth, async (user) => {
-        await refreshExerciseDatabase()
+        await refreshExerciseDatabase();
         try {
             if (user) {
                 AppState.currentUser = user;
                 showUserInfo(user);
+                
+                // 🔧 BUG-036 FIX: Enhanced in-progress workout check
+                await checkForInProgressWorkoutEnhanced();
+                
+                // Initialize workout manager for custom templates
+                if (!window.workoutManager) {
+                    const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
+                    window.workoutManager = new WorkoutManager(AppState);
+                }
+                
                 await loadWorkoutPlans(AppState);
                 
-                // Validate user data with delay to ensure everything is loaded
-                setTimeout(() => {
-                    try {
-                        validateUserData();
-                    } catch (error) {
-                        console.error('❌ Error in validateUserData:', error);
-                    }
-                }, 2000);
-                
-                // Check for in-progress workout and show options
-                await checkAndShowInProgressWorkout();
-                
             } else {
+                console.log('❌ User signed out');
                 AppState.currentUser = null;
-                showSignInButton();
-                showWorkoutSelector(); // Show selector if not signed in
+                hideUserInfo();
+                showWorkoutSelector();
             }
         } catch (error) {
             console.error('❌ Error in auth state change:', error);
-            showNotification('Error during sign in process', 'error');
+            showNotification('Authentication error', 'error');
         }
     });
+}
+
+// 2. ADD this enhanced in-progress workout check function to main.js
+// (Add this as a new function, don't replace anything)
+
+async function checkForInProgressWorkoutEnhanced() {
+    if (!AppState.currentUser) {
+        console.log('❌ No user signed in, skipping in-progress check');
+        showWorkoutSelector();
+        return;
+    }
+    
+    try {       
+        const { db, doc, getDoc } = await import('./core/firebase-config.js');
+        const today = AppState.getTodayDateString();
+        const docRef = doc(db, "users", AppState.currentUser.uid, "workouts", today);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+            const workoutData = docSnap.data();
+            
+            // FIXED: Check for EITHER progress data OR started status
+            const hasProgress = workoutData.exercises && Object.keys(workoutData.exercises).length > 0;
+            const wasStarted = workoutData.startedAt || workoutData.startTime || workoutData.status === 'in-progress';
+            
+            console.log('📋 Found today\'s workout data:', {
+                workoutType: workoutData.workoutType,
+                status: workoutData.status,
+                hasProgress: hasProgress,
+                wasStarted: wasStarted,
+                startedAt: workoutData.startedAt,
+                startTime: workoutData.startTime
+            });
+            
+            // Check if this should be resumable
+            const isNotCompleted = !workoutData.completedAt && 
+                                 !workoutData.cancelledAt && 
+                                 workoutData.status !== 'completed' && 
+                                 workoutData.status !== 'cancelled';
+            
+            // FIX: Show resume prompt for workouts that were STARTED OR have progress
+            if ((hasProgress || wasStarted) && isNotCompleted) {
+                console.log('✅ FIXED: Found resumable workout (started or has progress)');
+                
+                // Store the in-progress workout globally
+                inProgressWorkout = {
+                    ...workoutData,
+                    startTime: workoutData.startTime || workoutData.startedAt || new Date().toISOString()
+                };
+                
+                showInProgressWorkoutPromptEnhanced();
+                
+            } else {
+                console.log('✅ FIXED: No resumable workout found');
+                inProgressWorkout = null;
+                showWorkoutSelector();
+            }
+        } else {
+            inProgressWorkout = null;
+            showWorkoutSelector();
+        }
+        
+    } catch (error) {
+        console.error('❌ FIXED: Error in enhanced in-progress check:', error);
+        showWorkoutSelector(); // Fallback to normal selector
+    }
+}
+
+// 3. ADD this enhanced custom workout restoration function to main.js
+// (Add this as a new function, don't replace anything)
+
+async function restoreCustomWorkoutEnhanced(workoutData) {
+      
+    try {
+        let workoutPlan = null;
+        
+        // First check default workout plans
+        workoutPlan = AppState.workoutPlans.find(w => w.day === workoutData.workoutType);
+        
+        if (workoutPlan) {
+            //console.log('✅ BUG-036: Found default workout plan:', workoutPlan.day);
+        } else {
+            //console.log('🔍 BUG-036: Not a default workout, checking custom templates...');
+            
+            // 🔧 CRITICAL FIX: Enhanced custom template lookup
+            workoutPlan = await findCustomWorkoutTemplate(workoutData.workoutType);
+            
+            if (workoutPlan) {
+               // console.log('✅ BUG-036: Found custom workout template:', workoutPlan.day);
+            } else {
+                //console.warn('❌ BUG-036: Could not find workout template for:', workoutData.workoutType);
+                // Show selector instead of throwing error
+                showWorkoutSelector();
+                return;
+            }
+        }
+        
+        // Restore the full workout structure
+        AppState.currentWorkout = {
+            day: workoutData.workoutType,
+            exercises: [...workoutPlan.exercises] // Clone the exercises
+        };
+        
+        // Restore all saved data
+        AppState.savedData = { ...workoutData };
+        AppState.workoutStartTime = new Date(workoutData.startTime || new Date().toISOString());
+        
+        // Restore exercise units
+        if (workoutData.exerciseUnits) {
+            AppState.exerciseUnits = { ...workoutData.exerciseUnits };
+        } else {
+            // Initialize with global unit
+            AppState.currentWorkout.exercises.forEach((exercise, index) => {
+                AppState.exerciseUnits[index] = AppState.globalUnit;
+            });
+        }
+        
+        // 🔧 BUG-036 FIX: Show in-progress workout prompt instead of auto-continuing
+        showInProgressWorkoutPromptEnhanced();
+
+        
+    } catch (error) {
+        showWorkoutSelector(); // Fallback
+    }
+}
+
+// 4. ADD this enhanced custom template finder function to main.js
+// (Add this as a new function, don't replace anything)
+
+async function findCustomWorkoutTemplate(workoutType) {
+    console.log('🔍 BUG-036: Searching for custom template:', workoutType);
+    
+    try {
+        // Initialize workout manager if not available
+        if (!window.workoutManager) {
+            const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
+            window.workoutManager = new WorkoutManager(AppState);
+        }
+        
+        // Get all custom templates
+        const templates = await window.workoutManager.getUserWorkoutTemplates();
+        console.log(`📋 BUG-036: Checking ${templates.length} custom templates`);
+        
+        // Look for matching template by name or ID
+        const customTemplate = templates.find(t => 
+            t.name === workoutType || 
+            t.id === workoutType ||
+            t.day === workoutType  // Also check 'day' property
+        );
+        
+        if (customTemplate) {
+            console.log('✅ BUG-036: Found matching custom template:', customTemplate.name);
+            
+            // Convert template to workout format
+            return {
+                day: customTemplate.name,
+                exercises: customTemplate.exercises.map(ex => ({
+                    machine: ex.name,
+                    sets: ex.sets || 3,
+                    reps: ex.reps || 10,
+                    weight: ex.weight || 50,
+                    video: ex.video || ''
+                }))
+            };
+        } else {
+            console.log('❌ BUG-036: No matching custom template found');
+            // Log all available template names for debugging
+            console.log('Available templates:', templates.map(t => t.name));
+            return null;
+        }
+        
+    } catch (error) {
+        console.error('❌ BUG-036: Error finding custom template:', error);
+        return null;
+    }
+}
+
+async function ensureWorkoutStartTracking(workoutName) {
+    // Make sure we set startedAt when workout begins
+    if (!AppState.savedData.startedAt && !AppState.savedData.startTime) {
+        const now = new Date().toISOString();
+        AppState.savedData.startedAt = now;
+        AppState.savedData.startTime = now;
+        AppState.savedData.status = 'in-progress';
+        
+        console.log('✅ Set workout start tracking:', now);
+        
+        // Save immediately to prevent data loss
+        try {
+            await saveWorkoutData(AppState);
+            console.log('✅ Saved initial workout start state');
+        } catch (error) {
+            console.error('❌ Error saving workout start state:', error);
+        }
+    }
 }
 
 function testHistoryFilters() {
@@ -143,7 +339,7 @@ async function validateUserData() {
         await refreshExerciseDatabase();
         
         // Your existing validation code...
-        const { WorkoutManager } = await import('./core/workout/workout-manager.js');
+        const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
         const workoutManager = new WorkoutManager(AppState);
         const templates = await workoutManager.getUserWorkoutTemplates();
         
@@ -182,7 +378,7 @@ async function checkAndShowInProgressWorkout() {
                 // There's a valid in-progress workout
                 console.log('✅ Found valid in-progress workout:', workout.day);
                 inProgressWorkout = todaysData;
-                showInProgressWorkoutPrompt();
+                showInProgressWorkoutPromptEnhanced();
             } else {
                 // Invalid workout - clear it and start fresh
                 console.log('🧹 Clearing invalid in-progress workout:', todaysData.workoutType);
@@ -219,7 +415,7 @@ async function checkAndShowInProgressWorkout() {
 }
 
 // NEW FUNCTION: Show in-progress workout prompt
-function showInProgressWorkoutPrompt() {
+function showInProgressWorkoutPromptEnhanced() {
     if (showingProgressPrompt) return; // Prevent multiple prompts
     showingProgressPrompt = true;
     
@@ -235,38 +431,50 @@ function showInProgressWorkoutPrompt() {
     if (workoutSelector) {
         workoutSelector.classList.remove('hidden');
         
-        // Add in-progress workout prompt at the top
+        // Remove existing prompt if any
         const existingPrompt = workoutSelector.querySelector('.in-progress-prompt');
         if (existingPrompt) {
-            existingPrompt.remove(); // Remove existing prompt if any
+            existingPrompt.remove();
         }
         
         const progressSets = countProgressSets(inProgressWorkout);
         const workoutAge = getWorkoutAge(inProgressWorkout.startTime);
         
+        // 🔧 BUG-036 FIX: Enhanced prompt for custom workouts
+        const isCustomWorkout = !AppState.workoutPlans.find(w => w.day === inProgressWorkout.workoutType);
+        const workoutTypeDisplay = isCustomWorkout ? 
+            `Custom: ${inProgressWorkout.workoutType}` : 
+            inProgressWorkout.workoutType;
+        
         const promptHTML = `
             <div class="in-progress-prompt">
                 <div class="progress-alert">
-                    <div class="progress-alert-content">
-                        <div class="progress-alert-header">
-                            <i class="fas fa-clock"></i>
-                            <h3>Workout In Progress</h3>
+                    <div class="progress-info">
+                        <div class="progress-header">
+                            <i class="fas fa-play-circle"></i>
+                            <h3>Continue Your Workout?</h3>
                         </div>
-                        <div class="progress-alert-body">
-                            <p><strong>${inProgressWorkout.workoutType}</strong></p>
-                            <div class="progress-details">
-                                <span>${progressSets.completed}/${progressSets.total} sets completed</span>
-                                <span>Started ${workoutAge}</span>
+                        <div class="progress-details">
+                            <p><strong>${workoutTypeDisplay}</strong></p>
+                            <div class="progress-stats">
+                                <span class="stat">
+                                    <i class="fas fa-dumbbell"></i>
+                                    ${progressSets.completed}/${progressSets.total} sets completed
+                                </span>
+                                <span class="stat">
+                                    <i class="fas fa-clock"></i>
+                                    Started ${workoutAge}
+                                </span>
                             </div>
                         </div>
-                        <div class="progress-alert-actions">
-                            <button class="btn btn-primary" onclick="continueInProgressWorkout()">
-                                <i class="fas fa-play"></i> Continue Workout
-                            </button>
-                            <button class="btn btn-danger" onclick="discardInProgressWorkout()">
-                                <i class="fas fa-trash"></i> Discard & Start New
-                            </button>
-                        </div>
+                    </div>
+                    <div class="progress-actions">
+                        <button class="btn btn-primary" onclick="continueInProgressWorkout()">
+                            <i class="fas fa-play"></i> Continue Workout
+                        </button>
+                        <button class="btn btn-secondary" onclick="discardInProgressWorkout()">
+                            <i class="fas fa-trash"></i> Start Fresh
+                        </button>
                     </div>
                 </div>
             </div>
@@ -274,56 +482,26 @@ function showInProgressWorkoutPrompt() {
         
         workoutSelector.insertAdjacentHTML('afterbegin', promptHTML);
     }
+    
+    console.log('✅ BUG-036: Enhanced in-progress prompt shown for custom workout');
 }
 
 // NEW FUNCTION: Continue in-progress workout
-// NEW FUNCTION: Continue in-progress workout
 async function continueInProgressWorkout() {
-    if (!inProgressWorkout) return;
+    if (!inProgressWorkout) {
+        console.log('❌ BUG-036: No in-progress workout to continue');
+        showWorkoutSelector();
+        return;
+    }
     
+    console.log('🔄 BUG-036: Enhanced continue workout for:', inProgressWorkout.workoutType);
     showingProgressPrompt = false;
     
-    // Remove the prompt
-    const prompt = document.querySelector('.in-progress-prompt');
-    if (prompt) prompt.remove();
-    
     try {
-        // First try to find in default workout plans
-        let workoutPlan = AppState.workoutPlans.find(w => w.day === inProgressWorkout.workoutType);
+        // Use the enhanced restoration function
+        await restoreCustomWorkoutEnhanced(inProgressWorkout);
         
-        // If not found in defaults, check custom templates
-        if (!workoutPlan) {
-            console.log('🔍 Workout not in default plans, checking custom templates...');
-            workoutPlan = await handleUnknownWorkout(inProgressWorkout);
-        }
-        
-        if (!workoutPlan) {
-            throw new Error(`Workout plan "${inProgressWorkout.workoutType}" not found in default or custom templates`);
-        }
-        
-        console.log('✅ Found workout plan for:', workoutPlan.day);
-        
-        // Restore the full workout structure
-        AppState.currentWorkout = {
-            day: inProgressWorkout.workoutType,
-            exercises: [...workoutPlan.exercises] // Clone the exercises
-        };
-        
-        // Restore all saved data
-        AppState.savedData = { ...inProgressWorkout };
-        AppState.workoutStartTime = new Date(inProgressWorkout.startTime);
-        
-        // Restore exercise units
-        if (inProgressWorkout.exerciseUnits) {
-            AppState.exerciseUnits = { ...inProgressWorkout.exerciseUnits };
-        } else {
-            // Initialize with global unit
-            AppState.currentWorkout.exercises.forEach((exercise, index) => {
-                AppState.exerciseUnits[index] = AppState.globalUnit;
-            });
-        }
-        
-        // Update UI
+        // Update UI to show active workout
         updateWorkoutDisplay(inProgressWorkout.workoutType);
         document.getElementById('workout-selector')?.classList.add('hidden');
         document.getElementById('active-workout')?.classList.remove('hidden');
@@ -333,45 +511,32 @@ async function continueInProgressWorkout() {
         
         showNotification('Continuing your workout!', 'success');
         
-    } catch (error) {
-        console.error('Error continuing workout:', error);
-        showNotification('Error loading workout. Starting fresh.', 'error');
+        console.log('✅ BUG-036: Enhanced workout continuation completed');
         
-        // Clear the problematic workout and start over
-        inProgressWorkout = null;
-        showingProgressPrompt = false;
-        AppState.reset();
+    } catch (error) {
+        console.error('❌ BUG-036: Error continuing enhanced workout:', error);
+        showNotification('Error loading workout. Starting fresh.', 'error');
         showWorkoutSelector();
     }
 }
 
 async function refreshExerciseDatabase() {
     if (!AppState.currentUser) {
-        console.log('❌ No user signed in, cannot refresh exercise database');
         return AppState.exerciseDatabase || [];
     }
     
     try {
-        console.log('🔄 Refreshing exercise database in AppState...');
+        console.log('🔄 Refreshing exercise database from Firebase...');
         
-        const { WorkoutManager } = await import('./core/workout/workout-manager.js');
-        const workoutManager = new WorkoutManager(AppState);
+        const { FirebaseWorkoutManager } = await import('./core/firebase-workout-manager.js');
+        const workoutManager = new FirebaseWorkoutManager(AppState);
         
         // Get fresh data from Firebase
-        const freshExercises = await workoutManager.getExerciseLibrary();
+        AppState.exerciseDatabase = await workoutManager.getExerciseLibrary();
         
-        // Update AppState with fresh data
-        AppState.exerciseDatabase = freshExercises;
+        console.log(`✅ Exercise database refreshed: ${AppState.exerciseDatabase.length} total exercises`);
         
-        // Make WorkoutManager globally available for exercise manager
-        window.WorkoutManager = WorkoutManager;
-        
-        const customCount = freshExercises.filter(ex => ex.isCustom).length;
-        const defaultCount = freshExercises.filter(ex => !ex.isCustom).length;
-        
-        console.log(`✅ AppState exercise database refreshed: ${defaultCount} default + ${customCount} custom = ${freshExercises.length} total`);
-        
-        return freshExercises;
+        return AppState.exerciseDatabase;
     } catch (error) {
         console.error('❌ Error refreshing exercise database:', error);
         return AppState.exerciseDatabase || [];
@@ -418,8 +583,6 @@ function addToManualWorkoutFromLibrary(exerciseData) {
         
         // FIX: Add to manual workout with validation
         currentManualWorkout.exercises.push(exerciseEntry);
-        
-        console.log('✅ Bug 17 Fix: Exercise added successfully:', exerciseEntry);
         
         // Update UI
         renderManualExerciseList();
@@ -555,9 +718,7 @@ async function discardInProgressWorkout() {
         
         // 12. Success notification
         showNotification('Previous workout discarded and deleted completely!', 'info');
-        
-        console.log('✅ COMPLETE: Bug 20 Fixed - In-progress workout fully discarded and deleted from Firebase');
-        
+                
     } catch (error) {
         console.error('❌ CRITICAL ERROR in discardInProgressWorkout:', error);
         showNotification('Error discarding workout. Please try again.', 'error');
@@ -701,7 +862,7 @@ async function handleUnknownWorkout(workoutData) {
     // Check if it's a custom template that was saved
     if (AppState.currentUser) {
         try {
-            const { WorkoutManager } = await import('./core/workout/workout-manager.js');
+            const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
             const workoutManager = new WorkoutManager(AppState);
             const templates = await workoutManager.getUserWorkoutTemplates();
             
@@ -748,13 +909,14 @@ async function handleUnknownWorkout(workoutData) {
 // Workout functions
 // REPLACE the existing showWorkoutSelector function in main.js with this:
 async function showWorkoutSelector(fromNavigation = false) {
-    console.log('🔄 BUG-032 FIX: showWorkoutSelector called, fromNavigation:', fromNavigation);
+    
+    // 🔧 BUG-036 FIX: Better custom template detection
+    const hasActiveCustomTemplate = await checkForActiveCustomTemplate();
     
     // Only show workout progress warning if:
-    // 1. Not from navigation (management/history screens)
+    // 1. Not from navigation 
     // 2. Has an active workout with progress
     // 3. Not a custom template navigation scenario
-    const hasActiveCustomTemplate = checkForActiveCustomTemplate();
     const shouldShowWarning = !fromNavigation && 
                              !hasActiveCustomTemplate &&
                              AppState.currentWorkout && 
@@ -785,7 +947,7 @@ async function showWorkoutSelector(fromNavigation = false) {
     
     AppState.clearTimers();
     
-    // Don't reset currentWorkout when returning from navigation with custom template
+    // 🔧 BUG-036 FIX: Don't reset currentWorkout when returning from navigation with custom template
     if (!fromNavigation || !hasActiveCustomTemplate) {
         AppState.currentWorkout = null;
     }
@@ -793,13 +955,16 @@ async function showWorkoutSelector(fromNavigation = false) {
     // Hide workout management if it was open
     hideWorkoutManagement();
     
-    if (Object.keys(AppState.savedData.exercises || {}).length > 0) {
+    // 🔧 BUG-036 FIX: Show appropriate feedback
+    if (Object.keys(AppState.savedData.exercises || {}).length > 0 && !hasActiveCustomTemplate) {
         showNotification('Workout progress saved. You can continue where you left off.', 'info');
     }
+    
+    //console.log('✅ BUG-036: Enhanced workout selector shown, preserving custom template state:', hasActiveCustomTemplate);
 }
 
 // ADD this helper function to main.js:
-function checkForActiveCustomTemplate() {
+async function checkForActiveCustomTemplate() {
     if (!AppState.currentWorkout || !AppState.savedData.workoutType) {
         return false;
     }
@@ -809,8 +974,20 @@ function checkForActiveCustomTemplate() {
         plan.day === AppState.savedData.workoutType
     );
     
-    return !isDefaultWorkout; // If not default, it's likely a custom template
+    if (isDefaultWorkout) {
+        return false; // It's a default workout
+    }
+    
+    // Double-check if it's actually a custom template
+    try {
+        const customTemplate = await findCustomWorkoutTemplate(AppState.savedData.workoutType);
+        return customTemplate !== null;
+    } catch (error) {
+        console.error('Error checking custom template:', error);
+        return false;
+    }
 }
+
 
 function startWorkoutDurationTimer() {
     // Clear any existing timer
@@ -2095,7 +2272,7 @@ async function loadTemplatesForCategory(category) {
         // Get custom templates for this category
         let customTemplates = [];
         if (AppState.currentUser) {
-            const { WorkoutManager } = await import('./core/workout/workout-manager.js');
+            const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
             const workoutManager = new WorkoutManager(AppState);
             const allCustom = await workoutManager.getUserWorkoutTemplates();
             customTemplates = allCustom.filter(t => t.category === category);
@@ -2174,7 +2351,7 @@ async function selectTemplate(templateId, isDefault) {
     if (isDefault) {
         workout = AppState.workoutPlans.find(w => w.day === templateId);
     } else {
-        const { WorkoutManager } = await import('./core/workout/workout-manager.js');
+        const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
         const workoutManager = new WorkoutManager(AppState);
         const templates = await workoutManager.getUserWorkoutTemplates();
         const template = templates.find(t => t.id === templateId);
@@ -2327,7 +2504,7 @@ async function quickAddExercise() {
     try {
         // Save to library first if user is signed in
         if (AppState.currentUser) {
-            const { WorkoutManager } = await import('./core/workout/workout-manager.js');
+            const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
             const workoutManager = new WorkoutManager(AppState);
             await workoutManager.createExercise(exerciseData);
         }
@@ -2450,61 +2627,134 @@ function showTemplateEditorWithData(templateData) {
 }
 
 function switchTemplateCategory(category) {
-    currentTemplateCategory = category;
+    console.log('🔧 Switching template category to:', category);
+    
+    // CRITICAL FIX: Ensure we're in workout management mode, not history mode
+    const workoutManagement = document.getElementById('workout-management');
+    const historySection = document.getElementById('workout-history-section');
+    const workoutSelector = document.getElementById('workout-selector');
+    const activeWorkout = document.getElementById('active-workout');
+    
+    // Force show workout management and hide other sections
+    if (workoutManagement) workoutManagement.classList.remove('hidden');
+    if (historySection) historySection.classList.add('hidden');
+    if (workoutSelector) workoutSelector.classList.add('hidden');
+    if (activeWorkout) activeWorkout.classList.add('hidden');
+    
+    // Store current category globally
+    window.currentTemplateCategory = category;
     
     // Update tab appearance
     document.querySelectorAll('.category-tab').forEach(tab => {
-        tab.classList.toggle('active', tab.dataset.category === category);
+        if (tab.dataset.category === category) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
     });
     
-    // Show/hide content
-    document.getElementById('default-templates')?.classList.toggle('hidden', category !== 'default');
-    document.getElementById('custom-templates')?.classList.toggle('hidden', category !== 'custom');
+    // Show/hide content grids
+    const defaultGrid = document.getElementById('default-templates');
+    const customGrid = document.getElementById('custom-templates');
+    
+    if (defaultGrid && customGrid) {
+        if (category === 'default') {
+            defaultGrid.classList.remove('hidden');
+            customGrid.classList.add('hidden');
+        } else if (category === 'custom') {
+            defaultGrid.classList.add('hidden');
+            customGrid.classList.remove('hidden');
+        }
+    }
     
     // Load templates for this category
     loadTemplatesByCategory(category);
 }
 
 async function loadTemplatesByCategory(category) {
+    console.log('🔧 Loading templates for category:', category);
+    
     const container = document.getElementById(`${category}-templates`);
-    if (!container) return;
+    if (!container) {
+        console.error(`❌ Container not found: ${category}-templates`);
+        return;
+    }
     
     container.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading templates...</span></div>';
     
     try {
-        if (category === 'default') {
-            // Load default templates (from workouts.json)
-            const templates = AppState.workoutPlans || [];
-            renderTemplatesInContainer(container, templates, true);
-        } else {
-            // Load custom templates (from Firebase)
-            if (!AppState.currentUser) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-sign-in-alt"></i>
-                        <h3>Sign In Required</h3>
-                        <p>Please sign in to view your custom templates.</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            const { WorkoutManager } = await import('./core/workout/workout-manager.js');
-            const workoutManager = new WorkoutManager(AppState);
-            const templates = await workoutManager.getUserWorkoutTemplates();
-            renderTemplatesInContainer(container, templates, false);
-        }
+        // Use the updated FirebaseWorkoutManager or WorkoutManager
+        const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
+        const workoutManager = new WorkoutManager(AppState);
+        
+        // Use the new category-specific method
+        const templates = await workoutManager.getTemplatesByCategory(category);
+        
+        console.log(`✅ Loaded ${templates.length} ${category} templates`);
+        renderTemplatesInContainer(container, templates, category === 'default');
+        
     } catch (error) {
-        console.error('Error loading templates:', error);
+        console.error(`❌ Error loading ${category} templates:`, error);
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-exclamation-triangle"></i>
                 <h3>Error Loading Templates</h3>
-                <p>Please try again later.</p>
+                <p>Failed to load ${category} templates. Please try again.</p>
+                <button class="btn btn-secondary" onclick="loadTemplatesByCategory('${category}')">
+                    <i class="fas fa-refresh"></i> Retry
+                </button>
             </div>
         `;
     }
 }
+
+async function copyTemplateToCustom(defaultTemplateId) {
+    try {
+        console.log(`📋 Copying default template to custom: ${defaultTemplateId}`);
+        
+        if (!AppState.currentUser) {
+            showNotification('Please sign in to copy templates', 'warning');
+            return;
+        }
+        
+        const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
+        const workoutManager = new WorkoutManager(AppState);
+        
+        const newCustomId = await workoutManager.copyDefaultToCustom(defaultTemplateId);
+        
+        // Refresh the custom templates view if it's currently active
+        if (window.currentTemplateCategory === 'custom') {
+            loadTemplatesByCategory('custom');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error copying template:', error);
+        showNotification('Failed to copy template', 'error');
+    }
+}
+
+async function deleteCustomTemplate(customTemplateId) {
+    if (!confirm('Are you sure you want to delete this custom template? This cannot be undone.')) {
+        return;
+    }
+    
+    try {
+        console.log(`🗑️ Deleting custom template: ${customTemplateId}`);
+        
+        const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
+        const workoutManager = new WorkoutManager(AppState);
+        
+        await workoutManager.deleteWorkoutTemplate(customTemplateId);
+        
+        // Refresh the custom templates view
+        loadTemplatesByCategory('custom');
+        
+    } catch (error) {
+        console.error('❌ Error deleting template:', error);
+        showNotification('Failed to delete template', 'error');
+    }
+}
+
 
 function renderTemplatesInContainer(container, templates, isDefault) {
     if (templates.length === 0) {
@@ -2527,32 +2777,46 @@ function renderTemplatesInContainer(container, templates, isDefault) {
 
 function createManagementTemplateCard(template, isDefault) {
     const card = document.createElement('div');
-    card.className = 'template-card';
+    card.className = `template-card ${isDefault ? 'default' : 'custom'}`;
     
     const exerciseCount = template.exercises?.length || 0;
     const exercisePreview = template.exercises?.slice(0, 3).map(ex => 
-        ex.name || ex.machine
+        ex.name || ex.machine || 'Unknown Exercise'
     ).join(', ') || 'No exercises';
     const moreText = exerciseCount > 3 ? ` and ${exerciseCount - 3} more...` : '';
     
+    // Template source badge
+    const templateSource = isDefault ? 'DEFAULT' : 'CUSTOM';
+    const templateSourceClass = isDefault ? 'default-badge' : 'custom-badge';
+    
     card.innerHTML = `
-        <h4>${template.name || template.day}</h4>
-        <div class="template-category">${getWorkoutCategory(template.day || template.category)}</div>
+        <div class="template-badge ${templateSourceClass}">${templateSource}</div>
+        <h4>${template.name}</h4>
+        <div class="template-category">${template.category || 'Other'}</div>
+        ${template.description ? `<div class="template-description">${template.description}</div>` : ''}
         <div class="template-exercises-preview">
-            ${exerciseCount} exercises: ${exercisePreview}${moreText}
+            <strong>${exerciseCount}</strong> exercises
+            ${exerciseCount > 0 ? `: ${exercisePreview}${moreText}` : ''}
+        </div>
+        <div class="template-source-info">
+            <small><i class="fas fa-database"></i> Firebase ${isDefault ? 'Global' : 'User'}</small>
         </div>
         <div class="template-actions">
-            <button class="btn btn-primary btn-small" onclick="useTemplateFromManagement('${template.id || template.day}', ${isDefault})">
+            <button class="btn btn-primary btn-small" onclick="useTemplate('${template.id}', ${isDefault})">
                 <i class="fas fa-play"></i> Use Today
             </button>
-            <button class="btn btn-secondary btn-small" onclick="${isDefault ? `customizeDefaultTemplate('${template.day}')` : `editTemplate('${template.id}')`}">
-                <i class="fas fa-${isDefault ? 'copy' : 'edit'}"></i> ${isDefault ? 'Customize' : 'Edit'}
+            <button class="btn btn-secondary btn-small" onclick="editTemplate('${template.id}', ${isDefault})">
+                <i class="fas fa-edit"></i> Edit
             </button>
-            ${!isDefault ? 
-                `<button class="btn btn-danger btn-small" onclick="deleteTemplate('${template.id}')">
+            ${isDefault ? `
+                <button class="btn btn-info btn-small" onclick="copyTemplateToCustom('${template.id}')">
+                    <i class="fas fa-copy"></i> Copy to Custom
+                </button>
+            ` : `
+                <button class="btn btn-danger btn-small" onclick="deleteCustomTemplate('${template.id}')">
                     <i class="fas fa-trash"></i> Delete
-                </button>` : ''
-            }
+                </button>
+            `}
         </div>
     `;
     
@@ -2842,7 +3106,7 @@ async function editTemplate(templateId) {
     
     try {
         // Load the template from Firebase
-        const { WorkoutManager } = await import('./core/workout/workout-manager.js');
+        const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
         const workoutManager = new WorkoutManager(AppState);
         const templates = await workoutManager.getUserWorkoutTemplates();
         const template = templates.find(t => t.id === templateId);
@@ -2897,7 +3161,7 @@ async function saveTemplateFromEditor() {
     try {
         // Save to Firebase if user is signed in
         if (AppState.currentUser) {
-            const { WorkoutManager } = await import('./core/workout/workout-manager.js');
+            const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
             const workoutManager = new WorkoutManager(AppState);
             
             if (currentEditingTemplate.id) {
@@ -2971,7 +3235,7 @@ async function createNewExerciseEnhanced(event) {
     
     try {
         if (AppState.currentUser) {
-            const { WorkoutManager } = await import('./core/workout/workout-manager.js');
+            const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
             const workoutManager = new WorkoutManager(AppState);
             await workoutManager.createExercise(exerciseData);
         }
@@ -3125,7 +3389,7 @@ async function openExerciseLibraryForTemplate() {
     
     // Load exercise library
     try {
-        const { WorkoutManager } = await import('./core/workout/workout-manager.js');
+        const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
         const workoutManager = new WorkoutManager(AppState);
         currentExerciseLibrary = await workoutManager.getExerciseLibrary();
         currentFilteredExercises = [...currentExerciseLibrary];
@@ -3343,7 +3607,7 @@ async function deleteTemplate(templateId) {
     
     try {
         // Load the template first to get its name
-        const { WorkoutManager } = await import('./core/workout/workout-manager.js');
+        const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
         const workoutManager = new WorkoutManager(AppState);
         const templates = await workoutManager.getUserWorkoutTemplates();
         const template = templates.find(t => t.id === templateId);
@@ -3390,7 +3654,7 @@ async function useTemplate(templateId) {
     
     try {
         // Load the template
-        const { WorkoutManager } = await import('./core/workout/workout-manager.js');
+        const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
         const workoutManager = new WorkoutManager(AppState);
         const templates = await workoutManager.getUserWorkoutTemplates();
         const template = templates.find(t => t.id === templateId);
@@ -4587,62 +4851,6 @@ function debounce(func, wait) {
     };
 }
 
-function debugWorkoutHistoryState() {
-    console.log('🔍 Debugging workout history state...');
-    console.log('workoutHistory object:', workoutHistory);
-    
-    if (workoutHistory) {
-        console.log('currentHistory length:', workoutHistory.currentHistory?.length);
-        console.log('filteredHistory length:', workoutHistory.filteredHistory?.length);
-        console.log('currentPage:', workoutHistory.currentPage);
-        
-        // Sample workout data structure
-        if (workoutHistory.currentHistory && workoutHistory.currentHistory.length > 0) {
-            console.log('Sample workout:', workoutHistory.currentHistory[0]);
-        }
-    }
-    
-    // Check filter UI elements
-    const filterBtns = document.querySelectorAll('.history-filter-btn');
-    const activeBtn = document.querySelector('.history-filter-btn.active');
-    console.log('Filter buttons:', filterBtns.length);
-    console.log('Active filter:', activeBtn?.dataset.filter);
-    
-    // Check if event listeners are attached
-    console.log('Event listeners setup:', window.historyListenersSetup);
-}
-
-window.debugWorkoutHistoryState = debugWorkoutHistoryState;
-
-// ===== TESTING QUICK FIX =====
-// Add this function to quickly test if the filtering logic works:
-function testFilteringLogic() {
-    console.log('🧪 Testing filtering logic...');
-    
-    if (!workoutHistory || !workoutHistory.currentHistory) {
-        console.log('❌ No workout history loaded');
-        return;
-    }
-    
-    const originalCount = workoutHistory.currentHistory.length;
-    console.log('Original workout count:', originalCount);
-    
-    // Test: Filter to only completed workouts
-    const completedWorkouts = workoutHistory.currentHistory.filter(workout => 
-        workout.completedAt && !workout.cancelledAt && !workout.status
-    );
-    
-    console.log('Completed workouts found:', completedWorkouts.length);
-    
-    // Manually apply completed filter
-    workoutHistory.filteredHistory = completedWorkouts;
-    workoutHistory.currentPage = 1;
-    workoutHistory.renderHistory();
-    
-    console.log('✅ Manual filter test applied');
-}
-
-window.testFilteringLogic = testFilteringLogic;
 
 function forceCheckHistoryData() {
     console.log('🔍 Force checking history data...');
@@ -4746,6 +4954,8 @@ window.discardInProgressWorkout = discardInProgressWorkout;
 window.cancelCurrentWorkout = cancelCurrentWorkout;
 window.selectWorkout = selectWorkout;
 window.deleteExerciseFromWorkout = deleteExerciseFromWorkout;
+window.copyTemplateToCustom = copyTemplateToCustom;
+window.deleteCustomTemplate = deleteCustomTemplate;
 
 // Manual Workout Functions
 window.showAddManualWorkoutModal = showAddManualWorkoutModal;
@@ -4841,9 +5051,6 @@ window.deleteWorkout = function(workoutId) {
 };
 
 // BUG-029 TARGETED FIX: Missing switchTemplateCategory function
-// This fixes the specific ReferenceError: switchTemplateCategory is not defined
-
-console.log('🔧 BUG-029: Applying targeted fix for switchTemplateCategory');
 
 // 1. Add the missing switchTemplateCategory function to window object
 window.switchTemplateCategory = function(category) {
@@ -4933,7 +5140,7 @@ if (typeof window.loadTemplatesByCategory === 'undefined') {
                 
                 // Load custom templates from Firebase
                 try {
-                    const { WorkoutManager } = await import('./core/workout/workout-manager.js');
+                    const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
                     const workoutManager = new WorkoutManager(window.AppState);
                     const customTemplates = await workoutManager.getUserWorkoutTemplates() || [];
                     
@@ -5170,6 +5377,78 @@ window.createTemplate = createTemplate;
 window.filterExercises = filterExercises;
 window.clearFilters = clearFilters;
 window.refreshExerciseDatabase = refreshExerciseDatabase;
+
+window.resumeWorkout = async function(workoutId) {
+    if (!window.workoutHistory) return;
+    
+    const workout = window.workoutHistory.getWorkoutDetails(workoutId);
+    if (!workout) {
+        showNotification('Workout not found', 'error');
+        return;
+    }
+    
+    try {
+        const today = AppState.getTodayDateString();
+        const workoutDate = workout.date;
+        
+        if (workoutDate === today) {
+                       
+            // Set up the global in-progress workout
+            inProgressWorkout = {
+                ...workout,
+                startTime: workout.startTime || workout.startedAt || new Date().toISOString()
+            };
+            
+            // Find or create workout template
+            let workoutTemplate = AppState.workoutPlans.find(w => w.day === workout.workoutType);
+            
+            if (!workoutTemplate && workout.originalWorkout) {
+                workoutTemplate = workout.originalWorkout;
+            }
+            
+            if (workoutTemplate) {
+                // Load the workout data into AppState
+                AppState.currentWorkout = workoutTemplate;
+                AppState.savedData = {
+                    ...workout,
+                    date: today,
+                    workoutType: workout.workoutType,
+                    // Ensure these are set for proper tracking
+                    startedAt: workout.startedAt || workout.startTime || new Date().toISOString(),
+                    startTime: workout.startTime || workout.startedAt || new Date().toISOString(),
+                    status: 'in-progress'
+                };
+                
+                // Hide history and show active workout
+                document.getElementById('workout-history-section')?.classList.add('hidden');
+                document.getElementById('workout-selector')?.classList.add('hidden');
+                document.getElementById('active-workout')?.classList.remove('hidden');
+                
+                // Update UI
+                updateWorkoutDisplay(workout.workoutType);
+                renderExercises();
+                startWorkoutDurationTimer();
+                
+                const progressMsg = workout.exercises && Object.keys(workout.exercises).length > 0 
+                    ? 'Workout resumed with previous progress!' 
+                    : 'Workout resumed - continue where you left off!';
+                    
+                showNotification(progressMsg, 'success');
+            } else {
+                showNotification('Cannot resume - workout template not found', 'error');
+            }
+            
+        } else {
+            // This is not today's workout - treat as repeat
+            showNotification('Cannot resume past workouts. Starting new workout instead...', 'info');
+            window.repeatWorkout(workoutId);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error resuming workout:', error);
+        showNotification('Failed to resume workout', 'error');
+    }
+};
 
 // ===================================================================
 // REMOVED FUNCTIONS (No longer needed with simplified approach)

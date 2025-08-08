@@ -1,5 +1,5 @@
 // Workout Management UI Functions
-import { WorkoutManager } from './workout-manager.js';
+import { WorkoutManager } from '../firebase-workout-manager.js';
 import { showNotification } from '../ui-helpers.js';
 
 let workoutManager;
@@ -13,15 +13,34 @@ export function initializeWorkoutManagement(appState) {
 
 // Main navigation functions
 export async function showWorkoutManagement() {
+    console.log('🔧 Fixed showWorkoutManagement - preserving active workout state');
+    
+    // ONLY hide sections when actually entering workout management mode
     const workoutSelector = document.getElementById('workout-selector');
-    const activeWorkout = document.getElementById('active-workout');
     const workoutManagement = document.getElementById('workout-management');
+    const historySection = document.getElementById('workout-history-section');
+    const templateEditor = document.getElementById('template-editor-section');
     
+    // Critical: Hide history section but DON'T touch active-workout
+    if (historySection) {
+        historySection.classList.add('hidden');
+        console.log('✅ Workout history section hidden');
+    }
+    
+    // Hide other management sections
     if (workoutSelector) workoutSelector.classList.add('hidden');
-    if (activeWorkout) activeWorkout.classList.add('hidden');
-    if (workoutManagement) workoutManagement.classList.remove('hidden');
+    if (templateEditor) templateEditor.classList.add('hidden');
     
-    await loadWorkoutTemplates();
+    // Show workout management
+    if (workoutManagement) {
+        workoutManagement.classList.remove('hidden');
+        console.log('✅ Workout management section shown');
+    }
+    
+    // Initialize with default templates category
+    setTimeout(() => {
+        switchTemplateCategory('default');
+    }, 100);
 }
 
 export function hideWorkoutManagement() {

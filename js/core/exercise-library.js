@@ -107,7 +107,7 @@ export function getExerciseLibrary(appState) {
 
         async loadExercises() {
             try {
-                const { WorkoutManager } = await import('./workout/workout-manager.js');
+                const { WorkoutManager } = await import('../firebase-workout-manager.js');
                 const workoutManager = new WorkoutManager(appState);
                 currentExercises = await workoutManager.getExerciseLibrary();
                 filteredExercises = [...currentExercises];

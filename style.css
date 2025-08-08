@@ -3391,3 +3391,17 @@ body {
     color: var(--text-secondary);
     font-style: italic;
 }
+.simple-status.unknown {
+    background: rgba(255, 193, 7, 0.2);
+    color: var(--warning);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.simple-status.unknown i {
+    color: var(--warning);
+}
+
+.simple-status.unknown.has-progress {
+    background: rgba(255, 193, 7, 0.3);
+    border: 1px solid var(--warning);
+}
