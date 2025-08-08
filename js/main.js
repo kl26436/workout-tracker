@@ -5076,6 +5076,35 @@ if (typeof originalShowWorkoutManagement === 'function') {
     };
 }
 
+// Enhanced action handlers for simplified table
+window.viewWorkout = function(workoutId) {
+    window.viewWorkoutDetails(workoutId);
+};
+
+window.resumeWorkout = function(workoutId) {
+    if (window.workoutHistory) {
+        window.workoutHistory.resumeWorkout(workoutId);
+    }
+};
+
+window.retryWorkout = function(workoutId) {
+    window.repeatWorkout(workoutId);
+};
+
+// Enhanced delete with better confirmation
+window.deleteWorkout = function(workoutId) {
+    if (!window.workoutHistory) return;
+    
+    const workout = window.workoutHistory.getWorkoutDetails(workoutId);
+    if (!workout) return;
+
+    const confirmMessage = `Are you sure you want to delete "${workout.workoutType}" from ${new Date(workout.date).toLocaleDateString()}?\n\nThis action cannot be undone.`;
+    
+    if (confirm(confirmMessage)) {
+        window.workoutHistory.deleteWorkout(workoutId);
+    }
+};
+
 
 // Template Selection Functions
 window.showTemplateSelection = showTemplateSelection;

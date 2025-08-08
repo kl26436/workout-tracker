@@ -216,13 +216,10 @@ export function getWorkoutHistory(appState) {
         },
 
         createWorkoutTableRow(workout) {
-            // 🔧 FIX: Handle date display properly to avoid timezone issues
+            // Handle date display properly
             let displayDate;
-            
             if (workout.date) {
-                // If it's a date string in YYYY-MM-DD format, add explicit time to avoid timezone shifts
                 if (workout.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                    // Create date object with explicit noon time to avoid timezone shifts
                     const dateObj = new Date(workout.date + 'T12:00:00');
                     displayDate = dateObj.toLocaleDateString('en-US', {
                         weekday: 'short',
@@ -231,7 +228,6 @@ export function getWorkoutHistory(appState) {
                         year: 'numeric'
                     });
                 } else {
-                    // Fallback for other date formats
                     const dateObj = new Date(workout.date);
                     displayDate = dateObj.toLocaleDateString('en-US', {
                         weekday: 'short',
@@ -246,56 +242,93 @@ export function getWorkoutHistory(appState) {
 
             const duration = this.formatDuration(this.getWorkoutDuration(workout));
             const status = this.getWorkoutStatus(workout);
-            const statusClass = status.toLowerCase().replace('-', '');
-            
-            let statusBadge = '';
-            switch (status) {
-                case 'completed':
-                    statusBadge = '<span class="status-badge completed"><i class="fas fa-check"></i> Completed</span>';
-                    break;
-                case 'cancelled':
-                    statusBadge = '<span class="status-badge cancelled"><i class="fas fa-times"></i> Cancelled</span>';
-                    break;
-                case 'in-progress':
-                    statusBadge = '<span class="status-badge incomplete"><i class="fas fa-clock"></i> In Progress</span>';
-                    break;
-                case 'discarded':
-                    statusBadge = '<span class="status-badge cancelled"><i class="fas fa-trash"></i> Discarded</span>';
-                    break;
-                default:
-                    statusBadge = '<span class="status-badge incomplete"><i class="fas fa-question"></i> Unknown</span>';
+            const progress = workout.progress || {};
+            const completedSets = progress.completedSets || 0;
+            const totalSets = progress.totalSets || workout.originalWorkout?.exercises?.length * 3 || 0;
+            const progressPercentage = progress.percentage || 0;
+
+            // Determine exercise count
+            let exerciseCount = 0;
+            if (workout.originalWorkout?.exercises) {
+                exerciseCount = workout.originalWorkout.exercises.length;
+            } else if (workout.exerciseNames) {
+                exerciseCount = Object.keys(workout.exerciseNames).length;
             }
 
-            const progressPercentage = workout.progress?.percentage || 0;
-            const completedSets = workout.progress?.completedSets || 0;
-            const totalSets = workout.progress?.totalSets || 0;
+            // Determine action button based on status
+            let actionButton;
+            let actionClass;
+            if (status === 'incomplete') {
+                actionButton = '<i class="fas fa-play"></i>';
+                actionClass = 'action-resume';
+            } else if (status === 'completed') {
+                actionButton = '<i class="fas fa-eye"></i>';
+                actionClass = 'action-view';
+            } else if (status === 'cancelled') {
+                actionButton = '<i class="fas fa-redo"></i>';
+                actionClass = 'action-retry';
+            } else {
+                actionButton = '<i class="fas fa-redo"></i>';
+                actionClass = 'action-repeat';
+            }
+
+            // Create status badge
+            const statusBadge = `
+                <div class="simple-status ${status}">
+                    <i class="fas fa-${status === 'completed' ? 'check-circle' : status === 'incomplete' ? 'pause-circle' : 'times-circle'}"></i>
+                    ${status.charAt(0).toUpperCase() + status.slice(1)}
+                </div>
+            `;
 
             return `
-                <tr class="workout-row" onclick="viewWorkoutDetails('${workout.id}')">
-                    <td class="workout-date">${displayDate}</td>
-                    <td class="workout-name">
-                        <div class="workout-name-main">${workout.workoutType}</div>
-                        ${workout.addedManually ? '<div class="manual-indicator"><i class="fas fa-edit"></i> Manual</div>' : ''}
-                    </td>
-                    <td class="workout-status">${statusBadge}</td>
-                    <td class="workout-duration">${duration}</td>
-                    <td class="workout-progress">
-                        <div class="progress-cell">
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${progressPercentage}%"></div>
+                <tr onclick="viewWorkoutDetails('${workout.id}')">
+                    <td>
+                        <div class="workout-info">
+                            <div class="workout-name">${workout.workoutType}</div>
+                            <div class="workout-meta">
+                                <div class="meta-item">
+                                    <i class="fas fa-calendar"></i>
+                                    <span>${displayDate}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-clock"></i>
+                                    <span>${duration}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-dumbbell"></i>
+                                    <span>${exerciseCount} exercises</span>
+                                </div>
                             </div>
-                            <span class="progress-text">${completedSets}/${totalSets}</span>
+                            <!-- Mobile status bar (hidden on desktop) -->
+                            <div class="mobile-status-bar">
+                                <div class="mobile-status">
+                                    <i class="fas fa-${status === 'completed' ? 'check-circle' : status === 'incomplete' ? 'pause-circle' : 'times-circle'}" style="color: var(--${status === 'completed' ? 'success' : status === 'incomplete' ? 'warning' : 'danger'});"></i>
+                                    <span>${status.charAt(0).toUpperCase() + status.slice(1)}</span>
+                                </div>
+                                <div class="mobile-progress">
+                                    <div class="mobile-progress-circle" style="--progress: ${progressPercentage}">${progressPercentage}%</div>
+                                    <span>${completedSets}/${totalSets} sets</span>
+                                </div>
+                            </div>
                         </div>
                     </td>
-                    <td class="workout-actions">
-                        <div class="table-actions">
-                            <button class="btn btn-secondary btn-small" onclick="repeatWorkout('${workout.id}'); event.stopPropagation();" title="Repeat Workout">
-                                <i class="fas fa-redo"></i>
+                    <td>
+                        ${statusBadge}
+                    </td>
+                    <td>
+                        <div class="simple-progress">
+                            <div class="progress-circle" style="--progress: ${progressPercentage}">
+                                <div class="progress-text">${progressPercentage}%</div>
+                            </div>
+                            <div class="progress-details">${completedSets}/${totalSets} sets</div>
+                        </div>
+                    </td>
+                    <td class="simple-action">
+                        <div class="action-buttons">
+                            <button class="action-btn ${actionClass}" onclick="event.stopPropagation(); ${actionClass.replace('action-', '')}Workout('${workout.id}');">
+                                ${actionButton}
                             </button>
-                            <button class="btn btn-secondary btn-small" onclick="viewWorkoutDetails('${workout.id}'); event.stopPropagation();" title="View Details">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="btn btn-danger btn-small" onclick="deleteWorkout('${workout.id}'); event.stopPropagation();" title="Delete Workout">
+                            <button class="action-btn action-delete" onclick="event.stopPropagation(); deleteWorkout('${workout.id}');">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>

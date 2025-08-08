@@ -151,26 +151,25 @@
             </div>
         </div>
 
-        <!-- Workout History Section - REPLACE the entire section starting around line 135 -->
+<!-- Workout History Section - REPLACE the entire section starting around line 135 -->
         <div id="workout-history-section" class="hidden">
             <div class="history-header">
-                <h2>Workout History</h2>
-                <div class="history-actions">
-                    <button class="btn btn-secondary" onclick="showWorkoutSelector()">
+                <h2><i class="fas fa-history"></i> Workout History</h2>
+                <div class="header-actions">
+                    <button class="btn btn-secondary">
                         <i class="fas fa-arrow-left"></i> Back to Workouts
                     </button>
-                    <button class="btn btn-success" onclick="showAddManualWorkoutModal()">
-                        <i class="fas fa-plus"></i> Add Past Workout
+                    <button class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Workout
                     </button>
                 </div>
             </div>
 
             <!-- Simple Search Bar -->
-            <div class="simple-search">
-                <input type="text" id="workout-search" class="form-input" 
-                       placeholder="Search workouts..." 
-                       style="max-width: 300px;">
-                <button id="clear-search" class="btn btn-secondary">
+           <div class="simple-search">
+                <input type="text" class="search-input" 
+                    placeholder="Search workouts by name, date, or status...">
+                <button class="btn btn-secondary">
                     <i class="fas fa-times"></i> Clear
                 </button>
             </div>
