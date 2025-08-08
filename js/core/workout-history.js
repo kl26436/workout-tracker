@@ -240,7 +240,7 @@ export function getWorkoutHistory(appState) {
                 displayDate = 'Unknown Date';
             }
 
-            const duration = this.formatDuration(this.getWorkoutDuration(workout));
+            const duration = this.formatDuration(this.getWorkoutDuration(workout)) || 'Quick session';
             const status = this.getWorkoutStatus(workout);
             const progress = workout.progress || {};
             const completedSets = progress.completedSets || 0;

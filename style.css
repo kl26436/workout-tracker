@@ -3146,20 +3146,15 @@ body {
 
 /* Mobile status bar (hidden on desktop) */
 .mobile-status-bar {
-    display: none;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--bg-secondary);
-    padding: 0.75rem;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-    border: 1px solid var(--border);
+    padding: 0.5rem 0.75rem; /* Less padding */
+    border-radius: 10px; /* More rounded */
+    margin-top: 0.75rem; /* Space from meta info */
 }
 
-.mobile-status {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+.mobile-progress-circle {
+    width: 20px; /* Smaller circle */
+    height: 20px;
+    font-size: 0.65rem; /* Smaller text */
 }
 
 .mobile-progress {
@@ -3313,4 +3308,86 @@ body {
     .meta-item {
         font-size: 0.9rem; /* Easier to read */
     }
+}
+/* Better action button layout on mobile */
+@media (max-width: 768px) {
+    .action-buttons {
+        gap: 0.75rem; /* More space between buttons */
+        margin-top: 0.5rem; /* Some top margin */
+    }
+    
+    .action-btn {
+        min-width: 48px; /* Slightly larger touch targets */
+        height: 48px;
+        border-radius: 12px; /* More rounded corners */
+    }
+}
+/* ============================================
+   MOBILE HISTORY FIXES
+   ============================================ */
+
+/* Hide mobile status bar by default, show only on mobile */
+.mobile-status-bar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-secondary);
+    padding: 0.5rem 0.75rem;
+    border-radius: 10px;
+    margin-top: 0.75rem;
+    border: 1px solid var(--border);
+}
+
+.mobile-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Enhanced mobile responsive styles */
+@media (max-width: 768px) {
+    /* Better meta item spacing */
+    .workout-meta {
+        gap: 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .meta-item {
+        font-size: 0.85rem;
+        color: #bbb;
+    }
+
+    /* Show mobile status bar */
+    .mobile-status-bar {
+        display: flex !important;
+    }
+
+    /* Better action button spacing */
+    .action-buttons {
+        gap: 0.75rem;
+        margin-top: 0.5rem;
+    }
+    
+    .action-btn {
+        min-width: 48px;
+        height: 48px;
+        border-radius: 12px;
+    }
+
+    /* Improved card spacing */
+    .simplified-workout-table tbody tr {
+        margin-bottom: 1.5rem;
+        padding: 1.25rem;
+    }
+
+    .workout-name {
+        font-size: 1.2rem;
+        margin-bottom: 0.75rem;
+    }
+}
+
+/* Fix for duration display fallback */
+.workout-duration-fallback {
+    color: var(--text-secondary);
+    font-style: italic;
 }
