@@ -3,23 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Big Surf - Exercise Library Manager</title>
+    <title>Universal Exercise Library Manager</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root {
-            --primary: #40e0d0;
-            --secondary: #20b2aa;
-            --success: #4caf50;
-            --warning: #ff9800;
-            --danger: #f44336;
-            --bg-primary: #0a0e1a;
-            --bg-secondary: #1a1f2e;
-            --bg-tertiary: #2a2f3e;
-            --text-primary: #ffffff;
-            --text-secondary: #b0b7c3;
-            --border: #3a3f4e;
-        }
-
         * {
             margin: 0;
             padding: 0;
@@ -27,326 +13,361 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            color: #333;
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 20px;
         }
 
+        /* Header Styles */
         .manager-header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
 
         .manager-header h1 {
-            color: var(--primary);
+            color: #4a5568;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            font-size: 2rem;
+            gap: 10px;
         }
 
         .manager-actions {
             display: flex;
-            gap: 1rem;
+            gap: 10px;
         }
 
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border: 1px solid var(--border);
+        /* Status Indicator */
+        .status-indicator {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.9);
             border-radius: 8px;
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-            text-decoration: none;
-            font-size: 0.875rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
         }
 
-        .btn:hover {
-            background: var(--bg-tertiary);
-            border-color: var(--primary);
+        .status-indicator.connected {
+            color: #48bb78;
         }
 
-        .btn-primary {
-            background: var(--primary);
-            color: var(--bg-primary);
-            border-color: var(--primary);
+        .status-indicator.disconnected {
+            color: #f56565;
         }
 
-        .btn-primary:hover {
-            background: var(--secondary);
-            border-color: var(--secondary);
-        }
-
-        .btn-secondary {
-            background: var(--bg-tertiary);
-            border-color: var(--border);
-        }
-
-        .btn-success {
-            background: var(--success);
-            color: white;
-            border-color: var(--success);
-        }
-
-        .btn-warning {
-            background: var(--warning);
-            color: var(--bg-primary);
-            border-color: var(--warning);
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-            border-color: var(--danger);
-        }
-
-        .btn-small {
-            padding: 0.375rem 0.75rem;
-            font-size: 0.75rem;
-        }
-
+        /* Search and Filter Styles */
         .search-filters {
-            background: var(--bg-secondary);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
             border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
 
         .filter-row {
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr auto;
-            gap: 1rem;
+            grid-template-columns: 2fr 1fr 1fr 120px;
+            gap: 15px;
             align-items: end;
         }
 
+        /* Form Styles */
         .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
+            margin-bottom: 10px;
         }
 
         .form-group label {
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-            font-weight: 500;
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #4a5568;
         }
 
         .form-input {
-            padding: 0.75rem;
-            border: 1px solid var(--border);
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e2e8f0;
             border-radius: 8px;
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            font-size: 0.875rem;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
         }
 
         .form-input:focus {
             outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(64, 224, 208, 0.2);
+            border-color: #667eea;
         }
 
+        /* Button Styles */
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+
+        .btn-warning {
+            background: #ed8936;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #dd6b20;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        /* Exercise Grid */
         .exercise-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
         }
 
         .exercise-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.95);
             border-radius: 12px;
-            padding: 1.5rem;
-            transition: all 0.2s ease;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
         }
 
         .exercise-card:hover {
-            border-color: var(--primary);
-            box-shadow: 0 4px 20px rgba(64, 224, 208, 0.1);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .exercise-card.override {
+            border-left: 4px solid #4299e1;
         }
 
         .exercise-card.custom {
-            border-left: 4px solid var(--primary);
+            border-left: 4px solid #48bb78;
         }
 
-        .exercise-header {
+        .exercise-card h3 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 18px;
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1rem;
+            align-items: center;
+            gap: 8px;
         }
 
-        .exercise-title {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 0.25rem;
+        .exercise-type-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .badge-default {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .badge-custom {
+            background: #c6f6d5;
+            color: #276749;
+        }
+
+        .badge-override {
+            background: #bee3f8;
+            color: #2c5282;
         }
 
         .exercise-meta {
             display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .meta-tag {
+            background: #edf2f7;
+            color: #4a5568;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
         }
 
         .exercise-stats {
-            margin-bottom: 1rem;
-        }
-
-        .stats-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 0.75rem;
+            gap: 10px;
+            margin-bottom: 15px;
         }
 
-        .stat-item {
+        .stat {
             text-align: center;
-            padding: 0.5rem;
-            background: var(--bg-tertiary);
+            background: #f7fafc;
+            padding: 8px;
             border-radius: 6px;
         }
 
         .stat-value {
-            font-size: 1.125rem;
             font-weight: 600;
-            color: var(--primary);
+            color: #2d3748;
         }
 
         .stat-label {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            margin-top: 0.25rem;
+            font-size: 12px;
+            color: #718096;
         }
 
         .exercise-actions {
             display: flex;
-            gap: 0.5rem;
+            gap: 8px;
+            justify-content: flex-end;
             flex-wrap: wrap;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 3rem 1rem;
-            color: var(--text-secondary);
-            grid-column: 1 / -1;
-        }
-
-        .empty-state i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: var(--border);
-        }
-
-        .empty-state h3 {
-            margin-bottom: 0.5rem;
-            color: var(--text-primary);
         }
 
         /* Modal Styles */
         .modal {
-            display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
             z-index: 1000;
-            backdrop-filter: blur(4px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
         }
 
         .modal.active {
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            opacity: 1;
+            visibility: visible;
         }
 
         .modal-content {
-            background: var(--bg-secondary);
+            background: white;
             border-radius: 12px;
-            padding: 2rem;
-            width: 90%;
+            padding: 0;
             max-width: 500px;
-            border: 1px solid var(--border);
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
 
         .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border);
         }
 
         .modal-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--primary);
+            margin: 0;
+            color: #2d3748;
         }
 
         .modal-close {
             background: none;
             border: none;
-            font-size: 1.5rem;
-            color: var(--text-secondary);
+            font-size: 18px;
             cursor: pointer;
-            padding: 0.25rem;
+            color: #718096;
+            padding: 5px;
         }
 
         .modal-close:hover {
-            color: var(--text-primary);
+            color: #4a5568;
+        }
+
+        .modal form {
+            padding: 20px;
         }
 
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-bottom: 1rem;
+            gap: 15px;
         }
 
         .form-actions {
             display: flex;
-            gap: 1rem;
+            gap: 10px;
             justify-content: flex-end;
-            margin-top: 2rem;
-            padding-top: 1rem;
-            border-top: 1px solid var(--border);
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
         }
 
-        /* Notification Styles */
+        /* Notifications */
         .notification {
             position: fixed;
             top: 20px;
             right: 20px;
-            padding: 1rem 1.5rem;
+            padding: 15px 20px;
             border-radius: 8px;
             color: white;
-            font-weight: 500;
-            transform: translateX(400px);
+            font-weight: 600;
+            z-index: 1100;
+            transform: translateX(100%);
             transition: transform 0.3s ease;
-            z-index: 2000;
-            max-width: 400px;
+            max-width: 350px;
         }
 
         .notification.show {
@@ -354,40 +375,49 @@
         }
 
         .notification.success {
-            background: var(--success);
-        }
-
-        .notification.warning {
-            background: var(--warning);
+            background: #48bb78;
         }
 
         .notification.error {
-            background: var(--danger);
+            background: #f56565;
+        }
+
+        .notification.warning {
+            background: #ed8936;
         }
 
         .notification.info {
-            background: var(--primary);
-            color: var(--bg-primary);
+            background: #4299e1;
         }
 
-        @media (max-width: 768px) {
-            .container {
-                padding: 1rem;
-            }
+        /* Empty state */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 40px;
+            color: #718096;
+        }
 
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
             .manager-header {
                 flex-direction: column;
-                gap: 1rem;
-                align-items: stretch;
+                gap: 15px;
             }
 
             .manager-actions {
+                width: 100%;
                 justify-content: center;
             }
 
             .filter-row {
                 grid-template-columns: 1fr;
-                gap: 1rem;
             }
 
             .exercise-grid {
@@ -401,12 +431,16 @@
     </style>
 </head>
 <body>
+    <div class="status-indicator" id="connection-status">
+        <i class="fas fa-circle"></i> Checking connection...
+    </div>
+
     <div class="container">
         <!-- Header -->
         <div class="manager-header">
             <h1>
                 <i class="fas fa-dumbbell"></i>
-                Exercise Library Manager
+                Universal Exercise Manager
             </h1>
             <div class="manager-actions">
                 <button class="btn btn-secondary" onclick="refreshExercises()">
@@ -479,7 +513,7 @@
                 </button>
             </div>
             
-            <form id="exercise-form" onsubmit="saveExercise(event)">
+            <form id="exercise-form" onsubmit="saveUniversalExercise(event)">
                 <div class="form-group">
                     <label for="exercise-name">Exercise Name *</label>
                     <input type="text" id="exercise-name" class="form-input" required
@@ -552,31 +586,68 @@
         let allExercises = [];
         let filteredExercises = [];
         let currentEditingExercise = null;
-        let parentExerciseData = null;
-        let parentAppState = null;
+        let parentConnection = null;
+        let connectionStatus = 'checking';
 
-        // Set up message listener to receive data from parent
-        window.addEventListener('message', function(event) {
-            if (event.data && event.data.type === 'PARENT_EXERCISE_DATA') {
-                console.log('📡 Received exercise data from parent window!');
-                parentExerciseData = event.data.exercises;
-                parentAppState = event.data.currentUser;
-                loadExercisesFromParentData();
-            } else if (event.data && event.data.type === 'EXERCISE_DATA_RESPONSE') {
-                console.log('📡 Received exercise data response from parent!');
-                parentExerciseData = event.data.exercises;
-                parentAppState = event.data.currentUser;
-                loadExercisesFromParentData();
+        // Enhanced parent window communication
+        function checkParentConnection() {
+            const statusEl = document.getElementById('connection-status');
+            
+            if (window.opener && !window.opener.closed && window.opener.AppState) {
+                connectionStatus = 'connected';
+                statusEl.innerHTML = '<i class="fas fa-circle"></i> Connected to app';
+                statusEl.className = 'status-indicator connected';
+                
+                // Store parent connection with better detection
+                parentConnection = {
+                    appState: window.opener.AppState,
+                    WorkoutManager: window.opener.WorkoutManager || 
+                                   window.opener.FirebaseWorkoutManager || 
+                                   window.opener.workoutManager?.constructor ||
+                                   null
+                };
+                
+                console.log('✅ Connected to parent app');
+                console.log('🔍 Parent connection details:', {
+                    hasAppState: !!parentConnection.appState,
+                    hasCurrentUser: !!parentConnection.appState?.currentUser,
+                    hasWorkoutManager: !!parentConnection.WorkoutManager,
+                    hasExerciseDatabase: !!parentConnection.appState?.exerciseDatabase,
+                    exerciseDatabaseLength: parentConnection.appState?.exerciseDatabase?.length || 0,
+                    availableManagers: {
+                        WorkoutManager: !!window.opener.WorkoutManager,
+                        FirebaseWorkoutManager: !!window.opener.FirebaseWorkoutManager,
+                        workoutManager: !!window.opener.workoutManager
+                    }
+                });
+                
+                return true;
+            } else {
+                connectionStatus = 'disconnected';
+                statusEl.innerHTML = '<i class="fas fa-circle"></i> Standalone mode';
+                statusEl.className = 'status-indicator disconnected';
+                console.log('⚠️ Running in standalone mode');
+                return false;
             }
-        });
+        }
 
         // Initialize the exercise manager
         document.addEventListener('DOMContentLoaded', async () => {
-            console.log('🚀 Exercise Manager starting up...');
-            console.log('🔍 Checking for parent window:', !!window.opener);
-            console.log('🔍 Checking for shared data:', !!window.sharedExerciseData);
+            console.log('🚀 Universal Exercise Manager starting up...');
             
-            // Set up event listeners for search and filters
+            // Check parent connection
+            const hasParent = checkParentConnection();
+            
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Load exercises
+            await loadExercises();
+            
+            console.log('✅ Universal Exercise Manager initialized successfully');
+        });
+
+        function setupEventListeners() {
             const searchInput = document.getElementById('search-input');
             const bodyPartFilter = document.getElementById('body-part-filter');
             const equipmentFilter = document.getElementById('equipment-filter');
@@ -590,354 +661,142 @@
             if (equipmentFilter) {
                 equipmentFilter.addEventListener('change', filterExercises);
             }
-            
-            // Load exercises
-            await loadExercises();
-            
-            console.log('✅ Exercise Manager initialized successfully');
-        });
 
-        // FIXED: Corrected loadExercises function
-        async function loadExercises() {
-            console.log('🔄 Loading exercises...');
-            
-            // Method 1: Check URL parameters for user info
-            const urlParams = new URLSearchParams(window.location.search);
-            const userEmail = urlParams.get('user');
-            
-            if (userEmail) {
-                console.log(`✅ Found user in URL: ${userEmail}`);
-                try {
-                    // Try to connect to Firebase directly
-                    await loadExercisesFromFirebase(userEmail);
-                    return;
-                } catch (error) {
-                    console.error('❌ Error loading from Firebase:', error);
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeExerciseModal();
+                } else if (e.ctrlKey && e.key === 'n') {
+                    e.preventDefault();
+                    showAddExerciseModal();
                 }
-            }
+            });
+        }
+
+        // Enhanced load exercises using universal system
+        async function loadExercises() {
+            console.log('🔄 Loading universal exercise library...');
             
-            // Method 2: Check for parent window (traditional approach)
-            console.log('🔍 Checking parent window:', !!window.opener);
-            console.log('🔍 Checking parent AppState:', !!window.opener?.AppState);
-            
-            if (window.opener && window.opener.AppState && window.opener.AppState.currentUser) {
-                console.log(`✅ Found parent window with user: ${window.opener.AppState.currentUser.email}`);
+            if (parentConnection && parentConnection.WorkoutManager) {
                 try {
-                    console.log('🔄 Loading fresh data from Firebase via parent...');
+                    console.log('📚 Loading from parent app with universal system...');
+                    console.log('🔍 Parent app state:', {
+                        currentUser: !!parentConnection.appState.currentUser,
+                        exerciseDatabase: parentConnection.appState.exerciseDatabase?.length || 0,
+                        WorkoutManager: !!parentConnection.WorkoutManager
+                    });
                     
-                    // Check if WorkoutManager is available in parent window
-                    if (window.opener.WorkoutManager) {
-                        console.log('📚 Using WorkoutManager from parent window');
-                        const workoutManager = new window.opener.WorkoutManager(window.opener.AppState);
-                        const exercises = await workoutManager.getExerciseLibrary();
-                        
-                        console.log(`📊 Parent WorkoutManager returned ${exercises.length} exercises`);
-                        const customCount = exercises.filter(ex => ex.isCustom).length;
-                        console.log(`📊 Including ${customCount} custom exercises`);
-                        
+                    const workoutManager = new parentConnection.WorkoutManager(parentConnection.appState);
+                    
+                    // Try to get exercises from the manager
+                    let exercises;
+                    if (workoutManager.getExerciseLibrary) {
+                        exercises = await workoutManager.getExerciseLibrary();
+                    } else if (workoutManager.getUniversalExerciseLibrary) {
+                        exercises = await workoutManager.getUniversalExerciseLibrary();
+                    } else {
+                        console.error('❌ WorkoutManager missing expected methods');
+                        throw new Error('WorkoutManager missing exercise methods');
+                    }
+                    
+                    console.log(`✅ Loaded ${exercises.length} exercises from universal library`);
+                    
+                    if (exercises.length > 0) {
                         loadExercisesFromData(exercises);
                         return;
                     } else {
-                        // Try to use existing exercise database from parent if available
-                        if (window.opener.AppState.exerciseDatabase && window.opener.AppState.exerciseDatabase.length > 0) {
-                            console.log('📚 Using cached exercise database from parent AppState');
-                            const exercises = window.opener.AppState.exerciseDatabase;
-                            loadExercisesFromData(exercises);
-                            return;
-                        } else {
-                            console.log('⚠️ Parent WorkoutManager not available and no cached exercises');
-                        }
+                        console.warn('⚠️ Universal library returned 0 exercises');
+                        throw new Error('No exercises returned from universal library');
                     }
                 } catch (error) {
                     console.error('❌ Error loading from parent:', error);
+                    showNotification('Error loading from main app, trying direct approach...', 'warning');
+                    
+                    // Try to get exercises directly from parent's exercise database
+                    if (parentConnection.appState.exerciseDatabase && parentConnection.appState.exerciseDatabase.length > 0) {
+                        console.log('🔄 Falling back to parent exerciseDatabase...');
+                        const exercises = parentConnection.appState.exerciseDatabase;
+                        console.log(`✅ Loaded ${exercises.length} exercises from parent exerciseDatabase`);
+                        loadExercisesFromData(exercises);
+                        return;
+                    }
                 }
             }
             
-            // Method 3: Fallback to sample data
-            console.log('❌ All methods failed, loading fallback exercises...');
+            // Fallback: Load sample exercises
+            console.log('📋 Loading fallback exercises...');
             loadFallbackExercises();
         }
 
-        // FIXED: Corrected loadExercisesFromFirebase function
-        async function loadExercisesFromFirebase(userEmail) {
-            console.log(`🔥 Attempting direct Firebase load for user: ${userEmail}`);
+        function loadExercisesFromData(exercises) {
+            allExercises = exercises.map(exercise => ({
+                id: exercise.id || `ex_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                name: exercise.name || exercise.machine || 'Unnamed Exercise',
+                machine: exercise.machine || exercise.name,
+                bodyPart: exercise.bodyPart || 'General',
+                equipmentType: exercise.equipmentType || exercise.equipment || 'Machine',
+                sets: exercise.sets || 3,
+                reps: exercise.reps || 10,
+                weight: exercise.weight || 50,
+                video: exercise.video || '',
+                isCustom: exercise.isCustom || false,
+                isDefault: exercise.isDefault || false,
+                isOverride: exercise.isOverride || false,
+                tags: exercise.tags || [],
+                originalData: exercise.originalData || null
+            }));
             
-            try {
-                // Check if we can access parent window's modules
-                if (window.opener && window.opener.WorkoutManager) {
-                    console.log('📚 Using WorkoutManager from parent window');
-                    
-                    // Get default exercises from parent or load from JSON
-                    let defaultExerciseDatabase = [];
-                    
-                    if (window.opener.AppState && window.opener.AppState.exerciseDatabase) {
-                        defaultExerciseDatabase = window.opener.AppState.exerciseDatabase.filter(ex => !ex.isCustom);
-                        console.log(`📚 Got ${defaultExerciseDatabase.length} default exercises from parent`);
-                    } else {
-                        // Fallback: Load default exercises from exercises.json
-                        try {
-                            const response = await fetch('./exercises.json');
-                            if (response.ok) {
-                                defaultExerciseDatabase = await response.json();
-                                console.log(`📚 Loaded ${defaultExerciseDatabase.length} default exercises from exercises.json`);
-                            }
-                        } catch (error) {
-                            console.log('⚠️ Could not load exercises.json, using minimal defaults');
-                            defaultExerciseDatabase = getMinimalDefaultExercises();
-                        }
-                    }
-                    
-                    // Create AppState-like object with actual default exercises
-                    const tempAppState = {
-                        currentUser: { 
-                            email: userEmail,
-                            uid: window.opener.AppState?.currentUser?.uid 
-                        },
-                        exerciseDatabase: defaultExerciseDatabase
-                    };
-                    
-                    console.log(`🔧 Created tempAppState with ${tempAppState.exerciseDatabase.length} default exercises`);
-                    
-                    const workoutManager = new window.opener.WorkoutManager(tempAppState);
-                    const exercises = await workoutManager.getExerciseLibrary();
-                    
-                    console.log(`✅ WorkoutManager returned ${exercises.length} total exercises`);
-                    
-                    // Debug: Count custom vs default
-                    const customCount = exercises.filter(ex => ex.isCustom).length;
-                    const defaultCount = exercises.filter(ex => !ex.isCustom).length;
-                    console.log(`📊 Breakdown: ${defaultCount} default + ${customCount} custom = ${exercises.length} total`);
-                    
-                    loadExercisesFromData(exercises);
-                    console.log(`✅ Successfully loaded ${exercises.length} exercises from Firebase`);
-                } else {
-                    throw new Error('WorkoutManager not available in parent window');
-                }
-            } catch (error) {
-                console.error('❌ Firebase direct load failed:', error);
-                throw error;
-            }
+            filteredExercises = [...allExercises];
+            renderExercises();
+            
+            const defaultCount = allExercises.filter(ex => ex.isDefault && !ex.isOverride).length;
+            const customCount = allExercises.filter(ex => ex.isCustom).length;
+            const overrideCount = allExercises.filter(ex => ex.isOverride).length;
+            
+            console.log(`📊 Loaded ${allExercises.length} total: ${defaultCount} default + ${customCount} custom + ${overrideCount} overrides`);
         }
 
-        // Added: Fallback function for minimal default exercises
-        function getMinimalDefaultExercises() {
-            return [
+        function loadFallbackExercises() {
+            allExercises = [
                 {
-                    id: 'bench_press',
+                    id: 'sample_1',
                     name: 'Bench Press',
                     machine: 'Bench Press',
                     bodyPart: 'Chest',
                     equipmentType: 'Barbell',
-                    sets: 4,
-                    reps: 8,
-                    weight: 185,
+                    sets: 3,
+                    reps: 10,
+                    weight: 135,
                     video: '',
-                    isCustom: false
+                    isDefault: true,
+                    isCustom: false,
+                    isOverride: false,
+                    tags: ['chest', 'compound']
                 },
                 {
-                    id: 'squat',
+                    id: 'sample_2',
                     name: 'Squat',
                     machine: 'Squat',
-                    bodyPart: 'Legs', 
-                    equipmentType: 'Barbell',
-                    sets: 4,
-                    reps: 10,
-                    weight: 225,
-                    video: '',
-                    isCustom: false
-                },
-                {
-                    id: 'lat_pulldown',
-                    name: 'Lat Pulldown',
-                    machine: 'Lat Pulldown',
-                    bodyPart: 'Back',
-                    equipmentType: 'Machine',
-                    sets: 4,
-                    reps: 10,
-                    weight: 130,
-                    video: '',
-                    isCustom: false
-                },
-                {
-                    id: 'shoulder_press',
-                    name: 'Shoulder Press',
-                    machine: 'Shoulder Press Machine',
-                    bodyPart: 'Shoulders',
-                    equipmentType: 'Machine',
-                    sets: 3,
-                    reps: 12,
-                    weight: 90,
-                    video: '',
-                    isCustom: false
-                },
-                {
-                    id: 'leg_press',
-                    name: 'Leg Press',
-                    machine: 'Leg Press',
                     bodyPart: 'Legs',
-                    equipmentType: 'Machine',
-                    sets: 4,
-                    reps: 12,
-                    weight: 300,
-                    video: '',
-                    isCustom: false
-                }
-            ];
-        }
-
-        function loadFallbackExercises() {
-            console.log('📁 Loading fallback exercises...');
-            allExercises = getSampleExercises();
-            
-            // Add sample custom exercises for testing
-            const sampleCustomExercises = [
-                {
-                    id: 'custom_sample_1',
-                    name: 'Custom Cable Crossovers',
-                    bodyPart: 'Chest',
-                    equipmentType: 'Cable',
-                    sets: 3,
-                    reps: 12,
-                    weight: 30,
-                    video: '',
-                    isCustom: true,
-                    tags: ['chest', 'cable']
-                },
-                {
-                    id: 'custom_sample_2', 
-                    name: 'Custom Bulgarian Split Squats',
-                    bodyPart: 'Legs',
-                    equipmentType: 'Bodyweight',
-                    sets: 3,
-                    reps: 10,
-                    weight: 0,
-                    video: '',
-                    isCustom: true,
-                    tags: ['legs', 'bodyweight']
-                }
-            ];
-            
-            allExercises.push(...sampleCustomExercises);
-            filteredExercises = [...allExercises];
-            
-            console.log(`✅ Fallback data loaded: ${allExercises.length} exercises`);
-            renderExercises();
-            showNotification('⚠️ Using sample data - sign in to the main app and reopen to see your custom exercises', 'warning');
-        }
-
-        // Sample exercises for demonstration
-        function getSampleExercises() {
-            return [
-                {
-                    id: 'bench_press',
-                    name: 'Bench Press',
-                    bodyPart: 'Chest',
                     equipmentType: 'Barbell',
-                    sets: 4,
-                    reps: 8,
+                    sets: 3,
+                    reps: 12,
                     weight: 185,
                     video: '',
-                    isCustom: false
-                },
-                {
-                    id: 'squat',
-                    name: 'Squat',
-                    bodyPart: 'Legs',
-                    equipmentType: 'Barbell',
-                    sets: 4,
-                    reps: 10,
-                    weight: 225,
-                    video: '',
-                    isCustom: false
-                },
-                {
-                    id: 'lat_pulldown',
-                    name: 'Lat Pulldown',
-                    bodyPart: 'Back',
-                    equipmentType: 'Machine',
-                    sets: 4,
-                    reps: 10,
-                    weight: 130,
-                    video: '',
-                    isCustom: false
-                },
-                {
-                    id: 'shoulder_press',
-                    name: 'Shoulder Press Machine',
-                    bodyPart: 'Shoulders',
-                    equipmentType: 'Machine',
-                    sets: 3,
-                    reps: 12,
-                    weight: 90,
-                    video: '',
-                    isCustom: false
-                },
-                {
-                    id: 'leg_press',
-                    name: 'Leg Press',
-                    bodyPart: 'Legs',
-                    equipmentType: 'Machine',
-                    sets: 4,
-                    reps: 12,
-                    weight: 300,
-                    video: '',
-                    isCustom: false
+                    isDefault: true,
+                    isCustom: false,
+                    isOverride: false,
+                    tags: ['legs', 'compound']
                 }
             ];
-        }
-
-        // DEBUG: Enhanced loadExercisesFromData with logging
-        function loadExercisesFromData(exerciseData) {
-            if (!exerciseData || exerciseData.length === 0) {
-                console.log('❌ No exercise data provided to loadExercisesFromData');
-                loadFallbackExercises();
-                return;
-            }
-            
-            console.log(`📚 loadExercisesFromData: Processing ${exerciseData.length} exercises`);
-            
-            // Debug: Check what types of exercises we received
-            const customExercisesReceived = exerciseData.filter(ex => ex.isCustom);
-            const defaultExercisesReceived = exerciseData.filter(ex => !ex.isCustom);
-            console.log(`📊 Received: ${defaultExercisesReceived.length} default + ${customExercisesReceived.length} custom`);
-            
-            // Debug: Log custom exercise names
-            if (customExercisesReceived.length > 0) {
-                console.log('🎯 Custom exercises received:');
-                customExercisesReceived.forEach(ex => {
-                    console.log(`  - ${ex.name} (${ex.bodyPart}, ${ex.equipmentType})`);
-                });
-            }
-            
-            allExercises = exerciseData.map(ex => ({
-                id: ex.id || `ex_${Date.now()}_${Math.random()}`,
-                name: ex.name || ex.machine,
-                machine: ex.machine || ex.name,
-                bodyPart: ex.bodyPart || 'General',
-                equipmentType: ex.equipmentType || 'Machine',
-                sets: ex.sets || 3,
-                reps: ex.reps || 10,
-                weight: ex.weight || 50,
-                video: ex.video || '',
-                isCustom: ex.isCustom || false,
-                tags: ex.tags || []
-            }));
             
             filteredExercises = [...allExercises];
-            
-            const customCount = allExercises.filter(ex => ex.isCustom).length;
-            console.log(`✅ Final result: ${allExercises.length} exercises (${customCount} custom)`);
-            
             renderExercises();
             
-            if (customCount > 0) {
-                showNotification(`✅ Loaded ${customCount} custom exercises from your library!`, 'success');
-            } else {
-                showNotification(`✅ Loaded ${allExercises.length} exercises (no custom exercises found)`, 'info');
-            }
+            showNotification('Loaded sample exercises. Connect to main app for full library.', 'info');
         }
 
-        // Render exercises to the grid
+        // Enhanced render with exercise type indicators
         function renderExercises() {
             const grid = document.getElementById('exercise-grid');
             
@@ -945,73 +804,88 @@
                 grid.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-search"></i>
-                        <h3>No Exercises Found</h3>
-                        <p>Try adjusting your search filters or add a new exercise.</p>
+                        <p>No exercises found matching your criteria.</p>
+                        <button class="btn btn-primary" onclick="showAddExerciseModal()" style="margin-top: 16px;">
+                            <i class="fas fa-plus"></i> Add First Exercise
+                        </button>
                     </div>
                 `;
                 return;
             }
-
-            grid.innerHTML = '';
-            filteredExercises.forEach(exercise => {
-                const card = createExerciseCard(exercise);
-                grid.appendChild(card);
-            });
-        }
-
-        // Create exercise card element
-        function createExerciseCard(exercise) {
-            const card = document.createElement('div');
-            card.className = `exercise-card ${exercise.isCustom ? 'custom' : ''}`;
             
-            card.innerHTML = `
-                <div class="exercise-header">
-                    <div>
-                        <div class="exercise-title">${exercise.name}</div>
+            grid.innerHTML = filteredExercises.map(exercise => {
+                const exerciseTypeClass = exercise.isOverride ? 'override' : exercise.isCustom ? 'custom' : '';
+                const badge = exercise.isOverride ? 
+                    '<span class="exercise-type-badge badge-override">YOUR VERSION</span>' :
+                    exercise.isCustom ? 
+                    '<span class="exercise-type-badge badge-custom">CUSTOM</span>' :
+                    '<span class="exercise-type-badge badge-default">DEFAULT</span>';
+                
+                const deleteButton = getDeleteButton(exercise);
+                
+                return `
+                    <div class="exercise-card ${exerciseTypeClass}">
+                        <h3>
+                            ${exercise.name}
+                            ${badge}
+                        </h3>
+                        
                         <div class="exercise-meta">
-                            <i class="fas fa-tag"></i>
-                            ${exercise.bodyPart} • ${exercise.equipmentType}
-                            ${exercise.isCustom ? '<span style="color: var(--primary);">Custom</span>' : ''}
+                            <span class="meta-tag">${exercise.bodyPart}</span>
+                            <span class="meta-tag">${exercise.equipmentType}</span>
+                        </div>
+                        
+                        <div class="exercise-stats">
+                            <div class="stat">
+                                <div class="stat-value">${exercise.sets}</div>
+                                <div class="stat-label">Sets</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${exercise.reps}</div>
+                                <div class="stat-label">Reps</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${exercise.weight}</div>
+                                <div class="stat-label">lbs</div>
+                            </div>
+                        </div>
+                        
+                        ${exercise.video ? `
+                            <div style="margin-bottom: 15px;">
+                                <a href="${exercise.video}" target="_blank" class="btn btn-secondary btn-small">
+                                    <i class="fas fa-play"></i> Form Video
+                                </a>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="exercise-actions">
+                            <button class="btn btn-secondary btn-small" onclick="editExercise('${exercise.id}')">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            ${deleteButton}
                         </div>
                     </div>
-                </div>
-                
-                <div class="exercise-stats">
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <div class="stat-value">${exercise.sets}</div>
-                            <div class="stat-label">Sets</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">${exercise.reps}</div>
-                            <div class="stat-label">Reps</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">${exercise.weight}</div>
-                            <div class="stat-label">lbs</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="exercise-actions">
-                    <button class="btn btn-small" onclick="editExercise('${exercise.id}')">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
-                    ${exercise.video ? 
-                        `<button class="btn btn-small" onclick="showVideo('${exercise.video}', '${exercise.name}')">
-                            <i class="fas fa-play"></i> Video
-                        </button>` : ''
-                    }
-                    <button class="btn btn-danger btn-small" onclick="deleteExercise('${exercise.id}')">
-                        <i class="fas fa-trash"></i> Delete
-                    </button>
-                </div>
-            `;
-            
-            return card;
+                `;
+            }).join('');
         }
 
-        // Filter exercises based on search and filters
+        function getDeleteButton(exercise) {
+            if (exercise.isOverride) {
+                return `<button class="btn btn-warning btn-small" onclick="deleteUniversalExercise('${exercise.id}')">
+                    <i class="fas fa-undo"></i> Revert
+                </button>`;
+            } else if (exercise.isCustom) {
+                return `<button class="btn btn-danger btn-small" onclick="deleteUniversalExercise('${exercise.id}')">
+                    <i class="fas fa-trash"></i> Delete
+                </button>`;
+            } else {
+                return `<button class="btn btn-secondary btn-small" onclick="deleteUniversalExercise('${exercise.id}')">
+                    <i class="fas fa-eye-slash"></i> Hide
+                </button>`;
+            }
+        }
+
+        // Filter exercises
         function filterExercises() {
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
             const bodyPartFilter = document.getElementById('body-part-filter').value;
@@ -1022,7 +896,6 @@
                     exercise.name.toLowerCase().includes(searchTerm) ||
                     exercise.bodyPart.toLowerCase().includes(searchTerm) ||
                     exercise.equipmentType.toLowerCase().includes(searchTerm);
-
                 const matchesBodyPart = !bodyPartFilter || exercise.bodyPart === bodyPartFilter;
                 const matchesEquipment = !equipmentFilter || exercise.equipmentType === equipmentFilter;
 
@@ -1066,44 +939,20 @@
             document.getElementById('exercise-weight').value = exercise.weight;
             document.getElementById('exercise-video').value = exercise.video || '';
 
-            document.querySelector('.modal-title').textContent = 'Edit Exercise';
+            let title = 'Edit Exercise';
+            if (exercise.isOverride) {
+                title = 'Edit Your Version';
+            } else if (exercise.isDefault) {
+                title = 'Customize Exercise';
+            }
+
+            document.querySelector('.modal-title').textContent = title;
             document.getElementById('exercise-modal').classList.add('active');
             document.getElementById('exercise-name').focus();
         }
 
-        // FIXED: Delete exercise function
-        async function deleteExercise(exerciseId) {
-            const exercise = allExercises.find(ex => ex.id === exerciseId);
-            if (!exercise) return;
-
-            if (confirm(`Are you sure you want to delete "${exercise.name}"? This cannot be undone.`)) {
-                try {
-                    // Try to delete through parent window's Firebase connection
-                    if (window.opener && window.opener.AppState && window.opener.AppState.currentUser && exercise.isCustom && window.opener.WorkoutManager) {
-                        const workoutManager = new window.opener.WorkoutManager(window.opener.AppState);
-                        await workoutManager.deleteCustomExercise(exerciseId);
-                        
-                        // Refresh parent window's exercise library
-                        window.opener.AppState.exerciseDatabase = await workoutManager.getExerciseLibrary();
-                        
-                        showNotification(`Deleted "${exercise.name}" from Firebase`, 'success');
-                    } else {
-                        showNotification(`Deleted "${exercise.name}" (local only)`, 'warning');
-                    }
-                    
-                } catch (error) {
-                    console.error('Error deleting from Firebase:', error);
-                    showNotification(`Error deleting from Firebase, removed locally`, 'warning');
-                }
-                
-                // Remove from local array regardless
-                allExercises = allExercises.filter(ex => ex.id !== exerciseId);
-                filterExercises();
-            }
-        }
-
-        // FIXED: Save exercise function
-        async function saveExercise(event) {
+        // Universal save function
+        async function saveUniversalExercise(event) {
             event.preventDefault();
             
             const formData = {
@@ -1123,54 +972,40 @@
 
             try {
                 if (currentEditingExercise) {
-                    // Update existing exercise
-                    const index = allExercises.findIndex(ex => ex.id === currentEditingExercise.id);
-                    if (index !== -1) {
-                        allExercises[index] = { ...allExercises[index], ...formData };
+                    // Editing existing exercise
+                    const exerciseData = { ...currentEditingExercise, ...formData };
+                    
+                    if (parentConnection && parentConnection.WorkoutManager) {
+                        const workoutManager = new parentConnection.WorkoutManager(parentConnection.appState);
+                        await workoutManager.saveUniversalExercise(exerciseData, true);
                         
-                        // Update in Firebase if it's a custom exercise
-                        if (currentEditingExercise.isCustom && window.opener && window.opener.AppState?.currentUser && window.opener.WorkoutManager) {
-                            const workoutManager = new window.opener.WorkoutManager(window.opener.AppState);
-                            await workoutManager.updateCustomExercise(currentEditingExercise.id, formData);
-                            
-                            // Refresh parent window's exercise database
-                            window.opener.AppState.exerciseDatabase = await workoutManager.getExerciseLibrary();
-                        }
-                        
-                        showNotification(`Updated "${formData.name}"`, 'success');
+                        // Refresh parent app
+                        parentConnection.appState.exerciseDatabase = await workoutManager.getExerciseLibrary();
+                    } else {
+                        showNotification(`Updated "${formData.name}" (local only)`, 'warning');
                     }
                 } else {
-                    // Create new custom exercise
+                    // Creating new exercise
                     const newExercise = {
-                        id: `custom_${Date.now()}`,
                         ...formData,
                         isCustom: true,
-                        createdAt: new Date().toISOString()
+                        isDefault: false,
+                        isOverride: false
                     };
                     
-                    // Save to Firebase if parent window is available and user is signed in
-                    if (window.opener && window.opener.AppState?.currentUser && window.opener.WorkoutManager) {
-                        const workoutManager = new window.opener.WorkoutManager(window.opener.AppState);
+                    if (parentConnection && parentConnection.WorkoutManager) {
+                        const workoutManager = new parentConnection.WorkoutManager(parentConnection.appState);
+                        await workoutManager.saveUniversalExercise(newExercise, false);
                         
-                        // Save to Firebase
-                        await workoutManager.saveCustomExercise(newExercise);
-                        
-                        // Refresh parent window's exercise database
-                        window.opener.AppState.exerciseDatabase = await workoutManager.getExerciseLibrary();
-                        
-                        showNotification(`Created "${formData.name}" and saved to your library!`, 'success');
+                        // Refresh parent app
+                        parentConnection.appState.exerciseDatabase = await workoutManager.getExerciseLibrary();
                     } else {
-                        showNotification(`Created "${formData.name}" (local only - sign in to save permanently)`, 'warning');
+                        showNotification(`Created "${formData.name}" (local only)`, 'warning');
                     }
-                    
-                    // Add to local array
-                    allExercises.push(newExercise);
                 }
                 
-                // Reset form and refresh UI
-                currentEditingExercise = null;
                 closeExerciseModal();
-                filterExercises();
+                await refreshExercises();
                 
             } catch (error) {
                 console.error('Error saving exercise:', error);
@@ -1178,19 +1013,45 @@
             }
         }
 
+        // Universal delete function
+        async function deleteUniversalExercise(exerciseId) {
+            const exercise = allExercises.find(ex => ex.id === exerciseId);
+            if (!exercise) return;
+
+            let confirmMessage;
+            if (exercise.isDefault && !exercise.isOverride) {
+                confirmMessage = `Hide "${exercise.name}" from your library? (You can unhide it later if needed)`;
+            } else if (exercise.isOverride) {
+                confirmMessage = `Revert "${exercise.name}" to default version? (This will remove your custom changes)`;
+            } else if (exercise.isCustom) {
+                confirmMessage = `Permanently delete "${exercise.name}"? This cannot be undone.`;
+            }
+
+            if (confirm(confirmMessage)) {
+                try {
+                    if (parentConnection && parentConnection.WorkoutManager) {
+                        const workoutManager = new parentConnection.WorkoutManager(parentConnection.appState);
+                        await workoutManager.deleteUniversalExercise(exerciseId, exercise);
+                        
+                        // Refresh parent app
+                        parentConnection.appState.exerciseDatabase = await workoutManager.getExerciseLibrary();
+                    }
+                    
+                    // Remove from local array
+                    allExercises = allExercises.filter(ex => ex.id !== exerciseId);
+                    filterExercises();
+                    
+                } catch (error) {
+                    console.error('Error deleting exercise:', error);
+                    showNotification('Error processing request', 'error');
+                }
+            }
+        }
+
         // Close exercise modal
         function closeExerciseModal() {
             document.getElementById('exercise-modal').classList.remove('active');
             currentEditingExercise = null;
-        }
-
-        // Show exercise video
-        function showVideo(videoUrl, exerciseName) {
-            if (videoUrl) {
-                window.open(videoUrl, '_blank');
-            } else {
-                showNotification('No video available for this exercise', 'info');
-            }
         }
 
         // Refresh exercises
@@ -1202,10 +1063,12 @@
 
         // Go back to main app
         function goBackToApp() {
-            if (confirm('Go back to the main app? Any unsaved changes will be lost.')) {
-                if (window.opener && !window.opener.closed) {
+            if (parentConnection) {
+                if (confirm('Go back to the main app? All changes have been synced.')) {
                     window.close();
-                } else {
+                }
+            } else {
+                if (confirm('Go back to the main app? Any unsaved changes will be lost.')) {
                     window.location.href = './index.html';
                 }
             }
@@ -1227,15 +1090,14 @@
             }, 3000);
         }
 
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeExerciseModal();
-            } else if (e.ctrlKey && e.key === 'n') {
-                e.preventDefault();
-                showAddExerciseModal();
+        // Monitor parent connection
+        setInterval(() => {
+            if (parentConnection && (!window.opener || window.opener.closed)) {
+                parentConnection = null;
+                checkParentConnection();
+                showNotification('Connection to main app lost', 'warning');
             }
-        });
+        }, 5000);
     </script>
 </body>
 </html>

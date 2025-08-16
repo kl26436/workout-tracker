@@ -1,37 +1,78 @@
 [
   {
-    "day": "Chest – Push",
+    "day": "Monday - Upper Body Push",
     "exercises": [
       {
+        "name": "Seated Chest Press",
         "machine": "Seated Chest Press",
+        "bodyPart": "Chest",
+        "equipmentType": "Machine",
+        "tags": [
+          "chest",
+          "push",
+          "compound"
+        ],
         "sets": 4,
         "reps": 10,
         "weight": 110,
         "video": "https://www.youtube.com/watch?v=5txUsGHzHAg"
       },
       {
+        "name": "Pec Deck",
         "machine": "Pec Deck",
+        "bodyPart": "Chest",
+        "equipmentType": "Machine",
+        "tags": [
+          "chest",
+          "isolation",
+          "fly"
+        ],
         "sets": 3,
         "reps": 12,
         "weight": 70,
-        "video": "https://www.youtube.com/watch?v=gh0g-BR1koA"
+        "video": "https://www.youtube.com/watch?v=y9NjJYEqkew"
       },
       {
+        "name": "Shoulder Press Machine",
         "machine": "Shoulder Press Machine",
+        "bodyPart": "Shoulders",
+        "equipmentType": "Machine",
+        "tags": [
+          "shoulders",
+          "push",
+          "compound"
+        ],
         "sets": 4,
         "reps": 10,
         "weight": 100,
         "video": "https://www.youtube.com/watch?v=1408u-2SB9k"
       },
       {
+        "name": "Lateral Raise Machine",
         "machine": "Lateral Raise Machine",
+        "bodyPart": "Shoulders",
+        "equipmentType": "Machine",
+        "tags": [
+          "shoulders",
+          "isolation",
+          "lateral delts"
+        ],
         "sets": 3,
         "reps": 15,
         "weight": 30,
         "video": "https://www.youtube.com/watch?v=mAFccjqRH9c"
       },
       {
+        "name": "Triceps Pushdown",
         "machine": "Triceps Pushdown",
+        "bodyPart": "Arms",
+        "equipmentType": "Cable",
+        "tags": [
+          "arms",
+          "triceps",
+          "isolation",
+          "pushdown"
+        ],
         "sets": 3,
         "reps": 15,
         "weight": 60,
@@ -40,123 +81,130 @@
     ]
   },
   {
-    "day": "Legs – Quad Focus",
+    "day": "Tuesday - Lower Body (Quads/Glutes/Hamstrings)",
     "exercises": [
       {
-        "machine": "Romanian Deadlift (Cable or Machine)",
+        "name": "Leg Press",
+        "machine": "Leg Press",
+        "bodyPart": "Legs",
+        "equipmentType": "Machine",
+        "tags": [
+          "legs",
+          "quads",
+          "compound",
+          "push"
+        ],
         "sets": 4,
-        "reps": 9,
-        "weight": 75,
-        "video": "https://www.youtube.com/watch?v=aCnMSFClFdU"
-      },
-      {
-        "machine": "Hip Abduction Machine",
-        "sets": 3,
-        "reps": 15,
-        "weight": 55,
-        "video": "https://www.youtube.com/watch?v=lTrUOSXoJJo"
-      },
-      {
-        "machine": "Leg Curl Machine",
-        "sets": 3,
         "reps": 10,
+        "weight": 300,
+        "video": "https://www.youtube.com/watch?v=7FIrHCAtXeI"
+      },
+      {
+        "name": "Leg Curl Machine",
+        "machine": "Leg Curl Machine",
+        "bodyPart": "Legs",
+        "equipmentType": "Machine",
+        "tags": [
+          "legs",
+          "hamstrings",
+          "isolation"
+        ],
+        "sets": 4,
+        "reps": 12,
         "weight": 80,
         "video": "https://www.youtube.com/watch?v=DWXBfXopnnY"
       },
       {
-        "machine": "Machine Crunch",
+        "name": "Leg Extension",
+        "machine": "Leg Extension",
+        "bodyPart": "Legs",
+        "equipmentType": "Machine",
+        "tags": [
+          "legs",
+          "quads",
+          "isolation"
+        ],
         "sets": 3,
-        "reps": 15,
-        "weight": 60,
-        "video": "https://www.youtube.com/watch?v=Svd95GUnLdk"
-      }
-    ]
-  },
-  {
-    "day": "Legs – Posterior Focus",
-    "exercises": [
-      {
-        "machine": "Romanian Deadlift (Cable or Machine)",
-        "sets": 4,
-        "reps": 10,
-        "weight": 75,
-        "video": "https://www.youtube.com/watch?v=aCnMSFClFdU"
-      },
-      {
-        "machine": "Hip Abduction Machine",
-        "sets": 3,
-        "reps": 15,
-        "weight": 55,
-        "video": "https://www.youtube.com/watch?v=lTrUOSXoJJo"
-      },
-      {
-        "machine": "Glute Kickbacks",
-        "sets": 3,
-        "reps": 15,
-        "weight": 55,
-        "video": "https://www.youtube.com/watch?v=hCJZwWWFOPU"
-      },
-      {
-        "machine": "Leg Curl Machine",
-        "sets": 3,
-        "reps": 10,
+        "reps": 12,
         "weight": 80,
-        "video": "https://www.youtube.com/watch?v=DWXBfXopnnY"
+        "video": "https://www.youtube.com/watch?v=UmsMCd5CpO8"
       },
       {
-        "machine": "Machine Crunch",
+        "name": "Hip Abduction Machine",
+        "machine": "Hip Abduction Machine",
+        "bodyPart": "Legs",
+        "equipmentType": "Machine",
+        "tags": [
+          "glutes",
+          "outer thigh",
+          "isolation"
+        ],
         "sets": 3,
         "reps": 15,
-        "weight": 60,
-        "video": "https://www.youtube.com/watch?v=Svd95GUnLdk"
+        "weight": 55,
+        "video": "https://www.youtube.com/watch?v=X3rVBZH7vj8"
+      },
+      {
+        "name": "Calf Raise Machine",
+        "machine": "Calf Raise Machine",
+        "bodyPart": "Legs",
+        "equipmentType": "Machine",
+        "tags": [
+          "legs",
+          "calves",
+          "isolation"
+        ],
+        "sets": 3,
+        "reps": 20,
+        "weight": 90,
+        "video": "https://www.youtube.com/watch?v=Q1b92Nhw6kw"
       }
     ]
   },
   {
-    "day": "Cardio / Abs / Mobility",
+    "day": "Wednesday - Core Focus",
     "exercises": [
       {
-        "machine": "Cable Woodchoppers",
-        "sets": 3,
-        "reps": 12,
-        "weight": 30,
-        "video": "https://www.youtube.com/watch?v=LJy-o3EUyIg"
-      },
-      {
-        "machine": "Plank",
-        "sets": 3,
-        "reps": 1,
-        "weight": 0,
-        "video": "https://www.youtube.com/watch?v=panatta-functional-training"
-      },
-      {
-        "machine": "Side Planks",
-        "sets": 3,
-        "reps": 1,
-        "weight": 0,
-        "video": "https://www.youtube.com/watch?v=K2VljzCC16g"
-      }
-    ]
-  },
-  {
-    "day": "Cardio + Core",
-    "exercises": [
-      {
+        "name": "Machine Crunch",
         "machine": "Machine Crunch",
+        "bodyPart": "Core",
+        "equipmentType": "Machine",
+        "tags": [
+          "core",
+          "abs",
+          "isolation"
+        ],
         "sets": 3,
         "reps": 15,
         "weight": 60,
         "video": "https://www.youtube.com/watch?v=Svd95GUnLdk"
       },
       {
-        "machine": "Hanging Leg Raise / Cable Knee Tuck",
+        "name": "Hanging Leg Raise / Cable Knee Tuck",
+        "machine": "Cable Knee Tuck",
+        "bodyPart": "Core",
+        "equipmentType": "Cable",
+        "tags": [
+          "core",
+          "abs",
+          "hip flexors",
+          "cable"
+        ],
         "sets": 3,
         "reps": 12,
         "weight": 0,
-        "video": "https://www.youtube.com/watch?v=LScXfWeKj4k"
+        "video": "https://www.youtube.com/watch?v=panatta-cable-knee-tuck"
       },
       {
+        "name": "Russian Twists",
         "machine": "Russian Twists",
+        "bodyPart": "Core",
+        "equipmentType": "Bodyweight",
+        "tags": [
+          "core",
+          "obliques",
+          "rotation"
+        ],
         "sets": 3,
         "reps": 20,
         "weight": 0,
@@ -165,42 +213,235 @@
     ]
   },
   {
-    "day": "Back – Pull",
+    "day": "Thursday - Upper Body Pull",
     "exercises": [
       {
+        "name": "Lat Pulldown",
         "machine": "Lat Pulldown",
+        "bodyPart": "Back",
+        "equipmentType": "Machine",
+        "tags": [
+          "back",
+          "pull",
+          "lats",
+          "compound"
+        ],
         "sets": 4,
         "reps": 10,
         "weight": 130,
         "video": "https://www.youtube.com/watch?v=zHdWLkPnGZo"
       },
       {
+        "name": "Seated Row Machine",
         "machine": "Seated Row Machine",
+        "bodyPart": "Back",
+        "equipmentType": "Machine",
+        "tags": [
+          "back",
+          "rows",
+          "compound"
+        ],
         "sets": 4,
         "reps": 10,
         "weight": 130,
-        "video": "https://www.youtube.com/watch?v=OqbGi9kdoV8E"
+        "video": "https://www.youtube.com/watch?v=OqbGi9kdoV8"
       },
       {
+        "name": "Reverse Pec Deck",
         "machine": "Reverse Pec Deck",
+        "bodyPart": "Shoulders",
+        "equipmentType": "Machine",
+        "tags": [
+          "shoulders",
+          "rear delts",
+          "isolation"
+        ],
         "sets": 3,
         "reps": 12,
         "weight": 60,
         "video": "https://www.youtube.com/watch?v=y9NjJYEqkew"
       },
       {
+        "name": "Cable Bicep Curl",
         "machine": "Cable Bicep Curl",
+        "bodyPart": "Arms",
+        "equipmentType": "Cable",
+        "tags": [
+          "arms",
+          "biceps",
+          "isolation",
+          "curl"
+        ],
         "sets": 3,
         "reps": 15,
         "weight": 75,
         "video": "https://www.youtube.com/watch?v=acNj8LwKntI"
       },
       {
+        "name": "Rope Face Pulls",
         "machine": "Rope Face Pulls",
+        "bodyPart": "Back",
+        "equipmentType": "Cable",
+        "tags": [
+          "back",
+          "rear delts",
+          "isolation"
+        ],
         "sets": 3,
         "reps": 12,
         "weight": 35,
-        "video": "https://www.youtube.com/watch?v=rep-qVOkqgk"
+        "video": "https://www.youtube.com/watch?v=WY402J032uU"
+      }
+    ]
+  },
+  {
+    "day": "DFriday - Lower Body + Core (Posterior Focus, All-Machines)",
+    "exercises": [
+      {
+        "name": "Seated Leg Curl Machine",
+        "machine": "Seated Leg Curl Machine",
+        "bodyPart": "Legs",
+        "equipmentType": "Machine",
+        "tags": [
+          "legs",
+          "hamstrings",
+          "isolation"
+        ],
+        "sets": 4,
+        "reps": 10,
+        "weight": 80,
+        "video": "https://www.youtube.com/watch?v=DWXBfXopnnY"
+      },
+      {
+        "name": "Hip Thrust Machine",
+        "machine": "Hip Thrust Machine",
+        "bodyPart": "Glutes",
+        "equipmentType": "Machine",
+        "tags": [
+          "glutes",
+          "hamstrings",
+          "compound"
+        ],
+        "sets": 3,
+        "reps": 12,
+        "weight": 90,
+        "video": "https://www.youtube.com/watch?v=nME5wVVCfc4"
+      },
+      {
+        "name": "Back Extension Machine",
+        "machine": "Back Extension Machine",
+        "bodyPart": "Lower Back",
+        "equipmentType": "Machine",
+        "tags": [
+          "lower back",
+          "glutes",
+          "hamstrings",
+          "isolation"
+        ],
+        "sets": 3,
+        "reps": 12,
+        "weight": 45,
+        "video": "https://www.youtube.com/watch?v=ENXyYltB7CM"
+      },
+      {
+        "name": "Machine Crunch",
+        "machine": "Machine Crunch",
+        "bodyPart": "Core",
+        "equipmentType": "Machine",
+        "tags": [
+          "core",
+          "abs",
+          "isolation"
+        ],
+        "sets": 3,
+        "reps": 15,
+        "weight": 60,
+        "video": "https://www.youtube.com/watch?v=Svd95GUnLdk"
+      },
+      {
+        "name": "Glute Kickback Machine",
+        "machine": "Glute Kickback Machine",
+        "bodyPart": "Legs",
+        "equipmentType": "Machine",
+        "tags": [
+          "glutes",
+          "legs",
+          "kickback",
+          "isolation"
+        ],
+        "sets": 3,
+        "reps": 15,
+        "weight": 60,
+        "video": "https://www.youtube.com/watch?v=WhtxQnm4254"
+      }
+    ]
+  },
+  {
+    "day": "Saturday - Light Chest & Arms (Easy + Cardio)",
+    "exercises": [
+      {
+        "name": "Incline Chest Press (Machine)",
+        "machine": "Incline Chest Press (Machine)",
+        "bodyPart": "Chest",
+        "equipmentType": "Machine",
+        "tags": [
+          "chest",
+          "push",
+          "upper chest",
+          "compound"
+        ],
+        "sets": 4,
+        "reps": 10,
+        "weight": 100,
+        "video": "https://www.youtube.com/watch?v=Vvz1iys3IF8",
+        "difficulty": "moderate"
+      },
+      {
+        "name": "Pec Deck",
+        "machine": "Pec Deck",
+        "bodyPart": "Chest",
+        "equipmentType": "Machine",
+        "tags": [
+          "chest",
+          "isolation",
+          "fly"
+        ],
+        "sets": 3,
+        "reps": 12,
+        "weight": 70,
+        "video": "https://www.youtube.com/watch?v=y9NjJYEqkew"
+      },
+      {
+        "name": "Cable Bicep Curl",
+        "machine": "Cable Bicep Curl",
+        "bodyPart": "Arms",
+        "equipmentType": "Cable",
+        "tags": [
+          "arms",
+          "biceps",
+          "isolation",
+          "curl"
+        ],
+        "sets": 3,
+        "reps": 15,
+        "weight": 75,
+        "video": "https://www.youtube.com/watch?v=acNj8LwKntI"
+      },
+      {
+        "name": "Triceps Pushdown",
+        "machine": "Triceps Pushdown",
+        "bodyPart": "Arms",
+        "equipmentType": "Cable",
+        "tags": [
+          "arms",
+          "triceps",
+          "isolation",
+          "pushdown"
+        ],
+        "sets": 3,
+        "reps": 15,
+        "weight": 60,
+        "video": "https://www.youtube.com/watch?v=blj-8JwcpgY"
       }
     ]
   }

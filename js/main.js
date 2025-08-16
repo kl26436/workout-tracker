@@ -5187,7 +5187,7 @@ if (typeof window.createTemplateCard === 'undefined') {
         
         const exerciseCount = template.exercises?.length || 0;
         const exercisePreview = template.exercises?.slice(0, 3).map(ex => 
-            ex.name || ex.machine
+           getExerciseName(ex)    // ✅ Always returns a valid string
         ).join(', ') || 'No exercises';
         const moreText = exerciseCount > 3 ? ` and ${exerciseCount - 3} more...` : '';
         

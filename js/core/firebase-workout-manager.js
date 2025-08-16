@@ -1,5 +1,5 @@
-// Updated Firebase Workout Manager - js/core/firebase-workout-manager.js
-// COMPLETE FILE - REPLACE YOUR ENTIRE firebase-workout-manager.js WITH THIS
+// Enhanced Firebase Workout Manager - js/core/firebase-workout-manager.js
+// Replace your existing firebase-workout-manager.js with this version
 
 import { 
     db, doc, setDoc, getDoc, deleteDoc, collection, query, where, 
@@ -16,127 +16,376 @@ export class FirebaseWorkoutManager {
         this.workoutListeners = new Set();
     }
 
-    // ===== EXERCISE MANAGEMENT =====
-
-    // Get all exercises (migrated default + user custom)
+    // ===== UNIVERSAL EXERCISE MANAGEMENT =====
+    
+    /**
+     * Get complete exercise library with user overrides applied
+     * This is the main method that replaces getExerciseLibrary()
+     */
     async getExerciseLibrary() {
         try {
-            console.log('🔄 Loading exercise library from Firebase...');
+            console.log('🔄 Loading universal exercise library...');
             
-            // ALWAYS try to load default exercises first (no auth required for public data)
-            const defaultExercises = await this.getMigratedDefaultExercises();
-            console.log(`📚 Loaded ${defaultExercises.length} default exercises`);
-            
-            // Load user's custom exercises (requires auth)
-            let customExercises = [];
-            if (this.appState.currentUser) {
-                try {
-                    customExercises = await this.getCustomExercises();
-                    console.log(`👤 Loaded ${customExercises.length} custom exercises for user`);
-                } catch (customError) {
-                    console.warn('⚠️ Failed to load custom exercises:', customError);
-                    // Continue with just default exercises
-                }
-            } else {
-                console.log('⚠️ No user signed in, using default exercises only');
+            if (!this.appState.currentUser) {
+                console.log('❌ No user signed in, loading default exercises only');
+                return await this.getDefaultExercisesOnly();
             }
 
-            const totalExercises = [...defaultExercises, ...customExercises];
+            // 1. Load base default exercises
+            const defaultExercises = await this.getDefaultExercises();
             
-            // If we have no default exercises, this is a critical error
-            if (defaultExercises.length === 0) {
-                console.error('❌ CRITICAL: No default exercises loaded from Firebase!');
-                console.log('🔄 Attempting JSON fallback...');
-                
-                const fallbackExercises = await this.fallbackToJSON();
-                if (fallbackExercises.length > 0) {
-                    console.log(`✅ Fallback successful: loaded ${fallbackExercises.length} exercises from JSON`);
-                    return [...fallbackExercises, ...customExercises];
-                } else {
-                    console.error('❌ Even JSON fallback failed!');
-                    return customExercises; // Return at least custom exercises if available
-                }
-            }
+            // 2. Load user's custom exercises  
+            const customExercises = await this.getCustomExercises();
             
-            console.log(`✅ Final library: ${defaultExercises.length} default + ${customExercises.length} custom = ${totalExercises.length} total`);
-            return totalExercises;
+            // 3. Load user's exercise overrides
+            const userOverrides = await this.getUserExerciseOverrides();
+            
+            // 4. Load hidden exercises
+            const hiddenExercises = await this.getHiddenExercises();
+            
+            // 5. Apply overrides and filter hidden exercises
+            let finalExercises = this.mergeExercisesWithOverrides(
+                defaultExercises, 
+                customExercises, 
+                userOverrides
+            );
+            
+            // 6. Filter out hidden exercises
+            finalExercises = this.filterHiddenExercises(finalExercises, hiddenExercises);
+            
+            console.log(`✅ Universal library: ${defaultExercises.length} default + ${customExercises.length} custom + ${userOverrides.length} overrides - ${hiddenExercises.length} hidden = ${finalExercises.length} total`);
+            
+            return finalExercises;
             
         } catch (error) {
-            console.error('❌ Complete failure in getExerciseLibrary:', error);
-            
-            // Try to at least get custom exercises if user is signed in
-            if (this.appState.currentUser) {
-                try {
-                    const customExercises = await this.getCustomExercises();
-                    console.log(`⚠️ Returning ${customExercises.length} custom exercises only`);
-                    return customExercises;
-                } catch (customError) {
-                    console.error('❌ Even custom exercises failed:', customError);
-                }
-            }
-            
-            // Last resort: JSON fallback
-            return await this.fallbackToJSON();
+            console.error('❌ Error loading universal exercise library:', error);
+            showNotification('Error loading exercise library, using fallback', 'warning');
+            return await this.getDefaultExercisesOnly();
         }
     }
 
-    // Get migrated default exercises from Firebase (ROOT LEVEL)
-    async getMigratedDefaultExercises() {
+    /**
+     * Universal save method - handles all exercise types
+     */
+    async saveUniversalExercise(exerciseData, isEditing = false) {
+        if (!this.appState.currentUser) {
+            throw new Error('Must be signed in to save exercises');
+        }
+
         try {
-            console.log('🔍 Loading exercises from root exercises collection...');
-            const exercisesRef = collection(this.db, 'exercises');
+            console.log('🔄 Saving universal exercise:', exerciseData.name, 'isEditing:', isEditing);
             
-            const querySnapshot = await getDocs(exercisesRef);
-            console.log(`📊 Firebase query returned ${querySnapshot.size} documents`);
+            // Determine save strategy
+            const isDefaultOverride = exerciseData.isDefault && isEditing && !exerciseData.isOverride;
+            const isExistingOverride = exerciseData.isOverride && isEditing;
+            const isCustomExercise = exerciseData.isCustom || (!exerciseData.isDefault && !exerciseData.isOverride);
             
-            const exercises = [];
+            if (isDefaultOverride) {
+                // Create user override for default exercise
+                console.log('📝 Creating user override for default exercise');
+                return await this.createUserOverride(exerciseData);
+            } else if (isExistingOverride) {
+                // Update existing override
+                console.log('📝 Updating existing override');
+                return await this.updateUserOverride(exerciseData);
+            } else if (isCustomExercise) {
+                // Handle custom exercise
+                console.log('📝 Handling custom exercise');
+                return await this.saveCustomExercise(exerciseData, isEditing);
+            } else {
+                // New custom exercise
+                console.log('📝 Creating new custom exercise');
+                return await this.saveCustomExercise(exerciseData, false);
+            }
+            
+        } catch (error) {
+            console.error('❌ Error saving universal exercise:', error);
+            showNotification(`Error saving "${exerciseData.name}"`, 'error');
+            throw error;
+        }
+    }
+
+    /**
+     * Create user override for a default exercise
+     */
+    async createUserOverride(exerciseData) {
+        try {
+            console.log(`🔄 Creating user override for: ${exerciseData.name}`);
+            
+            const overrideId = exerciseData.id || exerciseData.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+            const docRef = doc(this.db, "users", this.appState.currentUser.uid, "exerciseOverrides", overrideId);
+            
+            const overrideData = {
+                originalId: exerciseData.id,
+                originalName: exerciseData.name,
+                name: exerciseData.name,
+                bodyPart: exerciseData.bodyPart,
+                equipmentType: exerciseData.equipmentType,
+                sets: exerciseData.sets,
+                reps: exerciseData.reps,
+                weight: exerciseData.weight,
+                video: exerciseData.video,
+                tags: exerciseData.tags || [],
+                isDefault: false,        
+                isCustom: false,         
+                isOverride: true,        
+                overrideCreated: new Date().toISOString(),
+                lastUpdated: new Date().toISOString(),
+                createdBy: this.appState.currentUser.uid
+            };
+            
+            await setDoc(docRef, overrideData);
+            
+            console.log(`✅ User override created for "${exerciseData.name}"`);
+            showNotification(`Modified "${exerciseData.name}" (your personal version)`, 'success');
+            
+            return overrideId;
+            
+        } catch (error) {
+            console.error('❌ Error creating user override:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Update existing user override
+     */
+    async updateUserOverride(exerciseData) {
+        try {
+            const overrideId = exerciseData.id;
+            const docRef = doc(this.db, "users", this.appState.currentUser.uid, "exerciseOverrides", overrideId);
+            
+            const updateData = {
+                ...exerciseData,
+                lastUpdated: new Date().toISOString(),
+                isOverride: true
+            };
+            
+            await setDoc(docRef, updateData, { merge: true });
+            
+            console.log(`✅ User override updated: ${exerciseData.name}`);
+            showNotification(`Updated "${exerciseData.name}" (your version)`, 'success');
+            
+            return overrideId;
+            
+        } catch (error) {
+            console.error('❌ Error updating user override:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get user's exercise overrides
+     */
+    async getUserExerciseOverrides() {
+        if (!this.appState.currentUser) {
+            return [];
+        }
+        
+        try {
+            const overridesRef = collection(this.db, "users", this.appState.currentUser.uid, "exerciseOverrides");
+            const querySnapshot = await getDocs(overridesRef);
+            
+            const overrides = [];
             querySnapshot.forEach((doc) => {
-                // Skip the 'default' metadata document
-                if (doc.id === 'default') {
-                    console.log('⏭️ Skipping metadata document: default');
-                    return;
-                }
-                
-                const data = doc.data();
-                
-                // Validate that this is actually an exercise document
-                if (!data.name && !data.machine) {
-                    console.log(`⏭️ Skipping invalid exercise document: ${doc.id}`, data);
-                    return;
-                }
-                
-                exercises.push({ 
+                overrides.push({ 
                     id: doc.id, 
-                    ...data,
-                    isDefault: true,
-                    isCustom: false
+                    ...doc.data(),
+                    isOverride: true
                 });
             });
             
-            console.log(`✅ Successfully loaded ${exercises.length} valid exercises from root collection`);
-            
-            // Debug: Log first few exercise names
-            if (exercises.length > 0) {
-                exercises.slice(0, 5).forEach(ex => {
-                    console.log(`  - ${ex.name || ex.machine || 'Unknown'} (${ex.bodyPart || 'Unknown'})`);
-                });
-            } else {
-                console.error('❌ No valid exercises found in Firebase!');
-            }
-            
-            return exercises;
+            console.log(`📊 Loaded ${overrides.length} user exercise overrides`);
+            return overrides;
             
         } catch (error) {
-            console.error('❌ Error loading exercises from root collection:', error);
-            console.error('Error details:', error.message);
-            console.error('Error code:', error.code);
-            
-            // Return empty array instead of throwing
+            console.error('❌ Error loading user overrides:', error);
             return [];
         }
     }
 
-    // Get user's custom exercises
+    /**
+     * Merge exercises with user overrides applied
+     */
+    mergeExercisesWithOverrides(defaultExercises, customExercises, userOverrides) {
+        // Create lookup maps for overrides
+        const overrideByOriginalId = new Map();
+        const overrideByOriginalName = new Map();
+        
+        userOverrides.forEach(override => {
+            if (override.originalId) {
+                overrideByOriginalId.set(override.originalId, override);
+            }
+            if (override.originalName) {
+                overrideByOriginalName.set(override.originalName.toLowerCase(), override);
+            }
+        });
+
+        // Apply overrides to default exercises
+        const mergedDefaults = defaultExercises.map(exercise => {
+            const overrideById = overrideByOriginalId.get(exercise.id);
+            const overrideByName = overrideByOriginalName.get(exercise.name?.toLowerCase());
+            const override = overrideById || overrideByName;
+            
+            if (override) {
+                console.log(`🔄 Applying override for: ${exercise.name} -> ${override.name}`);
+                return { 
+                    ...exercise, 
+                    ...override, 
+                    isOverridden: true,
+                    originalData: exercise // Keep reference to original
+                };
+            }
+            return exercise;
+        });
+
+        // Combine all exercises
+        return [...mergedDefaults, ...customExercises];
+    }
+
+    /**
+     * Universal delete method
+     */
+    async deleteUniversalExercise(exerciseId, exerciseData) {
+        if (!this.appState.currentUser) {
+            throw new Error('Must be signed in to delete exercises');
+        }
+
+        try {
+            if (exerciseData.isOverride) {
+                // Delete user override (reverts to default)
+                await this.deleteUserOverride(exerciseId);
+                showNotification(`Reverted "${exerciseData.name}" to default version`, 'success');
+            } else if (exerciseData.isCustom) {
+                // Delete custom exercise
+                await this.deleteCustomExercise(exerciseId);
+                showNotification(`Deleted custom exercise "${exerciseData.name}"`, 'success');
+            } else if (exerciseData.isDefault) {
+                // Hide default exercise
+                await this.hideDefaultExercise(exerciseId, exerciseData);
+                showNotification(`Hidden "${exerciseData.name}" from your library`, 'info');
+            }
+            
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Error deleting exercise:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Delete user override (reverts to default)
+     */
+    async deleteUserOverride(overrideId) {
+        const docRef = doc(this.db, "users", this.appState.currentUser.uid, "exerciseOverrides", overrideId);
+        await deleteDoc(docRef);
+        console.log(`✅ Deleted user override: ${overrideId}`);
+    }
+
+    /**
+     * Hide default exercise from user's view
+     */
+    async hideDefaultExercise(exerciseId, exerciseData) {
+        const hideId = exerciseId || exerciseData.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        const docRef = doc(this.db, "users", this.appState.currentUser.uid, "hiddenExercises", hideId);
+        
+        await setDoc(docRef, {
+            originalId: exerciseId,
+            originalName: exerciseData.name,
+            hiddenAt: new Date().toISOString(),
+            reason: 'user_hidden'
+        });
+        
+        console.log(`✅ Hidden default exercise: ${exerciseData.name}`);
+    }
+
+    /**
+     * Get user's hidden exercises
+     */
+    async getHiddenExercises() {
+        if (!this.appState.currentUser) {
+            return [];
+        }
+        
+        try {
+            const hiddenRef = collection(this.db, "users", this.appState.currentUser.uid, "hiddenExercises");
+            const querySnapshot = await getDocs(hiddenRef);
+            
+            const hidden = [];
+            querySnapshot.forEach((doc) => {
+                hidden.push(doc.data());
+            });
+            
+            return hidden;
+            
+        } catch (error) {
+            console.error('❌ Error loading hidden exercises:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Filter out hidden exercises
+     */
+    filterHiddenExercises(exercises, hiddenExercises) {
+        if (hiddenExercises.length === 0) return exercises;
+        
+        const hiddenIds = new Set();
+        const hiddenNames = new Set();
+        
+        hiddenExercises.forEach(hidden => {
+            if (hidden.originalId) hiddenIds.add(hidden.originalId);
+            if (hidden.originalName) hiddenNames.add(hidden.originalName.toLowerCase());
+        });
+        
+        return exercises.filter(exercise => {
+            const isHiddenById = hiddenIds.has(exercise.id);
+            const isHiddenByName = hiddenNames.has(exercise.name?.toLowerCase());
+            return !isHiddenById && !isHiddenByName;
+        });
+    }
+
+    // ===== TRADITIONAL EXERCISE METHODS (for compatibility) =====
+    
+    async getDefaultExercises() {
+        try {
+            console.log('🔍 Loading default exercises from Firebase...');
+            const exercisesRef = collection(this.db, 'exercises');
+            const querySnapshot = await getDocs(exercisesRef);
+            
+            const exercises = [];
+            querySnapshot.forEach((doc) => {
+                if (doc.id !== 'default') { // Skip metadata
+                    const data = doc.data();
+                    if (data.name || data.machine) { // Validate exercise
+                        exercises.push({ 
+                            id: doc.id, 
+                            name: data.name || data.machine,
+                            machine: data.machine || data.name,
+                            bodyPart: data.bodyPart || 'General',
+                            equipmentType: data.equipmentType || data.equipment || 'Machine',
+                            sets: data.sets || 3,
+                            reps: data.reps || 10,
+                            weight: data.weight || 50,
+                            video: data.video || '',
+                            tags: data.tags || [],
+                            isDefault: true,
+                            isCustom: false
+                        });
+                    }
+                }
+            });
+            
+            console.log(`✅ Loaded ${exercises.length} default exercises from Firebase`);
+            return exercises;
+            
+        } catch (error) {
+            console.error('❌ Error loading default exercises from Firebase:', error);
+            return await this.getDefaultExercisesOnly();
+        }
+    }
+
     async getCustomExercises() {
         if (!this.appState.currentUser) {
             return [];
@@ -156,6 +405,7 @@ export class FirebaseWorkoutManager {
                 });
             });
             
+            console.log(`📊 Loaded ${customExercises.length} custom exercises`);
             return customExercises;
             
         } catch (error) {
@@ -164,203 +414,397 @@ export class FirebaseWorkoutManager {
         }
     }
 
-    // ===== WORKOUT TEMPLATE MANAGEMENT (FIXED) =====
-
-    // Get ONLY migrated default workout templates from Firebase ROOT level
-    async getMigratedDefaultWorkouts() {
-        try {
-            console.log('🔍 Loading DEFAULT templates from root workouts collection...');
-            const workoutsRef = collection(this.db, 'workouts');
-            const querySnapshot = await getDocs(workoutsRef);
-            
-            const templates = [];
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                templates.push({ 
-                    id: doc.id, 
-                    ...data,
-                    isDefault: true,
-                    isCustom: false,
-                    source: 'firebase-default'
-                });
-            });
-            
-            console.log(`✅ Found ${templates.length} DEFAULT templates in root collection`);
-            return templates;
-            
-        } catch (error) {
-            console.error('❌ Error loading default templates from root collection:', error);
-            return [];
-        }
-    }
-
-    // Get ONLY user's custom workout templates
-    async getCustomWorkoutTemplates() {
+    async saveCustomExercise(exerciseData, isEditing = false) {
         if (!this.appState.currentUser) {
-            console.log('❌ No user signed in for custom templates');
-            return [];
+            throw new Error('Must be signed in to save custom exercises');
         }
         
         try {
-            console.log('🔍 Loading CUSTOM templates from user collection...');
-            const customRef = collection(this.db, "users", this.appState.currentUser.uid, "workoutTemplates");
-            const querySnapshot = await getDocs(customRef);
+            const exerciseId = isEditing && exerciseData.id ? 
+                exerciseData.id : 
+                `custom_${exerciseData.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}_${Date.now()}`;
+                
+            const docRef = doc(this.db, "users", this.appState.currentUser.uid, "customExercises", exerciseId);
             
-            const templates = [];
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                templates.push({ 
-                    id: doc.id, 
-                    ...data, 
-                    isCustom: true,
-                    isDefault: false,
-                    source: 'firebase-custom',
-                    userId: this.appState.currentUser.uid
-                });
-            });
+            const exerciseToSave = {
+                name: exerciseData.name,
+                machine: exerciseData.machine || exerciseData.name,
+                bodyPart: exerciseData.bodyPart,
+                equipmentType: exerciseData.equipmentType,
+                sets: exerciseData.sets,
+                reps: exerciseData.reps,
+                weight: exerciseData.weight,
+                video: exerciseData.video || '',
+                tags: exerciseData.tags || [],
+                id: exerciseId,
+                isCustom: true,
+                isDefault: false,
+                createdBy: this.appState.currentUser.uid,
+                [isEditing ? 'lastUpdated' : 'createdAt']: new Date().toISOString()
+            };
             
-            console.log(`✅ Found ${templates.length} CUSTOM templates for user`);
-            return templates;
+            await setDoc(docRef, exerciseToSave);
+            
+            const action = isEditing ? 'Updated' : 'Created';
+            console.log(`✅ ${action} custom exercise: ${exerciseData.name}`);
+            showNotification(`${action} "${exerciseData.name}"`, 'success');
+            
+            return exerciseId;
             
         } catch (error) {
-            console.error('❌ Error loading custom workout templates:', error);
-            return [];
+            console.error('❌ Error saving custom exercise:', error);
+            throw error;
         }
     }
 
-    // Load templates by specific category (FIXED - no more mixing!)
+    async updateCustomExercise(exerciseId, exerciseData) {
+        return await this.saveCustomExercise({ ...exerciseData, id: exerciseId }, true);
+    }
+
+    async deleteCustomExercise(exerciseId) {
+        if (!this.appState.currentUser) {
+            throw new Error('Must be signed in to delete custom exercises');
+        }
+        
+        const docRef = doc(this.db, "users", this.appState.currentUser.uid, "customExercises", exerciseId);
+        await deleteDoc(docRef);
+        console.log(`✅ Deleted custom exercise: ${exerciseId}`);
+    }
+
+    async getDefaultExercisesOnly() {
+        // Fallback to JSON or hardcoded defaults
+        try {
+            const response = await fetch('./exercises.json');
+            if (response.ok) {
+                const exercises = await response.json();
+                return exercises.map(ex => ({ 
+                    ...ex, 
+                    name: ex.name || ex.machine,
+                    machine: ex.machine || ex.name,
+                    isDefault: true, 
+                    isCustom: false 
+                }));
+            }
+        } catch (error) {
+            console.error('❌ Error loading fallback exercises:', error);
+        }
+        
+        // Ultimate fallback
+        return [
+            {
+                id: 'fallback_1',
+                name: 'Bench Press',
+                machine: 'Bench Press',
+                bodyPart: 'Chest',
+                equipmentType: 'Barbell',
+                sets: 3,
+                reps: 10,
+                weight: 135,
+                video: '',
+                isDefault: true,
+                isCustom: false,
+                tags: ['chest', 'compound']
+            }
+        ];
+    }
+
+    // ===== WORKOUT TEMPLATE MANAGEMENT =====
+    
+    async getWorkoutTemplates() {
+        return await this.getUserWorkoutTemplates();
+    }
+
     async getTemplatesByCategory(category) {
         try {
             console.log(`🔄 Loading templates for category: ${category}`);
             
-            if (category === 'default') {
-                return await this.getMigratedDefaultWorkouts();
-            } else if (category === 'custom') {
-                return await this.getCustomWorkoutTemplates();
-            } else {
-                console.error(`❌ Unknown template category: ${category}`);
+            if (!this.appState.currentUser) {
+                console.log('❌ No user signed in, returning empty templates');
                 return [];
+            }
+
+            if (category === 'default') {
+                // Load migrated default workouts
+                const defaultTemplates = await this.getMigratedDefaultWorkouts();
+                console.log(`✅ Loaded ${defaultTemplates.length} default templates`);
+                return defaultTemplates;
+            } else if (category === 'custom') {
+                // Load user's custom templates
+                const customTemplatesRef = collection(this.db, "users", this.appState.currentUser.uid, "workoutTemplates");
+                const querySnapshot = await getDocs(customTemplatesRef);
+                
+                const customTemplates = [];
+                querySnapshot.forEach((doc) => {
+                    customTemplates.push({ 
+                        id: doc.id, 
+                        ...doc.data(),
+                        isCustom: true,
+                        isDefault: false
+                    });
+                });
+                
+                console.log(`✅ Loaded ${customTemplates.length} custom templates`);
+                return customTemplates;
+            } else {
+                // Load all templates and filter by category
+                const allTemplates = await this.getUserWorkoutTemplates();
+                const filteredTemplates = allTemplates.filter(template => 
+                    template.category === category || 
+                    (template.day && this.getWorkoutCategory(template.day) === category)
+                );
+                
+                console.log(`✅ Loaded ${filteredTemplates.length} templates for category: ${category}`);
+                return filteredTemplates;
             }
             
         } catch (error) {
-            console.error(`❌ Error loading ${category} templates:`, error);
+            console.error(`❌ Error loading templates for category ${category}:`, error);
             return [];
         }
     }
 
-    // Get all workout templates (when needed for compatibility)
-    async getWorkoutTemplates() {
-        try {
-            console.log('🔄 Loading ALL workout templates from Firebase...');
-            
-            // Load default templates from root
-            const defaultTemplates = await this.getMigratedDefaultWorkouts();
-            
-            // Load user's custom templates if signed in
-            let customTemplates = [];
-            if (this.appState.currentUser) {
-                customTemplates = await this.getCustomWorkoutTemplates();
-            }
-
-            const totalTemplates = [...defaultTemplates, ...customTemplates];
-            
-            console.log(`✅ Loaded ${defaultTemplates.length} default + ${customTemplates.length} custom = ${totalTemplates.length} total templates`);
-            
-            return totalTemplates;
-            
-        } catch (error) {
-            console.error('❌ Error loading workout templates:', error);
-            return await this.fallbackWorkoutsToJSON();
+    // Helper method to determine workout category from day name
+    getWorkoutCategory(dayName) {
+        if (!dayName) return 'Other';
+        
+        const dayLower = dayName.toLowerCase();
+        
+        if (dayLower.includes('push') || dayLower.includes('chest')) {
+            return 'Push';
+        } else if (dayLower.includes('pull') || dayLower.includes('back')) {
+            return 'Pull';
+        } else if (dayLower.includes('leg') || dayLower.includes('lower')) {
+            return 'Legs';
+        } else if (dayLower.includes('cardio') || dayLower.includes('core')) {
+            return 'Cardio';
+        } else {
+            return 'Other';
         }
     }
 
-    // Copy a default template to user's custom templates
-    async copyDefaultToCustom(defaultTemplateId) {
+    async getUserWorkoutTemplates() {
         if (!this.appState.currentUser) {
-            throw new Error('User must be signed in to copy templates');
+            console.log('❌ No user signed in, returning empty templates');
+            return [];
         }
         
         try {
-            console.log(`🔄 Copying default template to custom: ${defaultTemplateId}`);
+            console.log('🔄 Loading user workout templates...');
             
-            // Get the default template from root collection
-            const defaultDocRef = doc(this.db, "workouts", defaultTemplateId);
-            const defaultDoc = await getDoc(defaultDocRef);
+            // Load custom templates
+            const customTemplatesRef = collection(this.db, "users", this.appState.currentUser.uid, "workoutTemplates");
+            const customSnapshot = await getDocs(customTemplatesRef);
             
-            if (!defaultDoc.exists()) {
-                throw new Error('Default template not found');
+            const customTemplates = [];
+            customSnapshot.forEach((doc) => {
+                customTemplates.push({ 
+                    id: doc.id, 
+                    ...doc.data(),
+                    isCustom: true,
+                    isDefault: false
+                });
+            });
+            
+            // Load migrated default templates (if any)
+            const defaultTemplates = await this.getMigratedDefaultWorkouts();
+            
+            const allTemplates = [...defaultTemplates, ...customTemplates];
+            
+            console.log(`✅ Loaded ${defaultTemplates.length} default + ${customTemplates.length} custom = ${allTemplates.length} user templates`);
+            
+            return allTemplates;
+            
+        } catch (error) {
+            console.error('❌ Error loading user workout templates:', error);
+            return [];
+        }
+    }
+
+    async getMigratedDefaultWorkouts() {
+        if (!this.appState.currentUser) {
+            return [];
+        }
+        
+        try {
+            console.log('🔍 Loading migrated default workouts...');
+            const defaultWorkoutsRef = collection(this.db, "users", this.appState.currentUser.uid, "defaultWorkouts");
+            const querySnapshot = await getDocs(defaultWorkoutsRef);
+            
+            const defaultWorkouts = [];
+            querySnapshot.forEach((doc) => {
+                defaultWorkouts.push({ 
+                    id: doc.id, 
+                    ...doc.data(),
+                    isDefault: true,
+                    isCustom: false
+                });
+            });
+            
+            console.log(`✅ Loaded ${defaultWorkouts.length} migrated default workouts from Firebase`);
+            
+            // If no migrated workouts found, load from AppState.workoutPlans as fallback
+            if (defaultWorkouts.length === 0) {
+                console.log('🔄 No migrated workouts found, checking AppState.workoutPlans...');
+                
+                // Debug: Check what's in AppState
+                console.log('📊 AppState debug:', {
+                    hasWorkoutPlans: !!this.appState.workoutPlans,
+                    workoutPlansType: typeof this.appState.workoutPlans,
+                    workoutPlansLength: Array.isArray(this.appState.workoutPlans) ? this.appState.workoutPlans.length : 'not array',
+                    workoutPlans: this.appState.workoutPlans
+                });
+                
+                if (this.appState.workoutPlans && Array.isArray(this.appState.workoutPlans) && this.appState.workoutPlans.length > 0) {
+                    console.log('🔄 Using AppState.workoutPlans as fallback...');
+                    
+                    const fallbackWorkouts = this.appState.workoutPlans
+                        .filter((workout, index) => {
+                            if (!workout) {
+                                console.warn(`⚠️ Workout at index ${index} is null/undefined`);
+                                return false;
+                            }
+                            // Accept workouts with either 'day' or 'name' property
+                            if (!workout.day && !workout.name) {
+                                console.warn(`⚠️ Workout at index ${index} missing both 'day' and 'name' properties:`, workout);
+                                return false;
+                            }
+                            return true;
+                        })
+                        .map(workout => {
+                            // Use 'day' if it exists, otherwise use 'name'
+                            const workoutName = workout.day || workout.name || 'Unknown Workout';
+                            return {
+                                id: workoutName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase(),
+                                name: workoutName,
+                                day: workoutName,
+                                exercises: workout.exercises || [],
+                                category: this.getWorkoutCategory(workoutName),
+                                isDefault: workout.type !== 'custom', // Mark custom workouts appropriately
+                                isCustom: workout.type === 'custom',
+                                source: 'appstate-fallback',
+                                originalType: workout.type || 'default'
+                            };
+                        });
+                    
+                    console.log(`✅ Fallback loaded ${fallbackWorkouts.length} workouts from AppState`);
+                    if (fallbackWorkouts.length > 0) {
+                        console.log('📋 Sample workout:', fallbackWorkouts[0]);
+                    }
+                    return fallbackWorkouts;
+                } else {
+                    console.warn('⚠️ AppState.workoutPlans is not available or empty');
+                    
+                    // Try to load from workouts.json as absolute fallback
+                    console.log('🔄 Attempting to load from workouts.json...');
+                    try {
+                        const response = await fetch('./workouts.json');
+                        if (response.ok) {
+                            const jsonWorkouts = await response.json();
+                            console.log(`✅ Loaded ${jsonWorkouts.length} workouts from workouts.json`);
+                            
+                            return jsonWorkouts.map(workout => ({
+                                id: workout.day ? workout.day.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() : `workout_${Date.now()}`,
+                                name: workout.day || workout.name || 'Unknown Workout',
+                                day: workout.day || workout.name || 'Unknown Workout',
+                                exercises: workout.exercises || [],
+                                category: this.getWorkoutCategory(workout.day || workout.name),
+                                isDefault: true,
+                                isCustom: false,
+                                source: 'json-fallback'
+                            }));
+                        }
+                    } catch (jsonError) {
+                        console.error('❌ Failed to load from workouts.json:', jsonError);
+                    }
+                    
+                    // Ultimate fallback - create some basic workouts
+                    console.log('🔄 Creating basic fallback workouts...');
+                    return [
+                        {
+                            id: 'chest_push',
+                            name: 'Chest – Push',
+                            day: 'Chest – Push',
+                            exercises: [
+                                {
+                                    machine: 'Bench Press',
+                                    sets: 3,
+                                    reps: 10,
+                                    weight: 135,
+                                    video: ''
+                                }
+                            ],
+                            category: 'Push',
+                            isDefault: true,
+                            isCustom: false,
+                            source: 'hardcoded-fallback'
+                        },
+                        {
+                            id: 'back_pull',
+                            name: 'Back – Pull',
+                            day: 'Back – Pull',
+                            exercises: [
+                                {
+                                    machine: 'Pull-ups',
+                                    sets: 3,
+                                    reps: 8,
+                                    weight: 0,
+                                    video: ''
+                                }
+                            ],
+                            category: 'Pull',
+                            isDefault: true,
+                            isCustom: false,
+                            source: 'hardcoded-fallback'
+                        }
+                    ];
+                }
             }
             
-            const defaultData = defaultDoc.data();
-            
-            // Create custom copy in user's collection
-            const customTemplateId = `${defaultData.name}_copy_${Date.now()}`.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
-            const customDocRef = doc(this.db, "users", this.appState.currentUser.uid, "workoutTemplates", customTemplateId);
-            
-            const customTemplate = {
-                ...defaultData,
-                id: customTemplateId,
-                name: `${defaultData.name} (Custom)`,
-                lastUpdated: new Date().toISOString(),
-                createdBy: this.appState.currentUser.uid,
-                isCustom: true,
-                isDefault: false,
-                source: 'firebase-custom',
-                copiedFrom: defaultTemplateId
-            };
-            
-            await setDoc(customDocRef, customTemplate);
-            
-            console.log(`✅ Copied "${defaultData.name}" to custom templates`);
-            showNotification(`Copied "${defaultData.name}" to your custom templates!`, 'success');
-            
-            return customTemplateId;
+            return defaultWorkouts;
             
         } catch (error) {
-            console.error('❌ Error copying template:', error);
-            showNotification('Failed to copy template', 'error');
-            throw error;
+            console.error('❌ Error loading migrated default workouts:', error);
+            
+            // Final fallback to AppState.workoutPlans
+            if (this.appState.workoutPlans && Array.isArray(this.appState.workoutPlans)) {
+                console.log('🔄 Error fallback to AppState.workoutPlans...');
+                return this.appState.workoutPlans
+                    .filter(workout => workout && workout.day) // Filter out invalid workouts
+                    .map(workout => ({
+                        id: workout.day.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase(),
+                        name: workout.day,
+                        day: workout.day,
+                        exercises: workout.exercises || [],
+                        category: this.getWorkoutCategory(workout.day),
+                        isDefault: true,
+                        isCustom: false,
+                        source: 'appstate-fallback'
+                    }));
+            }
+            
+            // Ultimate fallback
+            return [
+                {
+                    id: 'emergency_workout',
+                    name: 'Basic Workout',
+                    day: 'Basic Workout',
+                    exercises: [],
+                    category: 'Other',
+                    isDefault: true,
+                    isCustom: false,
+                    source: 'emergency-fallback'
+                }
+            ];
         }
     }
 
-    // Update a default template (affects all users)
-    async updateDefaultWorkoutTemplate(templateId, templateData) {
-        try {
-            console.log(`🔄 Updating DEFAULT template: ${templateId}`);
-            
-            const docRef = doc(this.db, "workouts", templateId);
-            
-            const templateToSave = {
-                ...templateData,
-                id: templateId,
-                lastUpdated: new Date().toISOString(),
-                isDefault: true,
-                isCustom: false,
-                source: 'firebase-default'
-            };
-            
-            await setDoc(docRef, templateToSave, { merge: true });
-            
-            console.log(`✅ Default template "${templateData.name}" updated`);
-            showNotification(`Default template "${templateData.name}" updated globally!`, 'success');
-            
-            return true;
-            
-        } catch (error) {
-            console.error('❌ Error updating default template:', error);
-            showNotification('Failed to update default template', 'error');
-            throw error;
-        }
-    }
-
-    // Save a new custom template (only to user's collection)
     async saveWorkoutTemplate(templateData) {
         if (!this.appState.currentUser) {
             throw new Error('User must be signed in to save workout templates');
         }
         
         try {
-            const templateId = templateData.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() + '_' + Date.now();
+            const templateId = templateData.id || templateData.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
             const docRef = doc(this.db, "users", this.appState.currentUser.uid, "workoutTemplates", templateId);
             
             const templateToSave = {
@@ -369,334 +813,137 @@ export class FirebaseWorkoutManager {
                 lastUpdated: new Date().toISOString(),
                 createdBy: this.appState.currentUser.uid,
                 isCustom: true,
-                isDefault: false,
-                source: 'firebase-custom'
+                isDefault: false
             };
             
             await setDoc(docRef, templateToSave);
             
-            console.log(`✅ Custom workout template "${templateData.name}" saved`);
-            showNotification(`Custom template "${templateData.name}" saved!`, 'success');
+            console.log(`✅ Workout template "${templateData.name}" saved`);
+            showNotification(`Workout template "${templateData.name}" saved!`, 'success');
             
             return templateId;
             
         } catch (error) {
-            console.error('❌ Error saving custom workout template:', error);
-            showNotification('Failed to save custom template', 'error');
+            console.error('❌ Error saving workout template:', error);
+            showNotification('Failed to save workout template', 'error');
             throw error;
         }
     }
 
-    // Delete custom template (only user's templates can be deleted)
-    async deleteWorkoutTemplate(templateId) {
+    async updateWorkoutTemplate(templateId, templateData) {
         if (!this.appState.currentUser) {
-            throw new Error('User must be signed in to delete workout templates');
+            throw new Error('User must be signed in to update workout templates');
         }
         
         try {
-            console.log(`🗑️ Deleting CUSTOM workout template: ${templateId}`);
-            
-            // Delete from user's custom templates collection
             const docRef = doc(this.db, "users", this.appState.currentUser.uid, "workoutTemplates", templateId);
-            await deleteDoc(docRef);
-            
-            console.log(`✅ Custom workout template "${templateId}" deleted from Firebase`);
-            showNotification('Custom workout template deleted successfully', 'success');
-            
-            return true;
-            
-        } catch (error) {
-            console.error('❌ Error deleting custom workout template:', error);
-            showNotification('Failed to delete custom template', 'error');
-            throw error;
-        }
-    }
-
-    // ===== CUSTOM EXERCISE MANAGEMENT =====
-
-    async saveCustomExercise(exerciseData) {
-        if (!this.appState.currentUser) {
-            throw new Error('User must be signed in to save custom exercises');
-        }
-        
-        try {
-            const exerciseId = `${exerciseData.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}_${Date.now()}`;
-            const docRef = doc(this.db, "users", this.appState.currentUser.uid, "customExercises", exerciseId);
-            
-            const exerciseToSave = {
-                ...exerciseData,
-                id: exerciseId,
-                createdAt: new Date().toISOString(),
-                createdBy: this.appState.currentUser.uid,
-                isCustom: true,
-                isDefault: false
-            };
-            
-            await setDoc(docRef, exerciseToSave);
-            
-            console.log(`✅ Custom exercise "${exerciseData.name}" saved`);
-            showNotification(`Custom exercise "${exerciseData.name}" saved!`, 'success');
-            
-            return exerciseId;
-            
-        } catch (error) {
-            console.error('❌ Error saving custom exercise:', error);
-            showNotification('Failed to save custom exercise', 'error');
-            throw error;
-        }
-    }
-
-    async updateCustomExercise(exerciseId, exerciseData) {
-        if (!this.appState.currentUser) {
-            throw new Error('User must be signed in to update custom exercises');
-        }
-        
-        try {
-            const docRef = doc(this.db, "users", this.appState.currentUser.uid, "customExercises", exerciseId);
             
             const updateData = {
-                ...exerciseData,
+                ...templateData,
                 lastUpdated: new Date().toISOString(),
                 isCustom: true
             };
             
             await setDoc(docRef, updateData, { merge: true });
             
-            console.log(`✅ Custom exercise updated: ${exerciseId}`);
-            showNotification(`Exercise "${exerciseData.name}" updated!`, 'success');
+            console.log(`✅ Workout template updated: ${templateId}`);
+            showNotification(`Template "${templateData.name}" updated!`, 'success');
             
             return true;
             
         } catch (error) {
-            console.error('❌ Error updating custom exercise:', error);
-            showNotification('Failed to update custom exercise', 'error');
+            console.error('❌ Error updating workout template:', error);
+            showNotification('Failed to update workout template', 'error');
             throw error;
         }
     }
 
-    async deleteCustomExercise(exerciseId) {
+    async deleteWorkoutTemplate(templateId) {
         if (!this.appState.currentUser) {
-            throw new Error('User must be signed in to delete custom exercises');
+            throw new Error('User must be signed in to delete workout templates');
         }
         
         try {
-            const docRef = doc(this.db, "users", this.appState.currentUser.uid, "customExercises", exerciseId);
+            const docRef = doc(this.db, "users", this.appState.currentUser.uid, "workoutTemplates", templateId);
             await deleteDoc(docRef);
             
-            console.log(`✅ Custom exercise deleted: ${exerciseId}`);
-            showNotification('Custom exercise deleted', 'success');
+            console.log(`✅ Workout template deleted: ${templateId}`);
+            showNotification('Workout template deleted', 'success');
             
             return true;
             
         } catch (error) {
-            console.error('❌ Error deleting custom exercise:', error);
-            showNotification('Failed to delete custom exercise', 'error');
+            console.error('❌ Error deleting workout template:', error);
+            showNotification('Failed to delete workout template', 'error');
             throw error;
         }
     }
 
-    // Update migrated default exercise (admin function)
-    async updateDefaultExercise(exerciseId, exerciseData) {
+    // ===== WORKOUT MANAGEMENT =====
+    
+    async saveWorkout(workoutData) {
+        if (!this.appState.currentUser) {
+            throw new Error('User must be signed in to save workouts');
+        }
+        
         try {
-            console.log(`🔄 Updating default exercise: ${exerciseId}`);
-            
-            if (!this.appState.currentUser) {
-                throw new Error('User must be signed in to update exercises');
-            }
-            
-            // Update in root exercises collection
-            const docRef = doc(this.db, 'exercises', exerciseId);
-            
-            const updateData = {
-                ...exerciseData,
-                updatedAt: new Date().toISOString(),
-                lastUpdatedBy: this.appState.currentUser?.email || 'system'
-            };
-
-            await setDoc(docRef, updateData, { merge: true });
-            
-            // Update all workouts that use this exercise
-            const updatedWorkouts = await this.updateWorkoutsWithExerciseChanges(exerciseId, exerciseData);
-            
-            console.log(`✅ Updated default exercise and ${updatedWorkouts} workouts`);
-            showNotification(`Updated "${exerciseData.name}" and ${updatedWorkouts} workout(s)`, 'success');
-            
+            const docRef = doc(this.db, "users", this.appState.currentUser.uid, "workouts", workoutData.date);
+            await setDoc(docRef, workoutData);
+            console.log(`✅ Workout saved for ${workoutData.date}`);
             return true;
-            
         } catch (error) {
-            console.error('❌ Error updating default exercise:', error);
-            showNotification(`Failed to update exercise: ${error.message}`, 'error');
+            console.error('❌ Error saving workout:', error);
             throw error;
         }
     }
 
-    // Update workouts that reference a changed exercise
-    async updateWorkoutsWithExerciseChanges(exerciseId, newExerciseData) {
+    async getUserWorkouts() {
+        if (!this.appState.currentUser) {
+            return [];
+        }
+        
         try {
-            console.log(`🔄 Updating workouts that use exercise: ${exerciseId}`);
+            const workoutsRef = collection(this.db, "users", this.appState.currentUser.uid, "workouts");
+            const q = query(workoutsRef, orderBy("date", "desc"));
+            const querySnapshot = await getDocs(q);
             
-            // Update both default and custom templates
-            const batch = writeBatch(this.db);
-            let updatedCount = 0;
-            
-            // Update default templates in root collection
-            const defaultWorkoutsRef = collection(this.db, 'workouts');
-            const defaultSnapshot = await getDocs(defaultWorkoutsRef);
-            
-            defaultSnapshot.forEach((doc) => {
-                const workout = doc.data();
-                let needsUpdate = false;
-                
-                if (workout.exercises && Array.isArray(workout.exercises)) {
-                    workout.exercises.forEach(exercise => {
-                        if (exercise.machine === exerciseId || 
-                            exercise.name === exerciseId ||
-                            exercise.machine === newExerciseData.name ||
-                            exercise.machine === newExerciseData.machine) {
-                            
-                            exercise.machine = newExerciseData.name;
-                            exercise.name = newExerciseData.name;
-                            
-                            if (newExerciseData.video) {
-                                exercise.video = newExerciseData.video;
-                            }
-                            
-                            needsUpdate = true;
-                        }
-                    });
-                }
-                
-                if (needsUpdate) {
-                    batch.update(doc.ref, {
-                        exercises: workout.exercises,
-                        updatedAt: new Date().toISOString()
-                    });
-                    updatedCount++;
-                }
+            const workouts = [];
+            querySnapshot.forEach((doc) => {
+                workouts.push({ id: doc.id, ...doc.data() });
             });
             
-            // Update custom templates if user is signed in
-            if (this.appState.currentUser) {
-                const customWorkoutsRef = collection(this.db, 'users', this.appState.currentUser.uid, 'workoutTemplates');
-                const customSnapshot = await getDocs(customWorkoutsRef);
-                
-                customSnapshot.forEach((doc) => {
-                    const workout = doc.data();
-                    let needsUpdate = false;
-                    
-                    if (workout.exercises && Array.isArray(workout.exercises)) {
-                        workout.exercises.forEach(exercise => {
-                            if (exercise.machine === exerciseId || 
-                                exercise.name === exerciseId ||
-                                exercise.machine === newExerciseData.name ||
-                                exercise.machine === newExerciseData.machine) {
-                                
-                                exercise.machine = newExerciseData.name;
-                                exercise.name = newExerciseData.name;
-                                
-                                if (newExerciseData.video) {
-                                    exercise.video = newExerciseData.video;
-                                }
-                                
-                                needsUpdate = true;
-                            }
-                        });
-                    }
-                    
-                    if (needsUpdate) {
-                        batch.update(doc.ref, {
-                            exercises: workout.exercises,
-                            updatedAt: new Date().toISOString()
-                        });
-                        updatedCount++;
-                    }
-                });
-            }
-            
-            if (updatedCount > 0) {
-                await batch.commit();
-                console.log(`✅ Updated ${updatedCount} workout templates`);
-            }
-            
-            return updatedCount;
-            
+            return workouts;
         } catch (error) {
-            console.error('❌ Error updating workouts:', error);
-            throw error;
-        }
-    }
-
-    // ===== UTILITY METHODS =====
-
-    // Fallback to JSON files if Firebase fails
-    async fallbackToJSON() {
-        try {
-            console.log('⚠️ Falling back to JSON files...');
-            const response = await fetch('./exercises.json');
-            const exercises = await response.json();
-            return exercises.map(ex => ({ ...ex, isDefault: true, isCustom: false }));
-        } catch (error) {
-            console.error('❌ JSON fallback also failed:', error);
+            console.error('❌ Error loading user workouts:', error);
             return [];
         }
     }
 
-    async fallbackWorkoutsToJSON() {
-        try {
-            console.log('⚠️ Falling back to workout JSON files...');
-            const response = await fetch('./workouts.json');
-            const workouts = await response.json();
-            return workouts.map(w => ({ ...w, isDefault: true }));
-        } catch (error) {
-            console.error('❌ Workout JSON fallback also failed:', error);
-            return [];
-        }
-    }
-
-    // Clean up listeners
-    cleanup() {
-        this.exerciseListeners.forEach(unsubscribe => unsubscribe());
-        this.workoutListeners.forEach(unsubscribe => unsubscribe());
-        this.exerciseListeners.clear();
-        this.workoutListeners.clear();
-    }
-}
-
-// Legacy compatibility - keep existing method names
-export class WorkoutManager extends FirebaseWorkoutManager {
-    // Maintain compatibility with existing code
-    async getExerciseLibrary() {
-        return await super.getExerciseLibrary();
-    }
-
+    // Legacy method names for compatibility
     async createExercise(exerciseData) {
         return await this.saveCustomExercise(exerciseData);
     }
 
-    // Legacy method - now points to category-specific loading
-    async getUserWorkoutTemplates() {
-        console.warn('⚠️ getUserWorkoutTemplates is deprecated. Use getTemplatesByCategory() instead.');
-        return await super.getWorkoutTemplates();
-    }
-
-    // Add other legacy methods
-    async saveWorkoutTemplate(templateData) {
-        return await super.saveWorkoutTemplate(templateData);
-    }
-   
-    async deleteWorkoutTemplate(templateId) {
-        return await super.deleteWorkoutTemplate(templateId);
-    }
-
-    // Add the new category-specific method to legacy class
-    async getTemplatesByCategory(category) {
-        return await super.getTemplatesByCategory(category);
-    }
-
-    async copyDefaultToCustom(templateId) {
-        return await super.copyDefaultToCustom(templateId);
+    async swapExercise(exerciseIndex, newExercise) {
+        if (!this.appState.currentWorkout) return false;
+        
+        const oldExercise = this.appState.currentWorkout.exercises[exerciseIndex];
+        
+        // Update the workout
+        this.appState.currentWorkout.exercises[exerciseIndex] = {
+            machine: newExercise.name || newExercise.machine,
+            sets: newExercise.sets || oldExercise.sets || 3,
+            reps: newExercise.reps || oldExercise.reps || 10,
+            weight: newExercise.weight || oldExercise.weight || 50,
+            video: newExercise.video || ''
+        };
+        
+        console.log(`✅ Swapped exercise: ${oldExercise.machine} → ${newExercise.name}`);
+        showNotification(`Swapped to ${newExercise.name}`, 'success');
+        
+        return true;
     }
 }
 
-// Export both for flexibility
-export default FirebaseWorkoutManager;
+// For backward compatibility
+export { FirebaseWorkoutManager as WorkoutManager };
