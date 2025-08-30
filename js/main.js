@@ -5016,28 +5016,6 @@ async function showWorkoutHistory() {
 // Simplified History Functions (replaces complex filtering)
 window.showWorkoutHistory = showWorkoutHistory;
 
-// Table Action Functions - these are called from the table buttons
-window.viewWorkoutDetails = function(workoutId) {
-    if (!window.workoutHistory) return;
-    
-    const workout = window.workoutHistory.getWorkoutDetails(workoutId);
-    if (!workout) return;
-
-    // Create a simple details display
-    const status = window.workoutHistory.getWorkoutStatus(workout);
-    const duration = window.workoutHistory.formatDuration(window.workoutHistory.getWorkoutDuration(workout));
-    
-    const details = `
-Workout: ${workout.workoutType}
-Date: ${new Date(workout.date).toLocaleDateString()}
-Status: ${status.charAt(0).toUpperCase() + status.slice(1)}
-Duration: ${duration}
-Progress: ${workout.progress?.completedSets || 0}/${workout.progress?.totalSets || 0} sets (${workout.progress?.percentage || 0}%)
-${workout.manualNotes ? `\nNotes: ${workout.manualNotes}` : ''}
-    `.trim();
-    
-    alert(details);
-};
 
 window.repeatWorkout = function(workoutId) {
     if (window.workoutHistory) {

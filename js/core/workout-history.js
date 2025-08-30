@@ -604,19 +604,237 @@ window.viewWorkoutDetails = function(workoutId) {
     const workout = window.workoutHistory?.getWorkoutDetails(workoutId);
     if (!workout) return;
 
-    // Create a detailed modal or expand inline
-    console.log('Viewing workout details for:', workout.workoutType);
+    // Create detailed modal instead of simple alert
+    showDetailedWorkoutModal(workout);
+};
+
+// New function to show detailed workout modal
+function showDetailedWorkoutModal(workout) {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('detailed-workout-modal');
+    if (!modal) {
+        modal = createDetailedWorkoutModal();
+        document.body.appendChild(modal);
+    }
+
+    // Populate modal with detailed workout data
+    const modalTitle = modal.querySelector('.detailed-modal-title');
+    const modalContent = modal.querySelector('.detailed-modal-content');
     
-    // For now, just show an alert with basic details
-    const details = `
-Workout: ${workout.workoutType}
-Date: ${new Date(workout.date).toLocaleDateString()}
-Status: ${window.workoutHistory.getWorkoutStatus(workout)}
-Progress: ${workout.progress?.completedSets || 0}/${workout.progress?.totalSets || 0} sets (${workout.progress?.percentage || 0}%)
-${workout.manualNotes ? `Notes: ${workout.manualNotes}` : ''}
-    `.trim();
+    modalTitle.textContent = `${workout.workoutType} - ${new Date(workout.date).toLocaleDateString()}`;
     
-    alert(details);
+    // Generate detailed content
+    const status = window.workoutHistory.getWorkoutStatus(workout);
+    const duration = window.workoutHistory.formatDuration(window.workoutHistory.getWorkoutDuration(workout)) || 'Quick session';
+    
+    let detailedHTML = `
+        <div class="workout-overview">
+            <div class="workout-stat">
+                <strong>Status:</strong> <span class="status-${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>
+            </div>
+            <div class="workout-stat">
+                <strong>Duration:</strong> ${duration}
+            </div>
+            <div class="workout-stat">
+                <strong>Progress:</strong> ${workout.progress?.completedSets || 0}/${workout.progress?.totalSets || 0} sets (${workout.progress?.percentage || 0}%)
+            </div>
+            ${workout.manualNotes ? `
+                <div class="workout-stat">
+                    <strong>Notes:</strong> ${workout.manualNotes}
+                </div>
+            ` : ''}
+        </div>
+        
+        <h3>Exercises & Sets</h3>
+        <div class="exercises-detailed-list">
+    `;
+
+    // Add detailed exercise information
+    if (workout.exercises && Object.keys(workout.exercises).length > 0) {
+        // Handle saved exercise data from workout
+        Object.entries(workout.exercises).forEach(([exerciseKey, exerciseData]) => {
+            const exerciseName = workout.exerciseNames?.[exerciseKey] || exerciseKey.replace('exercise_', 'Exercise ');
+            
+            detailedHTML += `
+                <div class="exercise-detail-card">
+                    <h4>${exerciseName}</h4>
+                    <div class="sets-container">
+                        <table class="sets-table">
+                            <thead>
+                                <tr>
+                                    <th>Set</th>
+                                    <th>Reps</th>
+                                    <th>Weight</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            if (exerciseData.sets && exerciseData.sets.length > 0) {
+                exerciseData.sets.forEach((set, index) => {
+                    if (set && (set.reps || set.weight)) {
+                        detailedHTML += `
+                            <tr class="${set.reps && set.weight ? 'completed-set' : 'incomplete-set'}">
+                                <td>Set ${index + 1}</td>
+                                <td>${set.reps || '-'}</td>
+                                <td>${set.weight ? set.weight + ' lbs' : '-'}</td>
+                            </tr>
+                        `;
+                    }
+                });
+            } else {
+                detailedHTML += `
+                    <tr>
+                        <td colspan="3" class="no-sets">No sets recorded</td>
+                    </tr>
+                `;
+            }
+            
+            detailedHTML += `
+                            </tbody>
+                        </table>
+                    </div>
+                    ${exerciseData.notes ? `
+                        <div class="exercise-notes">
+                            <strong>Notes:</strong> ${exerciseData.notes}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        });
+    } else if (workout.originalWorkout?.exercises) {
+        // Handle template-based workout structure
+        workout.originalWorkout.exercises.forEach((exercise, index) => {
+            const exerciseData = workout.exercises?.[`exercise_${index}`];
+            
+            detailedHTML += `
+                <div class="exercise-detail-card">
+                    <h4>${exercise.machine || exercise.name || exercise.exercise}</h4>
+                    <div class="exercise-template-info">
+                        <span>Target: ${exercise.sets} sets × ${exercise.reps} reps @ ${exercise.weight} lbs</span>
+                    </div>
+                    <div class="sets-container">
+                        <table class="sets-table">
+                            <thead>
+                                <tr>
+                                    <th>Set</th>
+                                    <th>Target</th>
+                                    <th>Actual Reps</th>
+                                    <th>Actual Weight</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            if (exerciseData?.sets && exerciseData.sets.length > 0) {
+                exerciseData.sets.forEach((set, setIndex) => {
+                    detailedHTML += `
+                        <tr class="${set?.reps && set?.weight ? 'completed-set' : 'incomplete-set'}">
+                            <td>Set ${setIndex + 1}</td>
+                            <td>${exercise.reps} × ${exercise.weight} lbs</td>
+                            <td>${set?.reps || '-'}</td>
+                            <td>${set?.weight ? set.weight + ' lbs' : '-'}</td>
+                        </tr>
+                    `;
+                });
+                
+                // Fill remaining sets if template had more
+                for (let i = exerciseData.sets.length; i < exercise.sets; i++) {
+                    detailedHTML += `
+                        <tr class="incomplete-set">
+                            <td>Set ${i + 1}</td>
+                            <td>${exercise.reps} × ${exercise.weight} lbs</td>
+                            <td>-</td>
+                            <td>-</td>
+                        </tr>
+                    `;
+                }
+            } else {
+                // No sets completed - show template structure
+                for (let i = 0; i < exercise.sets; i++) {
+                    detailedHTML += `
+                        <tr class="incomplete-set">
+                            <td>Set ${i + 1}</td>
+                            <td>${exercise.reps} × ${exercise.weight} lbs</td>
+                            <td>-</td>
+                            <td>-</td>
+                        </tr>
+                    `;
+                }
+            }
+            
+            detailedHTML += `
+                            </tbody>
+                        </table>
+                    </div>
+                    ${exerciseData?.notes ? `
+                        <div class="exercise-notes">
+                            <strong>Notes:</strong> ${exerciseData.notes}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        });
+    } else {
+        detailedHTML += `
+            <div class="no-exercises">
+                <p>No exercise data available for this workout.</p>
+            </div>
+        `;
+    }
+    
+    detailedHTML += `
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="window.workoutHistory?.repeatWorkout('${workout.id}')">
+                <i class="fas fa-redo"></i> Repeat Workout
+            </button>
+            <button class="btn btn-secondary" onclick="closeDetailedWorkoutModal()">
+                Close
+            </button>
+        </div>
+    `;
+
+    modalContent.innerHTML = detailedHTML;
+    modal.style.display = 'flex';
+}
+
+// Create the detailed workout modal
+function createDetailedWorkoutModal() {
+    const modal = document.createElement('div');
+    modal.id = 'detailed-workout-modal';
+    modal.className = 'modal-overlay detailed-workout-modal';
+    
+    modal.innerHTML = `
+        <div class="modal-content detailed-modal-content-wrapper">
+            <div class="modal-header">
+                <h2 class="detailed-modal-title">Workout Details</h2>
+                <button class="modal-close-btn" onclick="closeDetailedWorkoutModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="detailed-modal-content">
+                <!-- Content will be populated by showDetailedWorkoutModal -->
+            </div>
+        </div>
+    `;
+    
+    // Add event listener to close modal when clicking outside
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeDetailedWorkoutModal();
+        }
+    });
+    
+    return modal;
+}
+
+// Close detailed modal
+window.closeDetailedWorkoutModal = function() {
+    const modal = document.getElementById('detailed-workout-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
 };
 
 window.repeatWorkout = function(workoutId) {

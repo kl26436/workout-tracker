@@ -3405,3 +3405,315 @@ body {
     background: rgba(255, 193, 7, 0.3);
     border: 1px solid var(--warning);
 }
+/* Detailed Workout Modal Styles */
+.detailed-workout-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.detailed-modal-content-wrapper {
+    background: var(--bg-primary);
+    border-radius: 12px;
+    max-width: 800px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    border: 1px solid var(--border);
+}
+
+.detailed-workout-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-secondary);
+    border-radius: 12px 12px 0 0;
+}
+
+.detailed-modal-title {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.modal-close-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.detailed-modal-content {
+    padding: 1.5rem;
+}
+
+/* Workout Overview Section */
+.workout-overview {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.workout-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.workout-stat strong {
+    color: var(--text-primary);
+    min-width: 80px;
+}
+
+.status-completed {
+    color: var(--success);
+    font-weight: 600;
+}
+
+.status-incomplete {
+    color: var(--warning);
+    font-weight: 600;
+}
+
+.status-in-progress {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+/* Exercises Section */
+.exercises-detailed-list h3 {
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 0.5rem;
+}
+
+.exercise-detail-card {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border);
+}
+
+.exercise-detail-card h4 {
+    margin: 0 0 1rem 0;
+    color: var(--primary);
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.exercise-detail-card h4::before {
+    content: "🏋️";
+    font-size: 1.2rem;
+}
+
+.exercise-template-info {
+    background: var(--bg-tertiary);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    border-left: 3px solid var(--primary);
+}
+
+/* Sets Table */
+.sets-container {
+    margin: 1rem 0;
+}
+
+.sets-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-primary);
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.sets-table th {
+    background: var(--bg-tertiary);
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.sets-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+}
+
+.sets-table tr:last-child td {
+    border-bottom: none;
+}
+
+.completed-set {
+    background: rgba(40, 167, 69, 0.1);
+    color: var(--text-primary);
+}
+
+.completed-set td {
+    border-color: rgba(40, 167, 69, 0.2);
+}
+
+.incomplete-set {
+    background: rgba(108, 117, 125, 0.1);
+    color: var(--text-secondary);
+}
+
+.incomplete-set td {
+    border-color: rgba(108, 117, 125, 0.2);
+}
+
+.no-sets {
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+    padding: 2rem !important;
+}
+
+/* Exercise Notes */
+.exercise-notes {
+    background: var(--bg-tertiary);
+    padding: 1rem;
+    border-radius: 6px;
+    margin-top: 1rem;
+    border-left: 3px solid var(--info);
+}
+
+.exercise-notes strong {
+    color: var(--info);
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+/* No Exercises State */
+.no-exercises {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+}
+
+.no-exercises p {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+/* Modal Actions */
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding: 1.5rem;
+    border-top: 1px solid var(--border);
+    background: var(--bg-secondary);
+    border-radius: 0 0 12px 12px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .detailed-workout-modal {
+        padding: 10px;
+    }
+    
+    .detailed-modal-content-wrapper {
+        max-height: 95vh;
+    }
+    
+    .detailed-workout-modal .modal-header,
+    .detailed-modal-content,
+    .modal-actions {
+        padding: 1rem;
+    }
+    
+    .workout-overview {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+        padding: 1rem;
+    }
+    
+    .exercise-detail-card {
+        padding: 1rem;
+    }
+    
+    .sets-table {
+        font-size: 0.8rem;
+    }
+    
+    .sets-table th,
+    .sets-table td {
+        padding: 0.5rem 0.25rem;
+    }
+    
+    .modal-actions {
+        flex-direction: column;
+    }
+    
+    .modal-actions .btn {
+        width: 100%;
+    }
+}
+
+/* Animation */
+.detailed-workout-modal[style*="flex"] {
+    animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.detailed-modal-content-wrapper {
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
