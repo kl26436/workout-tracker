@@ -2264,41 +2264,42 @@ async function loadTemplatesForCategory(category) {
     grid.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading templates...</span></div>';
     
     try {
-        // Get default templates for this category
-        const defaultTemplates = AppState.workoutPlans.filter(w => 
-            getWorkoutCategory(w.day).toLowerCase() === category.toLowerCase()
-        );
-        
-        // Get custom templates for this category
-        let customTemplates = [];
-        if (AppState.currentUser) {
-            const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
-            const workoutManager = new WorkoutManager(AppState);
-            const allCustom = await workoutManager.getUserWorkoutTemplates();
-            customTemplates = allCustom.filter(t => t.category === category);
+        if (!AppState.currentUser) {
+            grid.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <h3>Sign In Required</h3>
+                    <p>Please sign in to view workout templates.</p>
+                </div>
+            `;
+            return;
         }
+
+        // Use Firebase WorkoutManager to get templates by category
+        const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
+        const workoutManager = new WorkoutManager(AppState);
         
-        const allTemplates = [
-            ...defaultTemplates.map(t => ({ ...t, isDefault: true, id: t.day })),
-            ...customTemplates.map(t => ({ ...t, isDefault: false }))
-        ];
+        // Use the getTemplatesByCategory method which handles default vs custom properly
+        const templates = await workoutManager.getTemplatesByCategory(category);
         
-        if (allTemplates.length === 0) {
+        if (templates.length === 0) {
             grid.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-clipboard-list"></i>
                     <h3>No Templates Found</h3>
-                    <p>No templates available for ${category}. Create your first one!</p>
+                    <p>No ${category} templates available. ${category === 'custom' ? 'Create your first one!' : ''}</p>
                 </div>
             `;
             return;
         }
         
         grid.innerHTML = '';
-        allTemplates.forEach(template => {
+        templates.forEach(template => {
             const card = createTemplateSelectionCard(template);
             grid.appendChild(card);
         });
+        
+        console.log(`✅ Loaded ${templates.length} ${category} templates from Firebase`);
         
     } catch (error) {
         console.error('Error loading templates:', error);
