@@ -511,57 +511,107 @@ export class FirebaseWorkoutManager {
     // ===== WORKOUT TEMPLATE MANAGEMENT =====
     
     async getWorkoutTemplates() {
-        return await this.getUserWorkoutTemplates();
-    }
+    console.log('🔄 getWorkoutTemplates: Loading defaults for AppState.workoutPlans...');
+    
+    // For AppState.workoutPlans, we ONLY want global default templates
+    const defaultTemplates = await this.getGlobalDefaultTemplates();
+    
+    console.log(`✅ getWorkoutTemplates: Returning ${defaultTemplates.length} global defaults for AppState`);
+    return defaultTemplates;
+}
 
+async getGlobalDefaultTemplates() {
+    try {
+        console.log('🌍 Loading global default templates from Firebase workouts collection...');
+        
+        // Load from your existing 'workouts' collection
+        const globalDefaultsRef = collection(this.db, "workouts");
+        const querySnapshot = await getDocs(globalDefaultsRef);
+        
+        const globalDefaults = [];
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            globalDefaults.push({ 
+                id: doc.id, 
+                ...data,
+                // Ensure consistent naming
+                name: data.day || data.name || doc.id,
+                isDefault: true,
+                isCustom: false,
+                source: 'global-firebase'
+            });
+        });
+        
+        console.log(`✅ Loaded ${globalDefaults.length} global default templates from workouts collection`);
+        
+        if (globalDefaults.length === 0) {
+            console.warn('⚠️ No global default templates found in workouts collection.');
+        }
+        
+        return globalDefaults;
+        
+    } catch (error) {
+        console.error('❌ Error loading global default templates:', error);
+        
+        // Return empty array - no JSON fallback
+        console.log('❌ Returning empty array - no fallback to JSON');
+        return [];
+    }
+}
     async getTemplatesByCategory(category) {
-        try {
-            console.log(`🔄 Loading templates for category: ${category}`);
+    try {
+        console.log(`🔄 Loading templates for category: ${category}`);
+        
+        if (category === 'default') {
+            // Load ONLY global default templates
+            const defaultTemplates = await this.getGlobalDefaultTemplates();
             
+            console.log(`✅ Loaded ${defaultTemplates.length} global default templates`);
+            return defaultTemplates;
+            
+        } else if (category === 'custom') {
+            // Load ONLY user-specific custom templates
             if (!this.appState.currentUser) {
-                console.log('❌ No user signed in, returning empty templates');
+                console.log('❌ No user signed in for custom templates');
                 return [];
             }
-
-            if (category === 'default') {
-                // Load migrated default workouts
-                const defaultTemplates = await this.getMigratedDefaultWorkouts();
-                console.log(`✅ Loaded ${defaultTemplates.length} default templates`);
-                return defaultTemplates;
-            } else if (category === 'custom') {
-                // Load user's custom templates
-                const customTemplatesRef = collection(this.db, "users", this.appState.currentUser.uid, "workoutTemplates");
-                const querySnapshot = await getDocs(customTemplatesRef);
-                
-                const customTemplates = [];
-                querySnapshot.forEach((doc) => {
-                    customTemplates.push({ 
-                        id: doc.id, 
-                        ...doc.data(),
-                        isCustom: true,
-                        isDefault: false
-                    });
-                });
-                
-                console.log(`✅ Loaded ${customTemplates.length} custom templates`);
-                return customTemplates;
-            } else {
-                // Load all templates and filter by category
-                const allTemplates = await this.getUserWorkoutTemplates();
-                const filteredTemplates = allTemplates.filter(template => 
-                    template.category === category || 
-                    (template.day && this.getWorkoutCategory(template.day) === category)
-                );
-                
-                console.log(`✅ Loaded ${filteredTemplates.length} templates for category: ${category}`);
-                return filteredTemplates;
-            }
             
-        } catch (error) {
-            console.error(`❌ Error loading templates for category ${category}:`, error);
-            return [];
+            const customTemplatesRef = collection(this.db, "users", this.appState.currentUser.uid, "workoutTemplates");
+            const querySnapshot = await getDocs(customTemplatesRef);
+            
+            const customTemplates = [];
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                customTemplates.push({ 
+                    id: doc.id, 
+                    ...data,
+                    isCustom: true,
+                    isDefault: false,
+                    source: 'user-firebase'
+                });
+            });
+            
+            console.log(`✅ Loaded ${customTemplates.length} user custom templates`);
+            return customTemplates;
+            
+        } else {
+            // For workout categories (Push, Pull, Legs, etc.), load all and filter
+            const allTemplates = await this.getUserWorkoutTemplates();
+            const filteredTemplates = allTemplates.filter(template => 
+                template.category === category || 
+                (template.day && this.getWorkoutCategory(template.day) === category)
+            );
+            
+            console.log(`✅ Loaded ${filteredTemplates.length} templates for category: ${category}`);
+            return filteredTemplates;
         }
+        
+    } catch (error) {
+        console.error(`❌ Error loading templates for category ${category}:`, error);
+        return [];
     }
+}
+
 
     // Helper method to determine workout category from day name
     getWorkoutCategory(dayName) {
@@ -582,35 +632,33 @@ export class FirebaseWorkoutManager {
         }
     }
 
-    async getUserWorkoutTemplates() {
-        if (!this.appState.currentUser) {
-            console.log('❌ No user signed in, returning empty templates');
-            return [];
-        }
-        
+        async getUserWorkoutTemplates() {
         try {
-            console.log('🔄 Loading user workout templates...');
+            console.log('🔄 Loading all user workout templates...');
             
-            // Load custom templates
-            const customTemplatesRef = collection(this.db, "users", this.appState.currentUser.uid, "workoutTemplates");
-            const customSnapshot = await getDocs(customTemplatesRef);
+            // Load global defaults
+            const defaultTemplates = await this.getGlobalDefaultTemplates();
             
-            const customTemplates = [];
-            customSnapshot.forEach((doc) => {
-                customTemplates.push({ 
-                    id: doc.id, 
-                    ...doc.data(),
-                    isCustom: true,
-                    isDefault: false
+            // Load user customs (only if signed in)
+            let customTemplates = [];
+            if (this.appState.currentUser) {
+                const customTemplatesRef = collection(this.db, "users", this.appState.currentUser.uid, "workoutTemplates");
+                const customSnapshot = await getDocs(customTemplatesRef);
+                
+                customSnapshot.forEach((doc) => {
+                    customTemplates.push({ 
+                        id: doc.id, 
+                        ...doc.data(),
+                        isCustom: true,
+                        isDefault: false,
+                        source: 'user-firebase'
+                    });
                 });
-            });
-            
-            // Load migrated default templates (if any)
-            const defaultTemplates = await this.getMigratedDefaultWorkouts();
+            }
             
             const allTemplates = [...defaultTemplates, ...customTemplates];
             
-            console.log(`✅ Loaded ${defaultTemplates.length} default + ${customTemplates.length} custom = ${allTemplates.length} user templates`);
+            console.log(`✅ getUserWorkoutTemplates: ${defaultTemplates.length} global defaults + ${customTemplates.length} user customs = ${allTemplates.length} total`);
             
             return allTemplates;
             
@@ -620,182 +668,9 @@ export class FirebaseWorkoutManager {
         }
     }
 
-    async getMigratedDefaultWorkouts() {
-        if (!this.appState.currentUser) {
-            return [];
-        }
-        
-        try {
-            console.log('🔍 Loading migrated default workouts...');
-            const defaultWorkoutsRef = collection(this.db, "users", this.appState.currentUser.uid, "defaultWorkouts");
-            const querySnapshot = await getDocs(defaultWorkoutsRef);
-            
-            const defaultWorkouts = [];
-            querySnapshot.forEach((doc) => {
-                defaultWorkouts.push({ 
-                    id: doc.id, 
-                    ...doc.data(),
-                    isDefault: true,
-                    isCustom: false
-                });
-            });
-            
-            console.log(`✅ Loaded ${defaultWorkouts.length} migrated default workouts from Firebase`);
-            
-            // If no migrated workouts found, load from AppState.workoutPlans as fallback
-            if (defaultWorkouts.length === 0) {
-                console.log('🔄 No migrated workouts found, checking AppState.workoutPlans...');
-                
-                // Debug: Check what's in AppState
-                console.log('📊 AppState debug:', {
-                    hasWorkoutPlans: !!this.appState.workoutPlans,
-                    workoutPlansType: typeof this.appState.workoutPlans,
-                    workoutPlansLength: Array.isArray(this.appState.workoutPlans) ? this.appState.workoutPlans.length : 'not array',
-                    workoutPlans: this.appState.workoutPlans
-                });
-                
-                if (this.appState.workoutPlans && Array.isArray(this.appState.workoutPlans) && this.appState.workoutPlans.length > 0) {
-                    console.log('🔄 Using AppState.workoutPlans as fallback...');
-                    
-                    const fallbackWorkouts = this.appState.workoutPlans
-                        .filter((workout, index) => {
-                            if (!workout) {
-                                console.warn(`⚠️ Workout at index ${index} is null/undefined`);
-                                return false;
-                            }
-                            // Accept workouts with either 'day' or 'name' property
-                            if (!workout.day && !workout.name) {
-                                console.warn(`⚠️ Workout at index ${index} missing both 'day' and 'name' properties:`, workout);
-                                return false;
-                            }
-                            return true;
-                        })
-                        .map(workout => {
-                            // Use 'day' if it exists, otherwise use 'name'
-                            const workoutName = workout.day || workout.name || 'Unknown Workout';
-                            return {
-                                id: workoutName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase(),
-                                name: workoutName,
-                                day: workoutName,
-                                exercises: workout.exercises || [],
-                                category: this.getWorkoutCategory(workoutName),
-                                isDefault: workout.type !== 'custom', // Mark custom workouts appropriately
-                                isCustom: workout.type === 'custom',
-                                source: 'appstate-fallback',
-                                originalType: workout.type || 'default'
-                            };
-                        });
-                    
-                    console.log(`✅ Fallback loaded ${fallbackWorkouts.length} workouts from AppState`);
-                    if (fallbackWorkouts.length > 0) {
-                        console.log('📋 Sample workout:', fallbackWorkouts[0]);
-                    }
-                    return fallbackWorkouts;
-                } else {
-                    console.warn('⚠️ AppState.workoutPlans is not available or empty');
-                    
-                    // Try to load from workouts.json as absolute fallback
-                    console.log('🔄 Attempting to load from workouts.json...');
-                    try {
-                        const response = await fetch('./workouts.json');
-                        if (response.ok) {
-                            const jsonWorkouts = await response.json();
-                            console.log(`✅ Loaded ${jsonWorkouts.length} workouts from workouts.json`);
-                            
-                            return jsonWorkouts.map(workout => ({
-                                id: workout.day ? workout.day.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() : `workout_${Date.now()}`,
-                                name: workout.day || workout.name || 'Unknown Workout',
-                                day: workout.day || workout.name || 'Unknown Workout',
-                                exercises: workout.exercises || [],
-                                category: this.getWorkoutCategory(workout.day || workout.name),
-                                isDefault: true,
-                                isCustom: false,
-                                source: 'json-fallback'
-                            }));
-                        }
-                    } catch (jsonError) {
-                        console.error('❌ Failed to load from workouts.json:', jsonError);
-                    }
-                    
-                    // Ultimate fallback - create some basic workouts
-                    console.log('🔄 Creating basic fallback workouts...');
-                    return [
-                        {
-                            id: 'chest_push',
-                            name: 'Chest – Push',
-                            day: 'Chest – Push',
-                            exercises: [
-                                {
-                                    machine: 'Bench Press',
-                                    sets: 3,
-                                    reps: 10,
-                                    weight: 135,
-                                    video: ''
-                                }
-                            ],
-                            category: 'Push',
-                            isDefault: true,
-                            isCustom: false,
-                            source: 'hardcoded-fallback'
-                        },
-                        {
-                            id: 'back_pull',
-                            name: 'Back – Pull',
-                            day: 'Back – Pull',
-                            exercises: [
-                                {
-                                    machine: 'Pull-ups',
-                                    sets: 3,
-                                    reps: 8,
-                                    weight: 0,
-                                    video: ''
-                                }
-                            ],
-                            category: 'Pull',
-                            isDefault: true,
-                            isCustom: false,
-                            source: 'hardcoded-fallback'
-                        }
-                    ];
-                }
-            }
-            
-            return defaultWorkouts;
-            
-        } catch (error) {
-            console.error('❌ Error loading migrated default workouts:', error);
-            
-            // Final fallback to AppState.workoutPlans
-            if (this.appState.workoutPlans && Array.isArray(this.appState.workoutPlans)) {
-                console.log('🔄 Error fallback to AppState.workoutPlans...');
-                return this.appState.workoutPlans
-                    .filter(workout => workout && workout.day) // Filter out invalid workouts
-                    .map(workout => ({
-                        id: workout.day.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase(),
-                        name: workout.day,
-                        day: workout.day,
-                        exercises: workout.exercises || [],
-                        category: this.getWorkoutCategory(workout.day),
-                        isDefault: true,
-                        isCustom: false,
-                        source: 'appstate-fallback'
-                    }));
-            }
-            
-            // Ultimate fallback
-            return [
-                {
-                    id: 'emergency_workout',
-                    name: 'Basic Workout',
-                    day: 'Basic Workout',
-                    exercises: [],
-                    category: 'Other',
-                    isDefault: true,
-                    isCustom: false,
-                    source: 'emergency-fallback'
-                }
-            ];
-        }
+        async getMigratedDefaultWorkouts() {
+        // Simply return the global defaults
+        return await this.getGlobalDefaultTemplates();
     }
 
     async saveWorkoutTemplate(templateData) {
