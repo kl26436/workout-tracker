@@ -621,7 +621,19 @@ function showDetailedWorkoutModal(workout) {
     const modalTitle = modal.querySelector('.detailed-modal-title');
     const modalContent = modal.querySelector('.detailed-modal-content');
     
-    modalTitle.textContent = `${workout.workoutType} - ${new Date(workout.date).toLocaleDateString()}`;
+   let displayDate;
+    if (workout.date && workout.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // Add noon time to prevent timezone shift
+        const safeDate = new Date(workout.date + 'T12:00:00');
+        displayDate = safeDate.toLocaleDateString('en-US', {
+            month: 'numeric',
+            day: 'numeric',
+            year: 'numeric'
+        });
+    } else {
+        displayDate = 'Unknown Date';
+    }
+    modalTitle.textContent = `${workout.workoutType} - ${displayDate}`;
     
     // Generate detailed content
     const status = window.workoutHistory.getWorkoutStatus(workout);
@@ -847,4 +859,32 @@ window.deleteWorkout = function(workoutId) {
     if (window.workoutHistory) {
         window.workoutHistory.deleteWorkout(workoutId);
     }
+};
+// Fix for detailed workout modal date display issue
+window.closeDetailedWorkoutModal = function() {
+    const modal = document.getElementById('detailed-workout-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
+};
+
+// Fix the date display issue globally
+window.fixModalDateDisplay = function(workoutDate, workoutName) {
+    // Create a timezone-safe date display
+    let displayDate;
+    
+    if (workoutDate && workoutDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // For YYYY-MM-DD format, add time to avoid timezone shift
+        const safeDate = new Date(workoutDate + 'T12:00:00');
+        displayDate = safeDate.toLocaleDateString('en-US', {
+            month: 'numeric',
+            day: 'numeric', 
+            year: 'numeric'
+        });
+    } else {
+        displayDate = 'Unknown Date';
+    }
+    
+    return `${workoutName} - ${displayDate}`;
 };

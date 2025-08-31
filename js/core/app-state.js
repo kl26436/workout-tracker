@@ -19,13 +19,20 @@ export const AppState = {
   globalRestTimer: null,
   
   // Getters
-  getTodayDateString() {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  },
+   getTodayDateString() {
+  // Create a date object for right now
+  const now = new Date();
+  
+  // Get local date components (not UTC)
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  
+  const dateString = `${year}-${month}-${day}`;
+  console.log('🗓️ getTodayDateString result:', dateString, '(Local time)');
+  
+  return dateString;
+},
   
   hasWorkoutProgress() {
     return Object.keys(this.savedData.exercises || {}).some(key => {
