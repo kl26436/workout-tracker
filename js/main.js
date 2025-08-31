@@ -1963,36 +1963,64 @@ function setGlobalUnit(unit) {
 }
 
 function setExerciseUnit(exerciseIndex, unit) {
-    const currentUnit = AppState.exerciseUnits[exerciseIndex] || AppState.globalUnit;
-    if (currentUnit === unit) return; // No change needed
+    if (!AppState.currentWorkout || exerciseIndex >= AppState.currentWorkout.exercises.length) return;
     
+    console.log(`Setting unit for exercise ${exerciseIndex} to ${unit}`);
+    
+    // Store the old unit for conversion
+    const oldUnit = AppState.exerciseUnits[exerciseIndex] || AppState.globalUnit;
     AppState.exerciseUnits[exerciseIndex] = unit;
     
-    // Update the displayed values without conversion - use stored original values
-    if (AppState.savedData.exercises && AppState.savedData.exercises[`exercise_${exerciseIndex}`]) {
+    // PRESERVE TIMER STATE BEFORE REFRESHING MODAL
+    const modalTimer = document.getElementById(`modal-rest-timer-${exerciseIndex}`);
+    let timerState = null;
+    
+    if (modalTimer && modalTimer.timerData && !modalTimer.classList.contains('hidden')) {
+        // Save current timer state
+        timerState = {
+            isActive: true,
+            isPaused: modalTimer.timerData.isPaused || false,
+            timeLeft: modalTimer.timerData.timeLeft,
+            exerciseLabel: modalTimer.querySelector('.modal-rest-exercise')?.textContent,
+            startTime: modalTimer.timerData.startTime,
+            pausedTime: modalTimer.timerData.pausedTime
+        };
+        
+        // Cancel the current animation frame
+        if (modalTimer.timerData.animationFrame) {
+            cancelAnimationFrame(modalTimer.timerData.animationFrame);
+        }
+    }
+
+    // Convert existing weight values if switching units
+    if (oldUnit !== unit && AppState.savedData.exercises?.[`exercise_${exerciseIndex}`]) {
         const exerciseData = AppState.savedData.exercises[`exercise_${exerciseIndex}`];
         if (exerciseData.sets) {
             exerciseData.sets.forEach(set => {
-                if (set.originalWeights && set.originalWeights[unit] !== '') {
-                    // Use the stored original value for this unit
-                    set.weight = set.originalWeights[unit];
-                } else if (set.weight && !isNaN(set.weight)) {
-                    // First time switching - calculate and store
+                if (set.weight && !isNaN(parseFloat(set.weight))) {
+                    // Initialize originalWeights if not exists
                     if (!set.originalWeights) {
                         set.originalWeights = { lbs: '', kg: '' };
+                        set.originalWeights[oldUnit] = parseFloat(set.weight);
                     }
                     
-                    const conversionFactor = (currentUnit === 'lbs' && unit === 'kg') ? 0.453592 : 
-                                            (currentUnit === 'kg' && unit === 'lbs') ? 2.20462 : 1;
-                    
-                    const convertedWeight = unit === 'kg' ? 
-                        Math.round(set.weight * conversionFactor * 10) / 10 : // kg to 1 decimal
-                        Math.round(set.weight * conversionFactor); // lbs to whole number
-                    
-                    // Store both values
-                    set.originalWeights[currentUnit] = set.weight;
-                    set.originalWeights[unit] = convertedWeight;
-                    set.weight = convertedWeight;
+                    // Convert if we have the target unit stored
+                    if (set.originalWeights[unit]) {
+                        set.weight = set.originalWeights[unit];
+                    } else {
+                        // Calculate conversion
+                        const conversionFactor = (oldUnit === 'lbs' && unit === 'kg') ? 0.453592 : 
+                                                (oldUnit === 'kg' && unit === 'lbs') ? 2.20462 : 1;
+                        
+                        const convertedWeight = unit === 'kg' ? 
+                            Math.round(set.weight * conversionFactor * 10) / 10 : // kg to 1 decimal
+                            Math.round(set.weight * conversionFactor); // lbs to whole number
+                        
+                        // Store both values
+                        set.originalWeights[oldUnit] = set.weight;
+                        set.originalWeights[unit] = convertedWeight;
+                        set.weight = convertedWeight;
+                    }
                 }
             });
         }
@@ -2010,6 +2038,11 @@ function setExerciseUnit(exerciseIndex, unit) {
         const content = document.getElementById('modal-exercise-content');
         if (content) {
             content.innerHTML = generateExerciseTable(exercise, exerciseIndex, unit);
+            
+            // RESTORE TIMER STATE AFTER MODAL REFRESH
+            if (timerState && timerState.isActive) {
+                restoreModalRestTimer(exerciseIndex, timerState);
+            }
         }
     }
     
@@ -2021,6 +2054,111 @@ function setExerciseUnit(exerciseIndex, unit) {
     
     showNotification(`Switched to ${unit.toUpperCase()} for this exercise`, 'success');
 }
+
+function restoreModalRestTimer(exerciseIndex, timerState) {
+    const modalTimer = document.getElementById(`modal-rest-timer-${exerciseIndex}`);
+    const exerciseLabel = modalTimer?.querySelector('.modal-rest-exercise');
+    const timerDisplay = modalTimer?.querySelector('.modal-rest-display');
+    
+    if (!modalTimer || !exerciseLabel || !timerDisplay) return;
+    
+    // Restore visual state
+    exerciseLabel.textContent = timerState.exerciseLabel;
+    modalTimer.classList.remove('hidden');
+    
+    let timeLeft = timerState.timeLeft;
+    let isPaused = timerState.isPaused;
+    let startTime = timerState.startTime || Date.now();
+    let pausedTime = timerState.pausedTime || 0;
+    
+    const updateDisplay = () => {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    };
+    
+    const checkTime = () => {
+        if (isPaused) return;
+        
+        const elapsed = Math.floor((Date.now() - startTime - pausedTime) / 1000);
+        timeLeft = Math.max(0, timerState.timeLeft - elapsed);
+        
+        updateDisplay();
+        
+        if (timeLeft === 0) {
+            timerDisplay.textContent = 'Ready!';
+            timerDisplay.style.color = 'var(--success)';
+            
+            // Vibration and notification
+            if ('vibrate' in navigator) {
+                navigator.vibrate([200, 100, 200]);
+            }
+            
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('Rest complete!', {
+                    body: 'Time for your next set 💪',
+                    icon: '/BigSurf.png'
+                });
+            }
+            
+            showNotification('Rest period complete! 💪', 'success');
+            
+            setTimeout(() => {
+                modalTimer.classList.add('hidden');
+                timerDisplay.style.color = 'var(--primary)';
+            }, 5000);
+            
+            return;
+        }
+    };
+    
+    updateDisplay();
+    
+    // Resume timer animation
+    const timerLoop = () => {
+        checkTime();
+        if (timeLeft > 0) {
+            modalTimer.timerData.animationFrame = requestAnimationFrame(timerLoop);
+        }
+    };
+    
+    // Store timer state
+    modalTimer.timerData = {
+        animationFrame: requestAnimationFrame(timerLoop),
+        timeLeft: timeLeft,
+        isPaused: isPaused,
+        startTime: startTime,
+        pausedTime: pausedTime,
+        
+        pause: () => {
+            isPaused = !isPaused;
+            if (isPaused) {
+                pausedTime += Date.now() - startTime;
+            } else {
+                startTime = Date.now();
+            }
+            const pauseBtn = modalTimer.querySelector('.modal-rest-controls .btn:first-child');
+            if (pauseBtn) {
+                pauseBtn.innerHTML = isPaused ? 
+                    '<i class="fas fa-play"></i>' : '<i class="fas fa-pause"></i>';
+            }
+            
+            // Update stored state for future restores
+            modalTimer.timerData.isPaused = isPaused;
+            modalTimer.timerData.pausedTime = pausedTime;
+            modalTimer.timerData.timeLeft = timeLeft;
+        },
+        
+        skip: () => {
+            if (modalTimer.timerData.animationFrame) {
+                cancelAnimationFrame(modalTimer.timerData.animationFrame);
+            }
+            modalTimer.classList.add('hidden');
+            timerDisplay.style.color = 'var(--primary)';
+        }
+    };
+}
+
 
 // Rest Timer Functions
 function startRestTimer(exerciseIndex, setIndex) {
