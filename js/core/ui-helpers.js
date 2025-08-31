@@ -47,12 +47,16 @@ export function setTodayDisplay() {
 }
 
 export function convertWeight(weight, fromUnit, toUnit) {
+    // Handle corrupted or invalid weights
+    if (!weight || isNaN(weight) || weight <= 0) return 0;
+    if (weight > 1000) return '??'; // Clearly corrupted
+    
     if (fromUnit === toUnit) return Math.round(weight);
     
     if (fromUnit === 'lbs' && toUnit === 'kg') {
-        return Math.round(weight * 0.453592);
+        return Math.round(weight * 0.453592 * 10) / 10; // 1 decimal for kg
     } else if (fromUnit === 'kg' && toUnit === 'lbs') {
-        return Math.round(weight * 2.20462);
+        return Math.round(weight * 2.20462); // Whole number for lbs
     }
     
     return weight;

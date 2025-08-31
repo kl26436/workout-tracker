@@ -56,7 +56,7 @@ export async function saveWorkoutData(state) {
         state.savedData.totalExercises = state.currentWorkout.exercises.length;
     }
     
-    // Convert all weights to pounds for storage (baseline for future analysis)
+    // Convert weights to pounds for storage - FIXED to prevent corruption
     const normalizedData = { ...state.savedData };
     if (normalizedData.exercises) {
         Object.keys(normalizedData.exercises).forEach(exerciseKey => {
@@ -66,12 +66,22 @@ export async function saveWorkoutData(state) {
             
             if (exerciseData.sets) {
                 exerciseData.sets = exerciseData.sets.map(set => {
-                    if (set.weight && currentUnit === 'kg') {
-                        // Convert kg to lbs for storage
+                    // CRITICAL FIX: Don't convert if already converted or corrupted
+                    if (set.weight && currentUnit === 'kg' && 
+                        !set.alreadyConverted && 
+                        set.weight < 500) { // Reasonable weight check
+                        
                         return {
                             ...set,
                             weight: Math.round(set.weight * 2.20462),
-                            originalUnit: 'kg' // Track what user entered
+                            originalUnit: 'kg',
+                            alreadyConverted: true // Prevent double conversion
+                        };
+                    } else if (set.alreadyConverted || set.weight >= 500) {
+                        // Don't touch already converted or corrupted weights
+                        return {
+                            ...set,
+                            originalUnit: set.originalUnit || 'kg'
                         };
                     }
                     return {
@@ -88,10 +98,10 @@ export async function saveWorkoutData(state) {
         await setDoc(docRef, {
             ...normalizedData,
             lastUpdated: new Date().toISOString(),
-            version: '2.0' // Mark enhanced data format
+            version: '2.0'
         });
         
-        console.log('💾 Enhanced workout data saved for', saveDate, '(weights normalized to lbs)');
+        console.log('💾 Enhanced workout data saved for', saveDate);
         return true;
     } catch (error) {
         console.error('❌ Error saving workout data:', error);
@@ -280,11 +290,30 @@ export async function loadExerciseHistory(exerciseName, exerciseIndex, state) {
             
             lastExerciseData.sets.forEach((set, index) => {
                 if (set.reps && set.weight) {
-                    // Convert weight to current unit if needed (assuming stored in lbs)
-                    const convertedWeight = convertWeight(set.weight, 'lbs', unit);
+                    let displayWeight;
+                    
+                    // FIXED: Use originalWeights if available (most reliable)
+                    if (set.originalWeights && set.originalWeights[unit]) {
+                        displayWeight = set.originalWeights[unit];
+                    } else if (set.originalWeights) {
+                        // Use whichever originalWeight exists and convert
+                        const availableUnit = set.originalWeights.kg ? 'kg' : 'lbs';
+                        const availableWeight = set.originalWeights[availableUnit];
+                        displayWeight = convertWeight(availableWeight, availableUnit, unit);
+                    } else {
+                        // Fallback: check originalUnit and handle corrupted data
+                        const storedUnit = set.originalUnit || 'lbs';
+                        if (set.weight > 500) {
+                            // Corrupted weight - try to recover
+                            displayWeight = '??';
+                        } else {
+                            displayWeight = convertWeight(set.weight, storedUnit, unit);
+                        }
+                    }
+                    
                     historyHTML += `
                         <div style="background: var(--bg-secondary); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">
-                            Set ${index + 1}: ${set.reps} × ${convertedWeight} ${unit}
+                            Set ${index + 1}: ${set.reps} × ${displayWeight} ${unit}
                         </div>
                     `;
                 }
@@ -493,4 +522,55 @@ function getDefaultExercises() {
             "video": "https://www.youtube.com/watch?v=example"
         }
     ];
+}
+// RECOVERY FUNCTION: Fix corrupted weight data
+async function recoverCorruptedWeights(state) {
+    if (!state.currentUser) return;
+    
+    console.log('🔧 Starting weight corruption recovery...');
+    
+    let fixedCount = 0;
+    
+    // Get all workout data
+    const workoutsRef = collection(db, "users", state.currentUser.uid, "workouts");
+    const snapshot = await getDocs(workoutsRef);
+    
+    for (const docSnapshot of snapshot.docs) {
+        const data = docSnapshot.data();
+        let needsUpdate = false;
+        
+        if (data.exercises) {
+            Object.keys(data.exercises).forEach(exerciseKey => {
+                const exerciseData = data.exercises[exerciseKey];
+                if (exerciseData.sets) {
+                    exerciseData.sets.forEach(set => {
+                        // Check if weight is corrupted (unreasonably high)
+                        if (set.weight && set.weight > 500 && set.originalWeights) {
+                            console.log(`🔧 Fixing corrupted weight: ${set.weight} -> using originalWeights`);
+                            
+                            // Use the original kg value if available
+                            if (set.originalWeights.kg && set.originalUnit === 'kg') {
+                                set.weight = Math.round(set.originalWeights.kg * 2.20462);
+                            } else if (set.originalWeights.lbs) {
+                                set.weight = set.originalWeights.lbs;
+                            }
+                            
+                            set.alreadyConverted = true;
+                            needsUpdate = true;
+                            fixedCount++;
+                        }
+                    });
+                }
+            });
+        }
+        
+        // Update the document if we made changes
+        if (needsUpdate) {
+            await setDoc(doc(db, "users", state.currentUser.uid, "workouts", docSnapshot.id), data);
+            console.log(`✅ Fixed corrupted weights in workout ${docSnapshot.id}`);
+        }
+    }
+    
+    console.log(`🎉 Recovery complete! Fixed ${fixedCount} corrupted weight entries.`);
+    showNotification(`Recovered ${fixedCount} corrupted weights!`, 'success');
 }

@@ -5432,7 +5432,6 @@ window.deleteWorkout = function(workoutId) {
     }
 };
 
-
 // Template Selection Functions
 window.showTemplateSelection = showTemplateSelection;
 window.closeTemplateSelection = closeTemplateSelection;
