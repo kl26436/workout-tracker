@@ -47,6 +47,9 @@ let currentManualWorkout = {
 };
 let currentManualExerciseIndex = null;
 let manualExerciseUnit = 'lbs';
+let currentExerciseLibraryContext = null; // 'template', 'swap', or null
+let currentExerciseLibrary = [];
+let currentFilteredExercises = [];
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
@@ -87,8 +90,8 @@ function initializeWorkoutApp() {
                 
                 // Initialize workout manager for custom templates
                 if (!window.workoutManager) {
-                    const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
-                    window.workoutManager = new WorkoutManager(AppState);
+                    const { FirebaseWorkoutManager } = await import('./core/firebase-workout-manager.js');
+                    window.workoutManager = new FirebaseWorkoutManager(AppState); // ← Fixed
                 }
                 
                 await loadWorkoutPlans(AppState);
@@ -239,7 +242,7 @@ async function findCustomWorkoutTemplate(workoutType) {
     try {
         // Initialize workout manager if not available
         if (!window.workoutManager) {
-            const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
+            const { FirebaseWorkoutManager } = await import('./core/firebase-workout-manager.js');
             window.workoutManager = new WorkoutManager(AppState);
         }
         
@@ -339,8 +342,8 @@ async function validateUserData() {
         await refreshExerciseDatabase();
         
         // Your existing validation code...
-        const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
-        const workoutManager = new WorkoutManager(AppState);
+        const { FirebaseWorkoutManager } = await import('./core/firebase-workout-manager.js');
+        const workoutManager = new FirebaseWorkoutManager(AppState);
         const templates = await workoutManager.getUserWorkoutTemplates();
         
         // Check custom exercises (should now be in AppState.exerciseDatabase)
@@ -862,8 +865,8 @@ async function handleUnknownWorkout(workoutData) {
     // Check if it's a custom template that was saved
     if (AppState.currentUser) {
         try {
-            const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
-            const workoutManager = new WorkoutManager(AppState);
+            const { FirebaseWorkoutManager } = await import('./core/firebase-workout-manager.js');
+            const workoutManager = new FirebaseWorkoutManager(AppState);
             const templates = await workoutManager.getUserWorkoutTemplates();
             
             console.log(`📋 Checking ${templates.length} custom templates for "${workoutData.workoutType}"`);
@@ -2276,8 +2279,8 @@ async function loadTemplatesForCategory(category) {
         }
 
         // Use Firebase WorkoutManager to get templates by category
-        const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
-        const workoutManager = new WorkoutManager(AppState);
+        const { FirebaseWorkoutManager } = await import('./core/firebase-workout-manager.js');
+        const workoutManager = new FirebaseWorkoutManager(AppState);
         
         // Use the getTemplatesByCategory method which handles default vs custom properly
         const templates = await workoutManager.getTemplatesByCategory(category);
@@ -2352,8 +2355,8 @@ async function selectTemplate(templateId, isDefault) {
     if (isDefault) {
         workout = AppState.workoutPlans.find(w => w.day === templateId);
     } else {
-        const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
-        const workoutManager = new WorkoutManager(AppState);
+        const { FirebaseWorkoutManager } = await import('./core/firebase-workout-manager.js');
+        const workoutManager = new FirebaseWorkoutManager(AppState);
         const templates = await workoutManager.getUserWorkoutTemplates();
         const template = templates.find(t => t.id === templateId);
         
@@ -2505,8 +2508,8 @@ async function quickAddExercise() {
     try {
         // Save to library first if user is signed in
         if (AppState.currentUser) {
-            const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
-            const workoutManager = new WorkoutManager(AppState);
+            const { FirebaseWorkoutManager } = await import('./core/firebase-workout-manager.js');
+            const workoutManager = new FirebaseWorkoutManager(AppState);
             await workoutManager.createExercise(exerciseData);
         }
         
@@ -2685,8 +2688,8 @@ async function loadTemplatesByCategory(category) {
     
     try {
         // Use the updated FirebaseWorkoutManager or WorkoutManager
-        const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
-        const workoutManager = new WorkoutManager(AppState);
+        const { FirebaseWorkoutManager } = await import('./core/firebase-workout-manager.js');
+        const workoutManager = new FirebaseWorkoutManager(AppState);
         
         // Use the new category-specific method
         const templates = await workoutManager.getTemplatesByCategory(category);
@@ -2718,8 +2721,8 @@ async function copyTemplateToCustom(defaultTemplateId) {
             return;
         }
         
-        const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
-        const workoutManager = new WorkoutManager(AppState);
+        const { FirebaseWorkoutManager } = await import('./core/firebase-workout-manager.js');
+        const workoutManager = new FirebaseWorkoutManager(AppState);
         
         const newCustomId = await workoutManager.copyDefaultToCustom(defaultTemplateId);
         
@@ -2742,8 +2745,8 @@ async function deleteCustomTemplate(customTemplateId) {
     try {
         console.log(`🗑️ Deleting custom template: ${customTemplateId}`);
         
-        const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
-        const workoutManager = new WorkoutManager(AppState);
+        const { FirebaseWorkoutManager } = await import('./core/firebase-workout-manager.js');
+        const workoutManager = new FirebaseWorkoutManager(AppState);
         
         await workoutManager.deleteWorkoutTemplate(customTemplateId);
         
@@ -3107,8 +3110,8 @@ async function editTemplate(templateId) {
     
     try {
         // Load the template from Firebase
-        const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
-        const workoutManager = new WorkoutManager(AppState);
+        const { FirebaseWorkoutManager } = await import('./core/firebase-workout-manager.js');
+        const workoutManager = new FirebaseWorkoutManager(AppState);
         const templates = await workoutManager.getUserWorkoutTemplates();
         const template = templates.find(t => t.id === templateId);
         
@@ -3162,8 +3165,8 @@ async function saveTemplateFromEditor() {
     try {
         // Save to Firebase if user is signed in
         if (AppState.currentUser) {
-            const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
-            const workoutManager = new WorkoutManager(AppState);
+            const { FirebaseWorkoutManager } = await import('./core/firebase-workout-manager.js');
+            const workoutManager = new FirebaseWorkoutManager(AppState);
             
             if (currentEditingTemplate.id) {
                 // Update existing template
@@ -3236,8 +3239,8 @@ async function createNewExerciseEnhanced(event) {
     
     try {
         if (AppState.currentUser) {
-            const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
-            const workoutManager = new WorkoutManager(AppState);
+            const { FirebaseWorkoutManager } = await import('./core/firebase-workout-manager.js');
+            const workoutManager = new FirebaseWorkoutManager(AppState);
             await workoutManager.createExercise(exerciseData);
         }
         
@@ -3367,11 +3370,6 @@ async function confirmExerciseAddToWorkout(exerciseName, exerciseData) {
     showNotification(`Added "${workoutExercise.machine}" to workout!`, 'success');
 }
 
-// Enhanced Exercise Library Functions with Proper Context Handling
-let currentExerciseLibraryContext = null; // 'template', 'swap', or null
-let currentExerciseLibrary = [];
-let currentFilteredExercises = [];
-
 // REPLACE the existing openExerciseLibraryForTemplate function with this:
 async function openExerciseLibraryForTemplate() {
     const modal = document.getElementById('exercise-library-modal');
@@ -3388,17 +3386,17 @@ async function openExerciseLibraryForTemplate() {
     
     modal.classList.remove('hidden');
     
-    // Load exercise library
+    // Load exercise library with CORRECT import path
     try {
-        const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
-        const workoutManager = new WorkoutManager(AppState);
+        const { FirebaseWorkoutManager } = await import('./js/core/firebase-workout-manager.js');
+        const workoutManager = new FirebaseWorkoutManager(AppState);
         currentExerciseLibrary = await workoutManager.getExerciseLibrary();
         currentFilteredExercises = [...currentExerciseLibrary];
         
         console.log('📚 Loaded exercise library for template:', currentExerciseLibrary.length, 'exercises');
         renderExerciseLibraryWithContext();
         
-        // ADD THIS LINE - Set up event handlers after rendering
+        // Set up event handlers after rendering
         setupExerciseLibraryEventHandlersForTemplate();
         
     } catch (error) {
@@ -3409,34 +3407,7 @@ async function openExerciseLibraryForTemplate() {
 
 // Add this function to main.js (after the openExerciseLibraryForTemplate function):
 
-function setupExerciseLibraryEventHandlersForTemplate() {
-    console.log('🔧 Setting up exercise library event handlers for template');
-    
-    // Search functionality
-    const searchInput = document.getElementById('exercise-library-search');
-    if (searchInput) {
-        // Remove any existing listeners first
-        searchInput.removeEventListener('input', filterExerciseLibraryForTemplate);
-        searchInput.addEventListener('input', filterExerciseLibraryForTemplate);
-        console.log('✅ Search input handler attached');
-    }
 
-    // Filter dropdowns
-    const bodyPartFilter = document.getElementById('body-part-filter');
-    const equipmentFilter = document.getElementById('equipment-filter');
-    
-    if (bodyPartFilter) {
-        bodyPartFilter.removeEventListener('change', filterExerciseLibraryForTemplate);
-        bodyPartFilter.addEventListener('change', filterExerciseLibraryForTemplate);
-        console.log('✅ Body part filter handler attached');
-    }
-    
-    if (equipmentFilter) {
-        equipmentFilter.removeEventListener('change', filterExerciseLibraryForTemplate);
-        equipmentFilter.addEventListener('change', filterExerciseLibraryForTemplate);
-        console.log('✅ Equipment filter handler attached');
-    }
-}
 
 function filterExerciseLibraryForTemplate() {
     console.log('🔍 Filtering exercises for template');
@@ -3467,6 +3438,7 @@ function filterExerciseLibraryForTemplate() {
     console.log(`🔍 Filtered to ${currentFilteredExercises.length} exercises from ${currentExerciseLibrary.length} total`);
     renderExerciseLibraryWithContext();
 }
+
 
 // Create Exercise Library Card for Template
 function createExerciseLibraryCardForTemplate(exercise) {
@@ -3585,7 +3557,7 @@ function closeExerciseLibraryForTemplate() {
         modalTitle.textContent = 'Exercise Library';
     }
     
-    // Clear search
+    // Clear search and filters
     const searchInput = document.getElementById('exercise-library-search');
     const bodyPartFilter = document.getElementById('body-part-filter');
     const equipmentFilter = document.getElementById('equipment-filter');
@@ -3594,9 +3566,8 @@ function closeExerciseLibraryForTemplate() {
     if (bodyPartFilter) bodyPartFilter.value = '';
     if (equipmentFilter) equipmentFilter.value = '';
     
-    // Reset state
-    AppState.addingToTemplate = false;
-    AppState.templateEditingContext = null;
+    // Reset context
+    currentExerciseLibraryContext = null;
 }
 
 // Delete Template Function
@@ -3608,8 +3579,8 @@ async function deleteTemplate(templateId) {
     
     try {
         // Load the template first to get its name
-        const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
-        const workoutManager = new WorkoutManager(AppState);
+        const { FirebaseWorkoutManager } = await import('./core/firebase-workout-manager.js');
+        const workoutManager = new FirebaseWorkoutManager(AppState);
         const templates = await workoutManager.getUserWorkoutTemplates();
         const template = templates.find(t => t.id === templateId);
         
@@ -3655,8 +3626,8 @@ async function useTemplate(templateId) {
     
     try {
         // Load the template
-        const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
-        const workoutManager = new WorkoutManager(AppState);
+        const { FirebaseWorkoutManager } = await import('./core/firebase-workout-manager.js');
+        const workoutManager = new FirebaseWorkoutManager(AppState);
         const templates = await workoutManager.getUserWorkoutTemplates();
         const template = templates.find(t => t.id === templateId);
         
@@ -5119,8 +5090,8 @@ if (typeof window.loadTemplatesByCategory === 'undefined') {
                 
                 // Load custom templates from Firebase
                 try {
-                    const { WorkoutManager } = await import('./core/firebase-workout-manager.js');
-                    const workoutManager = new WorkoutManager(window.AppState);
+                    const { FirebaseWorkoutManager } = await import('./core/firebase-workout-manager.js');
+                    const workoutManager = new FirebaseWorkoutManager(AppState);
                     const customTemplates = await workoutManager.getUserWorkoutTemplates() || [];
                     
                     if (customTemplates.length === 0) {

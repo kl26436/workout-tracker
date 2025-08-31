@@ -97,18 +97,20 @@ export function getExerciseLibrary(appState) {
             try {
                 await this.loadExercises();
                 this.renderExercises();
+                this.setupEventHandlers(); // ← ADD THIS LINE
                 console.log(`📚 Loaded ${filteredExercises.length} exercises for context: ${currentContext}`);
             } catch (error) {
                 console.error('Error loading exercises:', error);
                 currentExercises = appState.exerciseDatabase || [];
                 filteredExercises = [...currentExercises];
+                this.setupEventHandlers(); // ← ADD THIS LINE HERE TOO
             }
         },
 
         async loadExercises() {
             try {
-                const { WorkoutManager } = await import('../firebase-workout-manager.js');
-                const workoutManager = new WorkoutManager(appState);
+                const { FirebaseWorkoutManager } = await import('./firebase-workout-manager.js');
+                const workoutManager = new FirebaseWorkoutManager(appState); // ← Fixed: use lowercase
                 currentExercises = await workoutManager.getExerciseLibrary();
                 filteredExercises = [...currentExercises];
                 
