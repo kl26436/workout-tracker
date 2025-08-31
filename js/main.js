@@ -2350,38 +2350,70 @@ function createTemplateSelectionCard(template) {
 }
 
 async function selectTemplate(templateId, isDefault) {
+    console.log('🔧 selectTemplate called with:', { templateId, isDefault });
+    
     let workout;
     
-    if (isDefault) {
-        workout = AppState.workoutPlans.find(w => w.day === templateId);
-    } else {
-        const { FirebaseWorkoutManager } = await import('./core/firebase-workout-manager.js');
-        const workoutManager = new FirebaseWorkoutManager(AppState);
-        const templates = await workoutManager.getUserWorkoutTemplates();
-        const template = templates.find(t => t.id === templateId);
-        
-        if (template) {
-            // Convert custom template to workout format
-            workout = {
-                day: template.name,
-                exercises: template.exercises.map(ex => ({
-                    machine: ex.name,
-                    sets: ex.sets || 3,
-                    reps: ex.reps || 10,
-                    weight: ex.weight || 50,
-                    video: ex.video || ''
-                }))
-            };
+    try {
+        if (isDefault) {
+            // For default templates, look by both day name AND by checking if any workout has this templateId as an ID
+            workout = AppState.workoutPlans.find(w => {
+                // First try exact day match
+                if (w.day === templateId) return true;
+                
+                // Then try to see if this workout was loaded from Firebase with this ID
+                // We need to check if any workout would generate this templateId
+                const workoutSlug = w.day
+                    .toLowerCase()
+                    .replace(/[^\w\s]/g, '')
+                    .replace(/\s+/g, '_')
+                    .replace(/_{2,}/g, '_')
+                    .replace(/^_|_$/g, '');
+                
+                return workoutSlug === templateId;
+            });
+            
+            console.log('📋 Found default workout:', workout?.day);
+        } else {
+            // Custom template logic
+            const { FirebaseWorkoutManager } = await import('./core/firebase-workout-manager.js');
+            const workoutManager = new FirebaseWorkoutManager(AppState);
+            const templates = await workoutManager.getUserWorkoutTemplates();
+            
+            const template = templates.find(t => t.id === templateId || t.name === templateId);
+            
+            if (template) {
+                workout = {
+                    day: template.name,
+                    exercises: template.exercises.map(ex => ({
+                        machine: ex.name || ex.machine,
+                        sets: ex.sets || 3,
+                        reps: ex.reps || 10,
+                        weight: ex.weight || 50,
+                        video: ex.video || ''
+                    }))
+                };
+            }
         }
+        
+        if (!workout) {
+            console.error('❌ No workout found for:', { templateId, isDefault });
+            console.log('🔍 Available workouts:', AppState.workoutPlans?.map(w => ({
+                day: w.day,
+                slug: w.day?.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, '_')
+            })));
+            showNotification('Template not found', 'error');
+            return;
+        }
+        
+        console.log('✅ Starting workout:', workout.day);
+        closeTemplateSelection();
+        selectWorkout(workout.day, null, workout);
+        
+    } catch (error) {
+        console.error('❌ Error in selectTemplate:', error);
+        showNotification('Error loading template', 'error');
     }
-    
-    if (!workout) {
-        showNotification('Template not found', 'error');
-        return;
-    }
-    
-    closeTemplateSelection();
-    selectWorkout(workout.day, null, workout);
 }
 
 function closeTemplateSelection() {
