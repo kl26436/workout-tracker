@@ -279,45 +279,58 @@ export async function loadExerciseHistory(exerciseName, exerciseIndex, state) {
         });
         
         if (lastWorkout && lastExerciseData) {
-            const displayDate = new Date(workoutDate).toLocaleDateString();
-            const unit = state.exerciseUnits[exerciseIndex] || state.globalUnit;
+    // FIXED: Prevent timezone shift for exercise history date
+    let displayDate;
+    if (workoutDate && workoutDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // Add noon time to prevent timezone shift
+        const safeDate = new Date(workoutDate + 'T12:00:00');
+        displayDate = safeDate.toLocaleDateString('en-US', {
+            month: 'numeric',
+            day: 'numeric',
+            year: 'numeric'
+        });
+    } else {
+        displayDate = 'Unknown Date';
+    }
+    
+    const unit = state.exerciseUnits[exerciseIndex] || state.globalUnit;
+    
+    let historyHTML = `
+        <div class="exercise-history-content" style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+            <h5 style="margin: 0 0 0.5rem 0; color: var(--primary);">Last Workout (${displayDate}):</h5>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+    `;
+    
+    lastExerciseData.sets.forEach((set, index) => {
+        if (set.reps && set.weight) {
+            let displayWeight;
             
-            let historyHTML = `
-                <div class="exercise-history-content" style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
-                    <h5 style="margin: 0 0 0.5rem 0; color: var(--primary);">Last Workout (${displayDate}):</h5>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            `;
-            
-            lastExerciseData.sets.forEach((set, index) => {
-                if (set.reps && set.weight) {
-                    let displayWeight;
-                    
-                    // FIXED: Use originalWeights if available (most reliable)
-                    if (set.originalWeights && set.originalWeights[unit]) {
-                        displayWeight = set.originalWeights[unit];
-                    } else if (set.originalWeights) {
-                        // Use whichever originalWeight exists and convert
-                        const availableUnit = set.originalWeights.kg ? 'kg' : 'lbs';
-                        const availableWeight = set.originalWeights[availableUnit];
-                        displayWeight = convertWeight(availableWeight, availableUnit, unit);
-                    } else {
-                        // Fallback: check originalUnit and handle corrupted data
-                        const storedUnit = set.originalUnit || 'lbs';
-                        if (set.weight > 500) {
-                            // Corrupted weight - try to recover
-                            displayWeight = '??';
-                        } else {
-                            displayWeight = convertWeight(set.weight, storedUnit, unit);
-                        }
-                    }
-                    
-                    historyHTML += `
-                        <div style="background: var(--bg-secondary); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">
-                            Set ${index + 1}: ${set.reps} × ${displayWeight} ${unit}
-                        </div>
-                    `;
+            // FIXED: Use originalWeights if available (most reliable)
+            if (set.originalWeights && set.originalWeights[unit]) {
+                displayWeight = set.originalWeights[unit];
+            } else if (set.originalWeights) {
+                // Use whichever originalWeight exists and convert
+                const availableUnit = set.originalWeights.kg ? 'kg' : 'lbs';
+                const availableWeight = set.originalWeights[availableUnit];
+                displayWeight = convertWeight(availableWeight, availableUnit, unit);
+            } else {
+                // Fallback: check originalUnit and handle corrupted data
+                const storedUnit = set.originalUnit || 'lbs';
+                if (set.weight > 500) {
+                    // Corrupted weight - show placeholder
+                    displayWeight = '??';
+                } else {
+                    displayWeight = convertWeight(set.weight, storedUnit, unit);
                 }
-            });
+            }
+            
+            historyHTML += `
+                <div style="background: var(--bg-secondary); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">
+                    Set ${index + 1}: ${set.reps} × ${displayWeight} ${unit}
+                </div>
+            `;
+        }
+    });
             
             if (lastExerciseData.notes) {
                 historyHTML += `</div><div style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);"><strong>Notes:</strong> ${lastExerciseData.notes}</div>`;
