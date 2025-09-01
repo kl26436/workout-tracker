@@ -144,9 +144,31 @@ export function getWorkoutHistory(appState) {
             },
 
         getWorkoutDuration(workout) {
-            if (workout.completedAt && workout.startedAt) {
-                return new Date(workout.completedAt) - new Date(workout.startedAt);
+            // Method 1: Use stored totalDuration (in seconds)
+            if (workout.totalDuration && workout.totalDuration > 0) {
+                return workout.totalDuration * 1000; // Convert to milliseconds
             }
+            
+            // Method 2: Calculate from timestamps (multiple field name variations)
+            const startTime = workout.startedAt || workout.startTime;
+            const endTime = workout.completedAt || workout.finishedAt;
+            
+            if (startTime && endTime) {
+                return new Date(endTime) - new Date(startTime);
+            }
+            
+            // Method 3: If workout is completed but no duration, estimate based on sets
+            if (workout.completedAt && workout.exercises) {
+                const totalSets = Object.values(workout.exercises).reduce((count, exercise) => {
+                    return count + (exercise.sets ? exercise.sets.filter(set => set.reps && set.weight).length : 0);
+                }, 0);
+                
+                // Estimate 2 minutes per set (reasonable assumption)
+                if (totalSets > 0) {
+                    return totalSets * 2 * 60 * 1000; // Convert to milliseconds
+                }
+            }
+            
             return 0;
         },
 
