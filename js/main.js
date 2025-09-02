@@ -2220,10 +2220,8 @@ function startModalRestTimer(exerciseIndex, setIndex) {
             
             showNotification('Rest period complete! 💪', 'success');
             
-            setTimeout(() => {
-                modalTimer.classList.add('hidden');
-                timerDisplay.style.color = 'var(--primary)';
-            }, 5000);
+            // *** REMOVED THE AUTO-HIDE setTimeout ***
+            // The timer now stays visible until manually dismissed
             
             return;
         }
@@ -2251,7 +2249,8 @@ function startModalRestTimer(exerciseIndex, setIndex) {
             }
             const pauseBtn = modalTimer.querySelector('.modal-rest-controls .btn:first-child');
             if (pauseBtn) {
-                pauseBtn.innerHTML = isPaused ? '<i class="fas fa-play"></i>' : '<i class="fas fa-pause"></i>';
+                pauseBtn.innerHTML = isPaused ? 
+                    '<i class="fas fa-play"></i>' : '<i class="fas fa-pause"></i>';
             }
         },
         
@@ -2267,6 +2266,19 @@ function startModalRestTimer(exerciseIndex, setIndex) {
     // Request notification permission if not granted
     if ('Notification' in window && Notification.permission === 'default') {
         Notification.requestPermission();
+    }
+}
+
+// OPTIONAL: Add this helper function to dismiss completed timers when starting a new set
+function dismissCompletedTimers(exerciseIndex) {
+    const modalTimer = document.getElementById(`modal-rest-timer-${exerciseIndex}`);
+    if (modalTimer && !modalTimer.classList.contains('hidden')) {
+        const timerDisplay = modalTimer.querySelector('.modal-rest-display');
+        if (timerDisplay && timerDisplay.textContent === 'Ready!') {
+            // Auto-dismiss if showing "Ready!" and user is starting a new set
+            modalTimer.classList.add('hidden');
+            timerDisplay.style.color = 'var(--primary)';
+        }
     }
 }
 
