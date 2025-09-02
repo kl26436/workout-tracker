@@ -5159,17 +5159,22 @@ async function showWorkoutHistory() {
         window.workoutHistory = workoutHistory;
     }
     
-    // Load history and setup table
+    // Initialize calendar instead of table
     if (window.workoutHistory) {
-        await window.workoutHistory.loadHistory();
-        console.log('✅ History loaded with simplified table interface');
+        await window.workoutHistory.initializeCalendar();
+        console.log('✅ Calendar workout history loaded');
     }
 }
 
-// Simplified History Functions (replaces complex filtering)
+// Update the global function assignments
 window.showWorkoutHistory = showWorkoutHistory;
 
+// Add global calendar navigation functions
+window.previousMonth = () => window.workoutHistory?.previousMonth();
+window.nextMonth = () => window.workoutHistory?.nextMonth();
+window.closeWorkoutDetailModal = () => window.workoutHistory?.closeWorkoutDetailModal();
 
+// Keep existing workout management functions
 window.repeatWorkout = function(workoutId) {
     if (window.workoutHistory) {
         window.workoutHistory.repeatWorkout(workoutId);
@@ -5580,6 +5585,11 @@ window.resumeWorkout = async function(workoutId) {
         showNotification('Failed to resume workout', 'error');
     }
 };
+
+// Make calendar functions globally accessible
+window.previousMonth = () => window.workoutHistory?.previousMonth();
+window.nextMonth = () => window.workoutHistory?.nextMonth();
+window.closeWorkoutDetailModal = () => window.workoutHistory?.closeWorkoutDetailModal();
 
 // ===================================================================
 // REMOVED FUNCTIONS (No longer needed with simplified approach)

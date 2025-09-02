@@ -151,80 +151,68 @@
             </div>
         </div>
 
-<!-- Workout History Section - REPLACE the entire section starting around line 135 -->
+<!-- Workout History Section - Calendar View -->
         <div id="workout-history-section" class="hidden">
-         <div class="history-header">
-            <h2><i class="fas fa-history"></i> Workout History</h2>
-            <div class="header-actions">
-                <button class="btn btn-secondary" onclick="showWorkoutSelector()">
-                    <i class="fas fa-arrow-left"></i> Back to Workouts
-                </button>
-                <button class="btn btn-primary" onclick="showAddManualWorkoutModal()">
-                    <i class="fas fa-plus"></i> Add Workout
-                </button>
-            </div>
-        </div>
-
-            <!-- Simple Search Bar -->
-           <div class="simple-search">
-                <input type="text" class="search-input" 
-                    placeholder="Search workouts by name, date, or status...">
-                <button class="btn btn-secondary">
-                    <i class="fas fa-times"></i> Clear
-                </button>
-            </div>
-
-            <!-- Simple Workout Table -->
-            <div class="workout-table-container">
-                <table class="workout-table">
-                    <thead>
-                        <tr>
-                            <th class="sortable" data-sort="date">
-                                Date <i class="fas fa-sort"></i>
-                            </th>
-                            <th class="sortable" data-sort="workout">
-                                Workout <i class="fas fa-sort"></i>
-                            </th>
-                            <th class="sortable" data-sort="status">
-                                Status <i class="fas fa-sort"></i>
-                            </th>
-                            <th class="sortable" data-sort="duration">
-                                Duration <i class="fas fa-sort"></i>
-                            </th>
-                            <th class="sortable" data-sort="progress">
-                                Progress <i class="fas fa-sort"></i>
-                            </th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="workout-table-body">
-                        <!-- Workouts will be populated here -->
-                    </tbody>
-                </table>
+            <!-- Calendar Header -->
+            <div class="calendar-header">
+                <div class="calendar-title">
+                    <h1><i class="fas fa-calendar-alt"></i> Workout Calendar</h1>
+                </div>
                 
-                <div id="empty-workouts" class="empty-state hidden">
-                    <i class="fas fa-history"></i>
-                    <h3>No Workouts Found</h3>
-                    <p>Complete some workouts or add past workouts to see them here!</p>
+                <div class="month-navigation">
+                    <button class="nav-button" onclick="previousMonth()">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div class="current-month" id="currentMonth">September 2025</div>
+                    <button class="nav-button" onclick="nextMonth()">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="showWorkoutSelector()">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <button class="btn btn-primary" onclick="showAddManualWorkoutModal()">
+                        <i class="fas fa-plus"></i> Add Workout
+                    </button>
+                </div>
+            </div>
+
+            <!-- Calendar -->
+            <div class="calendar-container">
+                <!-- Weekday Headers -->
+                <div class="calendar-weekdays">
+                    <div class="weekday">Sun</div>
+                    <div class="weekday">Mon</div>
+                    <div class="weekday">Tue</div>
+                    <div class="weekday">Wed</div>
+                    <div class="weekday">Thu</div>
+                    <div class="weekday">Fri</div>
+                    <div class="weekday">Sat</div>
+                </div>
+
+                <!-- Calendar Grid -->
+                <div class="calendar-grid" id="calendarGrid">
+                    <!-- Calendar days will be populated by JavaScript -->
                 </div>
             </div>
         </div>
-        
-    <!-- Sticky Rest Timer -->
-    <div id="rest-timer-sticky" class="rest-timer-sticky">
-        <div class="rest-timer-content">
-            <div class="rest-timer-exercise" id="rest-timer-exercise">Rest Period</div>
-            <div class="rest-timer-display" id="rest-timer-display">90s</div>
-            <div class="rest-timer-controls">
-                <button class="btn btn-small" id="pause-rest-btn">
-                    <i class="fas fa-pause"></i>
-                </button>
-                <button class="btn btn-small" id="skip-rest-btn">
-                    <i class="fas fa-forward"></i>
-                </button>
+
+        <!-- Workout Detail Modal -->
+        <div class="workout-detail-modal" id="workoutModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="modalTitle">Workout Details</h3>
+                    <button class="close-btn" onclick="closeWorkoutDetailModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Workout details will be loaded here -->
+                </div>
             </div>
         </div>
-    </div>
 
     <!-- Exercise Focus Modal with Video Support -->
     <div id="exercise-modal" class="exercise-modal">
