@@ -337,92 +337,91 @@ export function getWorkoutHistory(appState) {
         modal.style.display = 'flex';
     },
 
-        generateWorkoutDetailHTML(workout, date) {
-            let exerciseHTML = '';
-            
-            if (workout.exercises && workout.exercises.length > 0) {
-                workout.exercises.forEach(exercise => {
+       generateWorkoutDetailHTML(workout, date) {
+        let exerciseHTML = '';
+        
+        if (workout.exercises && workout.exercises.length > 0) {
+            workout.exercises.forEach(exercise => {
+                exerciseHTML += `
+                    <div style="background: var(--bg-tertiary); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; border: 1px solid var(--border);">
+                        <h4 style="color: var(--primary); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-trophy" style="color: var(--warning);"></i>
+                            ${exercise.name}
+                        </h4>
+                        
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid var(--border);">
+                                    <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Set</th>
+                                    <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Reps</th>
+                                    <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Weight</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+                
+                if (exercise.sets && exercise.sets.length > 0) {
+                    exercise.sets.forEach((set, index) => {
+                        if (set && (set.reps || set.weight)) {
+                            exerciseHTML += `
+                                <tr style="background: rgba(40, 167, 69, 0.1); border-bottom: 1px solid rgba(40, 167, 69, 0.2);">
+                                    <td style="padding: 0.75rem; color: var(--text-primary);">Set ${index + 1}</td>
+                                    <td style="padding: 0.75rem; color: var(--text-primary);">${set.reps || '-'}</td>
+                                    <td style="padding: 0.75rem; color: var(--text-primary);">${set.weight ? set.weight + ' lbs' : '-'}</td>
+                                </tr>`;
+                        }
+                    });
+                } else {
                     exerciseHTML += `
-                        <div style="background: var(--bg-tertiary); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; border: 1px solid var(--border);">
-                            <h4 style="color: var(--primary); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-trophy" style="color: var(--warning);"></i>
-                                ${exercise.name}
-                            </h4>
-                            
-                            <table style="width: 100%; border-collapse: collapse;">
-                                <thead>
-                                    <tr style="border-bottom: 1px solid var(--border);">
-                                        <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Set</th>
-                                        <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Reps</th>
-                                        <th style="text-align: left; padding: 0.75rem; color: var(--text-secondary);">Weight</th>
-                                    </tr>
-                                </thead>
-                                <tbody>`;
-                    
-                    if (exercise.sets && exercise.sets.length > 0) {
-                        exercise.sets.forEach((set, index) => {
-                            if (set && (set.reps || set.weight)) {
-                                exerciseHTML += `
-                                    <tr style="background: rgba(40, 167, 69, 0.1); border-bottom: 1px solid rgba(40, 167, 69, 0.2);">
-                                        <td style="padding: 0.75rem; color: var(--text-primary);">Set ${index + 1}</td>
-                                        <td style="padding: 0.75rem; color: var(--text-primary);">${set.reps || '-'}</td>
-                                        <td style="padding: 0.75rem; color: var(--text-primary);">${set.weight ? set.weight + ' lbs' : '-'}</td>
-                                    </tr>`;
-                            }
-                        });
-                    } else {
-                        exerciseHTML += `
-                            <tr>
-                                <td colspan="3" style="padding: 2rem; text-align: center; color: var(--text-secondary); font-style: italic;">No sets recorded</td>
-                            </tr>`;
-                    }
-                    
-                    exerciseHTML += `</tbody></table>`;
-                    
-                    if (exercise.notes) {
-                        exerciseHTML += `
-                            <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 6px; margin-top: 1rem; border-left: 3px solid var(--primary);">
-                                <strong style="color: var(--primary); display: block; margin-bottom: 0.5rem;">Notes:</strong>
-                                <span style="color: var(--text-primary);">${exercise.notes}</span>
-                            </div>`;
-                    }
-                    
-                    exerciseHTML += `</div>`;
-                });
-            } else {
-                exerciseHTML = `
-                    <div style="background: var(--bg-tertiary); padding: 2rem; border-radius: 8px; text-align: center; color: var(--text-secondary);">
-                        <i class="fas fa-dumbbell" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
-                        <p>No exercise data available for this workout.</p>
-                    </div>`;
-            }
-            
-            // Add manual workout notes if they exist
-            let notesSection = '';
-            if (workout.rawData && workout.rawData.manualNotes) {
-                notesSection = `
-                    <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 3px solid var(--info);">
-                        <strong style="color: var(--info); display: block; margin-bottom: 0.5rem;">Workout Notes:</strong>
-                        <span style="color: var(--text-primary);">${workout.rawData.manualNotes}</span>
-                    </div>`;
-            }
-            
-            return `
-                <div style="margin-bottom: 1.5rem;">
-                    <div style="display: grid; grid-template-columns: auto 1fr; gap: 1rem;">
-                        <strong style="color: var(--text-secondary);">Status:</strong>
-                        <span style="color: var(--success);">${workout.status.charAt(0).toUpperCase() + workout.status.slice(1)}</span>
-                        <strong style="color: var(--text-secondary);">Duration:</strong>
-                        <span style="color: var(--text-primary);">${workout.duration || 'Unknown'}</span>
-                        <strong style="color: var(--text-secondary);">Progress:</strong>
-                        <span style="color: var(--text-primary);">${workout.progress || 0}%</span>
-                    </div>
+                        <tr>
+                            <td colspan="3" style="padding: 2rem; text-align: center; color: var(--text-secondary); font-style: italic;">No sets recorded</td>
+                        </tr>`;
+                }
+                
+                exerciseHTML += `</tbody></table>`;
+                
+                if (exercise.notes) {
+                    exerciseHTML += `
+                        <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 6px; margin-top: 1rem; border-left: 3px solid var(--primary);">
+                            <strong style="color: var(--primary); display: block; margin-bottom: 0.5rem;">Notes:</strong>
+                            <span style="color: var(--text-primary);">${exercise.notes}</span>
+                        </div>`;
+                }
+                
+                exerciseHTML += `</div>`;
+            });
+        } else {
+            exerciseHTML = `
+                <div style="background: var(--bg-tertiary); padding: 2rem; border-radius: 8px; text-align: center; color: var(--text-secondary);">
+                    <i class="fas fa-dumbbell" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                    <p>No exercise data available for this workout.</p>
+                </div>`;
+        }
+        
+        // Add manual workout notes if they exist
+        let notesSection = '';
+        if (workout.rawData && workout.rawData.manualNotes) {
+            notesSection = `
+                <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 3px solid var(--info);">
+                    <strong style="color: var(--info); display: block; margin-bottom: 0.5rem;">Workout Notes:</strong>
+                    <span style="color: var(--text-primary);">${workout.rawData.manualNotes}</span>
+                </div>`;
+        }
+        
+        // Create action buttons based on workout status
+        let actionButtons = '';
+        if (workout.status === 'cancelled' || workout.status === 'partial') {
+            actionButtons = `
+                <div style="display: flex; gap: 1rem; justify-content: center;">
+                    <button class="btn btn-danger" onclick="deleteWorkoutFromCalendar('${date}')">
+                        <i class="fas fa-trash"></i> Delete This Workout
+                    </button>
+                    <button class="btn btn-secondary" onclick="workoutHistory.repeatWorkout('${date}')">
+                        <i class="fas fa-redo"></i> Repeat Workout
+                    </button>
                 </div>
-                ${notesSection}
-                <div style="margin-bottom: 1rem;">
-                    <h3 style="color: var(--text-primary); margin-bottom: 1rem;">Exercises & Sets</h3>
-                    ${exerciseHTML}
-                </div>
+            `;
+        } else {
+            actionButtons = `
                 <div style="display: flex; gap: 1rem; justify-content: center;">
                     <button class="btn btn-secondary" onclick="workoutHistory.repeatWorkout('${date}')">
                         <i class="fas fa-redo"></i> Repeat Workout
@@ -432,8 +431,29 @@ export function getWorkoutHistory(appState) {
                     </button>
                 </div>
             `;
-        },
+        }
+        
+        return `
+            <div style="margin-bottom: 1.5rem;">
+                <div style="display: grid; grid-template-columns: auto 1fr; gap: 1rem;">
+                    <strong style="color: var(--text-secondary);">Status:</strong>
+                    <span style="color: var(--success);">${workout.status.charAt(0).toUpperCase() + workout.status.slice(1)}</span>
+                    <strong style="color: var(--text-secondary);">Duration:</strong>
+                    <span style="color: var(--text-primary);">${workout.duration || 'Unknown'}m</span>
+                    <strong style="color: var(--text-secondary);">Progress:</strong>
+                    <span style="color: var(--text-primary);">${workout.progress || 0}%</span>
+                </div>
+            </div>
+            ${notesSection}
+            <div style="margin-bottom: 1rem;">
+                <h3 style="color: var(--text-primary); margin-bottom: 1rem;">Exercises & Sets</h3>
+                ${exerciseHTML}
+            </div>
+            ${actionButtons}
+        `;
+    },
 
+ 
         closeWorkoutDetailModal() {
             const modal = document.getElementById('workoutModal');
             if (modal) {
@@ -567,3 +587,28 @@ export function getWorkoutHistory(appState) {
         },
  };
 }
+
+// Put this AFTER the entire export function, not inside the object
+    window.deleteWorkoutFromCalendar = async function(date) {
+        if (!window.workoutHistory) return;
+        
+        const workout = window.workoutHistory.calendarWorkouts[date];
+        if (!workout || !workout.rawData) return;
+        
+        if (confirm(`Delete workout from ${new Date(date).toLocaleDateString()}? This cannot be undone.`)) {
+            try {
+                const { deleteDoc, doc, db } = await import('./firebase-config.js');
+                await deleteDoc(doc(db, "users", AppState.currentUser.uid, "workouts", date));
+                
+                // Remove from calendar
+                delete window.workoutHistory.calendarWorkouts[date];
+                window.workoutHistory.generateCalendarGrid();
+                window.workoutHistory.closeWorkoutDetailModal();
+                
+                showNotification('Workout deleted successfully', 'success');
+            } catch (error) {
+                console.error('Error deleting workout:', error);
+                showNotification('Failed to delete workout', 'error');
+            }
+        }
+    };
