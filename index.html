@@ -155,49 +155,173 @@
         <div id="workout-history-section" class="hidden">
             <!-- Calendar Header -->
             <div class="calendar-header">
-                <div class="calendar-title">
-                    <h1><i class="fas fa-calendar-alt"></i> Workout Calendar</h1>
-                </div>
-                
-                <div class="month-navigation">
-                    <button class="nav-button" onclick="previousMonth()">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <div class="current-month" id="currentMonth">September 2025</div>
-                    <button class="nav-button" onclick="nextMonth()">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
+        <div class="month-navigation">
+            <button class="nav-button" onclick="previousMonth()">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="current-month">September 2025</div>
+            <button class="nav-button" onclick="nextMonth()">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+        
+        <div class="calendar-title">
+            <h1><i class="fas fa-calendar"></i> Workout Calendar</h1>
+        </div>
+        
+        <div class="header-actions">
+            <button class="btn" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <button class="btn btn-primary" onclick="addWorkout()">
+                <i class="fas fa-plus"></i> Add Workout
+            </button>
+        </div>
+    </div>
 
-                <div class="header-actions">
-                    <button class="btn btn-secondary" onclick="showWorkoutSelector()">
-                        <i class="fas fa-arrow-left"></i> Back
-                    </button>
-                    <button class="btn btn-primary" onclick="showAddManualWorkoutModal()">
-                        <i class="fas fa-plus"></i> Add Workout
-                    </button>
-                </div>
+    <!-- Calendar Container -->
+    <div class="calendar-container">
+        <!-- Weekdays Header -->
+        <div class="calendar-weekdays">
+            <div class="weekday">SUN</div>
+            <div class="weekday">MON</div>
+            <div class="weekday">TUE</div>
+            <div class="weekday">WED</div>
+            <div class="weekday">THU</div>
+            <div class="weekday">FRI</div>
+            <div class="weekday">SAT</div>
+        </div>
+
+        <!-- Calendar Grid -->
+        <div class="calendar-grid" id="calendarGrid">
+            <!-- Sample calendar days - September 2025 -->
+            <!-- Week 1 -->
+            <div class="calendar-day">
+                <div class="day-number">1</div>
+                <div class="workout-icon"><i class="fas fa-hand"></i></div>
+                <div class="workout-status status-completed">Complete</div>
             </div>
-
-            <!-- Calendar -->
-            <div class="calendar-container">
-                <!-- Weekday Headers -->
-                <div class="calendar-weekdays">
-                    <div class="weekday">Sun</div>
-                    <div class="weekday">Mon</div>
-                    <div class="weekday">Tue</div>
-                    <div class="weekday">Wed</div>
-                    <div class="weekday">Thu</div>
-                    <div class="weekday">Fri</div>
-                    <div class="weekday">Sat</div>
+            <div class="calendar-day today">
+                <div class="day-number">2</div>
+                <div class="no-workout"><i class="fas fa-times"></i></div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">3</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">4</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">5</div>
+                <div class="workout-icon"><i class="fas fa-walking"></i></div>
+                <div class="workout-status status-partial">Partial</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">6</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">7</div>
+            </div>
+            
+            <!-- Week 2 -->
+            <div class="calendar-day">
+                <div class="day-number">8</div>
+                <div class="workout-icon"><i class="fas fa-fist-raised"></i></div>
+                <div class="workout-status status-completed">Complete</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">9</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">10</div>
+                <div class="no-workout"><i class="fas fa-times"></i></div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">11</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">12</div>
+                <div class="workout-icon"><i class="fas fa-heart"></i></div>
+                <div class="workout-status status-completed">Complete</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">13</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">14</div>
+            </div>
+            
+            <!-- Week 3 -->
+            <div class="calendar-day">
+                <div class="day-number">15</div>
+                <div class="workout-icon"><i class="fas fa-dumbbell"></i></div>
+                <div class="workout-status status-missed">Missed</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">16</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">17</div>
+                <div class="workout-icon"><i class="fas fa-walking"></i></div>
+                <div class="workout-status status-completed">Complete</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">18</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">19</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">20</div>
+                <div class="multiple-workouts">
+                    <div class="workout-icon"><i class="fas fa-hand"></i></div>
+                    <div class="workout-icon"><i class="fas fa-heart"></i></div>
                 </div>
-
-                <!-- Calendar Grid -->
-                <div class="calendar-grid" id="calendarGrid">
-                    <!-- Calendar days will be populated by JavaScript -->
-                </div>
+                <div class="workout-status status-completed">Complete</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">21</div>
+            </div>
+            
+            <!-- Week 4 -->
+            <div class="calendar-day">
+                <div class="day-number">22</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">23</div>
+                <div class="workout-icon"><i class="fas fa-fist-raised"></i></div>
+                <div class="workout-status status-partial">Partial</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">24</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">25</div>
+                <div class="workout-icon"><i class="fas fa-walking"></i></div>
+                <div class="workout-status status-completed">Complete</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">26</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">27</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">28</div>
+                <div class="no-workout"><i class="fas fa-times"></i></div>
+            </div>
+            
+            <!-- Week 5 -->
+            <div class="calendar-day">
+                <div class="day-number">29</div>
+                <div class="workout-icon"><i class="fas fa-dumbbell"></i></div>
+                <div class="workout-status status-completed">Complete</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-number">30</div>
             </div>
         </div>
+    </div>
 
         <!-- Workout Detail Modal -->
         <div class="workout-detail-modal" id="workoutModal">
