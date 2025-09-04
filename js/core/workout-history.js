@@ -206,6 +206,12 @@ export function getWorkoutHistory(appState) {
             this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() + 1);
             this.initializeCalendar();
         },
+       
+        currentMonth() {
+            this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() + 0);
+            this.initializeCalendar();
+        },
+
 
         updateCalendarDisplay() {
             const monthName = this.currentCalendarDate.toLocaleDateString('en-US', { 

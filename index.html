@@ -151,15 +151,13 @@
             </div>
         </div>
 
-<!-- Workout History Section - Calendar View -->
-        <div id="workout-history-section" class="hidden">
-            <!-- Calendar Header -->
-            <div class="calendar-header">
+ <!-- Calendar Header -->
+    <div class="calendar-header">
         <div class="month-navigation">
             <button class="nav-button" onclick="previousMonth()">
                 <i class="fas fa-chevron-left"></i>
             </button>
-            <div class="current-month">September 2025</div>
+            <div class="current-month" id="currentMonth"></div>
             <button class="nav-button" onclick="nextMonth()">
                 <i class="fas fa-chevron-right"></i>
             </button>
@@ -170,8 +168,8 @@
         </div>
         
         <div class="header-actions">
-            <button class="btn btn-secondary" onclick="showWorkoutSelector(true)">
-                        <i class="fas fa-arrow-left"></i> Back to Workouts
+            <button class="btn" onclick="showWorkoutSelector(true)">
+                <i class="fas fa-arrow-left"></i> Back
             </button>
             <button class="btn btn-primary" onclick="addWorkout()">
                 <i class="fas fa-plus"></i> Add Workout
