@@ -4047,9 +4047,9 @@ body {
 
         /* CRITICAL MOBILE FIXES */
         @media (max-width: 768px) {
-            body {
-                padding: 0.25rem;
-            }
+        #workout-history-section:not(.hidden) {
+            padding: 0.25rem;
+        }
 
             .calendar-header {
                 flex-direction: column;
@@ -4084,7 +4084,8 @@ body {
             }
 
             /* FIXED: Calendar container takes full width */
-            .calendar-container {
+            /* FIXED: Calendar container takes full width */
+            #workout-history-section .calendar-container {
                 padding: 0.75rem 0.5rem;
                 margin: 0;
                 width: 100%;
@@ -4093,18 +4094,20 @@ body {
             }
 
             /* FIXED: Grid takes full available width */
-            .calendar-grid {
+            #workout-history-section .calendar-grid {
                 gap: 0.2rem;
                 width: 100%;
             }
 
             /* FIXED: Days are properly sized for mobile */
-            .calendar-day {
+            #workout-history-section .calendar-day {
                 min-height: 60px;
                 max-height: 80px;
                 padding: 0.2rem;
                 border-radius: 6px;
                 font-size: 0.8rem;
+                width: 100%;
+                box-sizing: border-box;
             }
 
             .day-number {
