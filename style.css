@@ -4047,9 +4047,9 @@ body {
 
         /* CRITICAL MOBILE FIXES */
         @media (max-width: 768px) {
-        #workout-history-section:not(.hidden) {
-            padding: 0.25rem;
-        }
+            #workout-history-section:not(.hidden) {
+                padding: 0.25rem;
+            }
 
             .calendar-header {
                 flex-direction: column;
@@ -4083,76 +4083,103 @@ body {
                 min-width: 120px;
             }
 
-            /* FIXED: Calendar container takes full width */
+            /* FIXED: Calendar container with proper mobile padding */
             #workout-history-section .calendar-container {
-                padding: 0.75rem 0.5rem;
+                padding: 0.5rem 0.25rem;
                 margin: 0;
                 width: 100%;
                 max-width: 100%;
                 overflow: visible;
+                box-sizing: border-box;
             }
 
-            /* FIXED: Grid takes full available width */
+            /* FIXED: Grid with minimal gaps to maximize space */
             #workout-history-section .calendar-grid {
-                gap: 0.2rem;
-                width: 100%;
-            }
-
-            /* FIXED: Days are properly sized for mobile */
-            #workout-history-section .calendar-day {
-                min-height: 60px;
-                max-height: 80px;
-                padding: 0.2rem;
-                border-radius: 6px;
-                font-size: 0.8rem;
+                gap: 1px;
                 width: 100%;
                 box-sizing: border-box;
             }
 
+            /* FIXED: Weekdays grid with same minimal gap */
+            #workout-history-section .calendar-weekdays {
+                gap: 1px;
+                margin-bottom: 0.25rem;
+            }
+
+            /* FIXED: Calendar days with forced aspect ratio removal for mobile */
+            #workout-history-section .calendar-day {
+                aspect-ratio: unset !important;
+                min-height: 32px;
+                max-height: 45px;
+                height: auto;
+                padding: 0.15rem;
+                border-radius: 4px;
+                font-size: 0.75rem;
+                width: 100%;
+                box-sizing: border-box;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: center;
+                overflow: hidden;
+            }
+
             .day-number {
-                font-size: 0.8rem;
-                margin-bottom: 0.2rem;
+                font-size: 0.7rem;
+                margin-bottom: 0.1rem;
+                line-height: 1;
             }
 
             .workout-icon {
-                width: 18px;
-                height: 18px;
-                font-size: 0.65rem;
-                margin-bottom: 0.1rem;
-            }
-
-            .workout-status {
-                font-size: 0.5rem;
-                padding: 0.05rem 0.2rem;
-            }
-
-            .weekday {
-                padding: 0.4rem 0.2rem;
-                font-size: 0.65rem;
-            }
-
-            .multiple-workouts .workout-icon {
-                width: 12px;
-                height: 12px;
-                font-size: 0.5rem;
-            }
-
-            .no-workout {
                 width: 14px;
                 height: 14px;
                 font-size: 0.55rem;
+                margin-bottom: 0.05rem;
+                flex-shrink: 0;
+            }
+
+            .workout-status {
+                font-size: 0.45rem;
+                padding: 0.025rem 0.15rem;
+                line-height: 1;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 100%;
+            }
+
+            .weekday {
+                padding: 0.25rem 0.1rem;
+                font-size: 0.6rem;
+                line-height: 1;
+            }
+
+            .multiple-workouts {
+                gap: 0.5px;
+            }
+
+            .multiple-workouts .workout-icon {
+                width: 10px;
+                height: 10px;
+                font-size: 0.45rem;
+            }
+
+            .no-workout {
+                width: 12px;
+                height: 12px;
+                font-size: 0.5rem;
             }
         }
 
         /* EXTRA SMALL SCREENS */
         @media (max-width: 400px) {
             #workout-history-section .calendar-day {
-                min-height: 55px;
+                min-height: 40px;
                 max-height: 70px;
             }
 
             #workout-history-section .day-number {
-                font-size: 0.75rem;
+                font-size: 0.6rem;
             }
 
             #workout-history-section .workout-icon {

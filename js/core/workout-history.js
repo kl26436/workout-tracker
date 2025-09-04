@@ -207,12 +207,6 @@ export function getWorkoutHistory(appState) {
             this.initializeCalendar();
         },
        
-        currentMonth() {
-            this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() + 0);
-            this.initializeCalendar();
-        },
-
-
         updateCalendarDisplay() {
             const monthName = this.currentCalendarDate.toLocaleDateString('en-US', { 
                 month: 'long', 
@@ -280,7 +274,7 @@ export function getWorkoutHistory(appState) {
                         html += `<div class="workout-status status-${workout.status}">
                             ${workout.status === 'completed' ? 'Complete' : workout.progress + '%'}
                         </div>`;
-                    } else if (!isFutureDate && !isBeforeFirstWorkout) {
+                    } else if (isCurrentMonth && !isFutureDate && !isBeforeFirstWorkout && !isToday) {
                         // Only show red X for past dates that are AFTER the first workout date
                         html += `<div class="no-workout">
                             <i class="fas fa-times"></i>
