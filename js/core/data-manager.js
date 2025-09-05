@@ -201,6 +201,7 @@ export async function loadWorkoutPlans(state) {
     }
 }
 
+// FIXED loadExerciseHistory function for data-manager.js
 export async function loadExerciseHistory(exerciseName, exerciseIndex, state) {
     if (!state.currentUser) return;
     
@@ -222,7 +223,7 @@ export async function loadExerciseHistory(exerciseName, exerciseIndex, state) {
     try {
         // Query for recent workouts containing this exercise
         const workoutsRef = collection(db, "users", state.currentUser.uid, "workouts");
-        const q = query(workoutsRef, orderBy("lastUpdated", "desc"), limit(15));
+        const q = query(workoutsRef, orderBy("lastUpdated", "desc"), limit(50)); // Increased limit
         const querySnapshot = await getDocs(q);
         
         let lastWorkout = null;
@@ -231,106 +232,132 @@ export async function loadExerciseHistory(exerciseName, exerciseIndex, state) {
         
         // Find the most recent workout with this exercise (excluding today)
         const today = state.getTodayDateString();
+        let allMatches = []; // Collect ALL matches, then pick the most recent by date
         
         querySnapshot.forEach((doc) => {
-            if (lastWorkout) return; // Already found one
-            
             const data = doc.data();
             
             // Skip today's workout
             if (data.date === today) return;
             
-            // Check if this workout has exercise names stored (enhanced format)
-            if (data.exerciseNames && data.exercises) {
-                // Enhanced format - use stored exercise names
-                Object.keys(data.exerciseNames).forEach(key => {
-                    if (data.exerciseNames[key] === exerciseName && data.exercises[key] && data.exercises[key].sets) {
-                        const completedSets = data.exercises[key].sets.filter(set => set && set.reps && set.weight);
-                        if (completedSets.length > 0) {
-                            lastWorkout = data;
-                            lastExerciseData = data.exercises[key];
-                            workoutDate = data.date;
-                        }
-                    }
-                });
-            } else if (data.exercises) {
-                // Legacy format - try to match by workout plan
-                Object.keys(data.exercises).forEach(key => {
-                    if (key.startsWith('exercise_')) {
-                        const exerciseData = data.exercises[key];
-                        // Try to find the exercise by matching the workout plan
-                        const workout = state.workoutPlans.find(w => w.day === data.workoutType);
-                        if (workout) {
-                            const exerciseIdx = parseInt(key.split('_')[1]);
-                            const exercise = workout.exercises[exerciseIdx];
-                            if (exercise && exercise.machine === exerciseName && exerciseData.sets && exerciseData.sets.length > 0) {
-                                // Check if there are actually completed sets
-                                const completedSets = exerciseData.sets.filter(set => set && set.reps && set.weight);
-                                if (completedSets.length > 0) {
-                                    lastWorkout = data;
-                                    lastExerciseData = exerciseData;
-                                    workoutDate = data.date;
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-        });
-        
-        if (lastWorkout && lastExerciseData) {
-    // FIXED: Prevent timezone shift for exercise history date
-    let displayDate;
-    if (workoutDate && workoutDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        // Add noon time to prevent timezone shift
-        const safeDate = new Date(workoutDate + 'T12:00:00');
-        displayDate = safeDate.toLocaleDateString('en-US', {
-            month: 'numeric',
-            day: 'numeric',
-            year: 'numeric'
-        });
-    } else {
-        displayDate = 'Unknown Date';
-    }
-    
-    const unit = state.exerciseUnits[exerciseIndex] || state.globalUnit;
-    
-    let historyHTML = `
-        <div class="exercise-history-content" style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
-            <h5 style="margin: 0 0 0.5rem 0; color: var(--primary);">Last Workout (${displayDate}):</h5>
-            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-    `;
-    
-    lastExerciseData.sets.forEach((set, index) => {
-        if (set.reps && set.weight) {
-            let displayWeight;
+            // FIX: Search through ALL exercises in the workout for a name match
+            // This searches across different workout templates
+            let foundExerciseKey = null;
+            let foundExerciseData = null;
             
-            // FIXED: Use originalWeights if available (most reliable)
-            if (set.originalWeights && set.originalWeights[unit]) {
-                displayWeight = set.originalWeights[unit];
-            } else if (set.originalWeights) {
-                // Use whichever originalWeight exists and convert
-                const availableUnit = set.originalWeights.kg ? 'kg' : 'lbs';
-                const availableWeight = set.originalWeights[availableUnit];
-                displayWeight = convertWeight(availableWeight, availableUnit, unit);
-            } else {
-                // Fallback: check originalUnit and handle corrupted data
-                const storedUnit = set.originalUnit || 'lbs';
-                if (set.weight > 500) {
-                    // Corrupted weight - show placeholder
-                    displayWeight = '??';
-                } else {
-                    displayWeight = convertWeight(set.weight, storedUnit, unit);
+            // Method 1: Check exerciseNames mapping
+            if (data.exerciseNames) {
+                for (const [key, name] of Object.entries(data.exerciseNames)) {
+                    if (name === exerciseName) {
+                        foundExerciseKey = key;
+                        break;
+                    }
                 }
             }
             
-            historyHTML += `
-                <div style="background: var(--bg-secondary); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">
-                    Set ${index + 1}: ${set.reps} × ${displayWeight} ${unit}
-                </div>
-            `;
+            // Method 2: Check originalWorkout exercises if exerciseNames didn't work
+            if (!foundExerciseKey && data.originalWorkout && data.originalWorkout.exercises) {
+                data.originalWorkout.exercises.forEach((exercise, index) => {
+                    if (exercise.machine === exerciseName) {
+                        foundExerciseKey = `exercise_${index}`;
+                    }
+                });
+            }
+            
+            // Method 3: Search through exercises object directly for machine names
+            if (!foundExerciseKey && data.exercises) {
+                for (const [key, exerciseData] of Object.entries(data.exercises)) {
+                    // Check if this exercise has sets data (meaning it was actually done)
+                    if (exerciseData && exerciseData.sets && exerciseData.sets.length > 0) {
+                        // Get the corresponding exercise name
+                        const exerciseIndex = key.replace('exercise_', '');
+                        const exerciseName_check = data.exerciseNames?.[key] || 
+                                                 data.originalWorkout?.exercises?.[exerciseIndex]?.machine;
+                        
+                        if (exerciseName_check === exerciseName) {
+                            foundExerciseKey = key;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // If we found a matching exercise, collect this workout
+            if (foundExerciseKey && data.exercises?.[foundExerciseKey]) {
+                const exerciseData = data.exercises[foundExerciseKey];
+                
+                // Only use if it has actual set data
+                if (exerciseData.sets && exerciseData.sets.length > 0) {
+                    allMatches.push({
+                        workout: data,
+                        exerciseData: exerciseData,
+                        date: data.date
+                    });
+                    
+                    console.log(`✅ Found exercise history for "${exerciseName}" in workout from ${data.date}`);
+                }
+            }
+        });
+        
+        // Sort matches by date (most recent first) and pick the most recent
+        if (allMatches.length > 0) {
+            allMatches.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            const mostRecent = allMatches[0];
+            lastWorkout = mostRecent.workout;
+            lastExerciseData = mostRecent.exerciseData;
+            workoutDate = mostRecent.date;
+            
+            console.log(`🎯 Using most recent match from ${workoutDate}`);
+            console.log('Exercise data:', lastExerciseData);
         }
-    });
+        
+        // Display the results
+        if (lastExerciseData && lastExerciseData.sets) {
+            const displayDate = new Date(workoutDate + 'T12:00:00').toLocaleDateString('en-US', {
+                month: 'numeric',
+                day: 'numeric',
+                year: 'numeric'
+            });
+            
+            const unit = state.exerciseUnits[exerciseIndex] || state.globalUnit;
+            
+            let historyHTML = `
+                <div class="exercise-history-content" style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+                    <h5 style="margin: 0 0 0.5rem 0; color: var(--primary);">Last Workout (${displayDate}):</h5>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            `;
+            
+            lastExerciseData.sets.forEach((set, index) => {
+                if (set.reps && set.weight) {
+                    let displayWeight;
+                    
+                    // Use originalWeights if available (most reliable)
+                    if (set.originalWeights && set.originalWeights[unit]) {
+                        displayWeight = set.originalWeights[unit];
+                    } else if (set.originalWeights) {
+                        // Use whichever originalWeight exists and convert
+                        const availableUnit = set.originalWeights.kg ? 'kg' : 'lbs';
+                        const availableWeight = set.originalWeights[availableUnit];
+                        displayWeight = convertWeight(availableWeight, availableUnit, unit);
+                    } else {
+                        // Fallback: check originalUnit and handle corrupted data
+                        const storedUnit = set.originalUnit || 'lbs';
+                        if (set.weight > 500) {
+                            // Corrupted weight - show placeholder
+                            displayWeight = '??';
+                        } else {
+                            displayWeight = convertWeight(set.weight, storedUnit, unit);
+                        }
+                    }
+                    
+                    historyHTML += `
+                        <div style="background: var(--bg-secondary); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">
+                            Set ${index + 1}: ${set.reps} × ${displayWeight} ${unit}
+                        </div>
+                    `;
+                }
+            });
             
             if (lastExerciseData.notes) {
                 historyHTML += `</div><div style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);"><strong>Notes:</strong> ${lastExerciseData.notes}</div>`;
