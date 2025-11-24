@@ -339,7 +339,7 @@ export function createExerciseCard(exercise, index) {
             <div class="exercise-info">
                 <h3 class="exercise-title">${exercise.machine}</h3>
                 <div class="exercise-meta">
-                    ${completedSets}/${totalSets} sets â€¢ ${exercise.reps || 10} reps â€¢ ${exercise.weight || 50} ${unit}
+                    ${completedSets}/${totalSets} sets • ${exercise.reps || 10} reps • ${exercise.weight || 50} ${unit}
                 </div>
                 <!-- Add unit toggle for each exercise -->
                 <div class="exercise-unit-toggle-mini">
