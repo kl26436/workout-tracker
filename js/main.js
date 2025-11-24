@@ -78,6 +78,9 @@ import {
     debounce, setupErrorLogging, runAllDebugChecks
 } from './core/debug-utilities.js';
 
+// Firebase Workout Manager (for exercise-manager.html)
+import { FirebaseWorkoutManager } from './core/firebase-workout-manager.js';
+
 // ===================================================================
 // CALENDAR NAVIGATION FUNCTIONS (Add to window assignments)
 // ===================================================================
@@ -361,6 +364,9 @@ window.runAllDebugChecks = runAllDebugChecks;
 
 // State access (for debugging)
 window.AppState = AppState;
+
+// Firebase Workout Manager (for exercise-manager.html)
+window.FirebaseWorkoutManager = FirebaseWorkoutManager;
 
 // ===================================================================
 // SIMPLE INITIALIZATION - Just call your existing startApplication
