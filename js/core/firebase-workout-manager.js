@@ -799,11 +799,44 @@ async getGlobalDefaultTemplates() {
         return await this.saveCustomExercise(exerciseData);
     }
 
+    searchExercises(exercises, searchQuery, filters = {}) {
+        if (!exercises || exercises.length === 0) return [];
+
+        let filtered = [...exercises];
+
+        // Apply search query
+        if (searchQuery && searchQuery.trim()) {
+            const query = searchQuery.toLowerCase().trim();
+            filtered = filtered.filter(ex => {
+                const name = (ex.name || ex.machine || '').toLowerCase();
+                const bodyPart = (ex.bodyPart || '').toLowerCase();
+                const equipment = (ex.equipmentType || '').toLowerCase();
+                return name.includes(query) || bodyPart.includes(query) || equipment.includes(query);
+            });
+        }
+
+        // Apply body part filter
+        if (filters.bodyPart) {
+            filtered = filtered.filter(ex =>
+                (ex.bodyPart || '').toLowerCase() === filters.bodyPart.toLowerCase()
+            );
+        }
+
+        // Apply equipment filter
+        if (filters.equipment) {
+            filtered = filtered.filter(ex =>
+                (ex.equipmentType || '').toLowerCase() === filters.equipment.toLowerCase()
+            );
+        }
+
+        return filtered;
+    }
+
     async swapExercise(exerciseIndex, newExercise) {
         if (!this.appState.currentWorkout) return false;
-        
+
         const oldExercise = this.appState.currentWorkout.exercises[exerciseIndex];
-        
+
         // Update the workout
         this.appState.currentWorkout.exercises[exerciseIndex] = {
             machine: newExercise.name || newExercise.machine,
@@ -812,10 +845,10 @@ async getGlobalDefaultTemplates() {
             weight: newExercise.weight || oldExercise.weight || 50,
             video: newExercise.video || ''
         };
-        
+
         console.log(`✅ Swapped exercise: ${oldExercise.machine} → ${newExercise.name}`);
         showNotification(`Swapped to ${newExercise.name}`, 'success');
-        
+
         return true;
     }
 }

@@ -184,7 +184,7 @@ export function getExerciseLibrary(appState) {
                     
                 case 'workout-add':
                     actionButton = `
-                        <button class="btn btn-success btn-small" onclick="confirmExerciseAddToWorkout('${exercise.name || exercise.machine}', '${exerciseJson}')">
+                        <button class="btn btn-success btn-small" onclick="confirmExerciseAddToWorkout('${exerciseJson}')">
                             <i class="fas fa-plus"></i> Add to Workout
                         </button>
                     `;

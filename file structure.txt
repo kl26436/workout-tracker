@@ -1,0 +1,26 @@
+WORKOUT-TRACKER/
+├── .vscode/
+├── firebase-migration/
+├── js/
+│   └── core/
+│       ├── workout/
+│       ├── app-initialization.js
+│       ├── app-state.js
+│       ├── data-manager.js
+│       ├── debug-utilities.js
+│       ├── exercise-library.js
+│       ├── firebase-config.js
+│       ├── firebase-workout-manager.js
+│       ├── manual-workout.js
+│       ├── template-selector.js
+│       ├── ui-helpers.js
+│       ├── workout-core.js
+│       ├── workout-history-ui.js
+│       └── workout-history.js
+│   └── main.js
+├── BigSurf.png
+├── exercise-manager.html
+├── exercises.json
+├── index.html
+├── style.css
+└── workouts.json

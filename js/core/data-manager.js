@@ -66,24 +66,6 @@ export async function saveWorkoutData(state) {
             
             if (exerciseData.sets) {
                 exerciseData.sets = exerciseData.sets.map(set => {
-                    // CRITICAL FIX: Don't convert if already converted or corrupted
-                    if (set.weight && currentUnit === 'kg' && 
-                        !set.alreadyConverted && 
-                        set.weight < 500) { // Reasonable weight check
-                        
-                        return {
-                            ...set,
-                            weight: Math.round(set.weight * 2.20462),
-                            originalUnit: 'kg',
-                            alreadyConverted: true // Prevent double conversion
-                        };
-                    } else if (set.alreadyConverted || set.weight >= 500) {
-                        // Don't touch already converted or corrupted weights
-                        return {
-                            ...set,
-                            originalUnit: set.originalUnit || 'kg'
-                        };
-                    }
                     return {
                         ...set,
                         originalUnit: currentUnit || 'lbs'
@@ -129,13 +111,19 @@ export async function loadTodaysWorkout(state) {
                 console.log('📅 Loading today\'s in-progress workout:', data.workoutType);
                 
                 // Validate that the workout plan still exists
-                const workoutPlan = state.workoutPlans?.find(w => w.day === data.workoutType);
+                const workoutPlan = state.workoutPlans?.find(w => 
+                    w.day === data.workoutType || 
+                    w.name === data.workoutType || 
+                    w.id === data.workoutType ||
+                    w.title === data.workoutType
+                );
                 if (!workoutPlan) {
                     console.warn('⚠️ Workout plan not found for:', data.workoutType);
-                    // Don't load invalid workout
-                    return null;
+                    console.log('Available workout plans:', state.workoutPlans?.map(w => ({day: w.day, name: w.name, id: w.id})));
+                    // Still return the data but mark it as needing attention
+                    return data; // Change this to allow loading even if plan isn't found
                 }
-                
+                                
                 return data; // Return data to be handled by workout manager
             } else {
                 if (data.completedAt) {

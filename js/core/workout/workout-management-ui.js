@@ -1,5 +1,5 @@
 // Workout Management UI Functions
-import { WorkoutManager } from '../firebase-workout-manager.js';
+import { FirebaseWorkoutManager } from '../firebase-workout-manager.js';
 import { showNotification } from '../ui-helpers.js';
 
 let workoutManager;
@@ -8,7 +8,7 @@ let exerciseLibrary = [];
 let filteredExercises = [];
 
 export function initializeWorkoutManagement(appState) {
-    workoutManager = new WorkoutManager(appState);
+    workoutManager = new FirebaseWorkoutManager(appState);
 }
 
 // Main navigation functions
@@ -148,23 +148,70 @@ export function useTemplate(templateId) {
 }
 
 function showTemplateEditor() {
-    const templateEditor = document.getElementById('template-editor');
-    if (!templateEditor) return;
-    
+    const templateEditor = document.getElementById('template-editor-modal');
+    const editorContent = document.getElementById('template-editor-content');
+
+    if (!templateEditor || !editorContent) {
+        console.error('❌ Template editor modal not found');
+        showNotification('Template editor not available', 'error');
+        return;
+    }
+
+    // Build the template editor form
+    editorContent.innerHTML = `
+        <form id="template-editor-form" class="template-editor-form">
+            <div class="form-group">
+                <label for="template-name">Template Name *</label>
+                <input type="text"
+                       id="template-name"
+                       class="form-input"
+                       value="${currentEditingTemplate.name}"
+                       placeholder="e.g., Upper Body Push"
+                       required>
+            </div>
+
+            <div class="form-group">
+                <label for="template-category">Category *</label>
+                <select id="template-category" class="form-input" required>
+                    <option value="push" ${currentEditingTemplate.category === 'push' ? 'selected' : ''}>Push (Chest, Shoulders, Triceps)</option>
+                    <option value="pull" ${currentEditingTemplate.category === 'pull' ? 'selected' : ''}>Pull (Back, Biceps)</option>
+                    <option value="legs" ${currentEditingTemplate.category === 'legs' ? 'selected' : ''}>Legs (Quads, Glutes, Hamstrings)</option>
+                    <option value="cardio" ${currentEditingTemplate.category === 'cardio' ? 'selected' : ''}>Cardio & Core</option>
+                    <option value="other" ${currentEditingTemplate.category === 'other' ? 'selected' : ''}>Other/Mixed</option>
+                </select>
+            </div>
+
+            <div class="form-section">
+                <div class="form-section-header">
+                    <h4>Exercises</h4>
+                    <button type="button" class="btn btn-primary btn-small" onclick="addExerciseToTemplate()">
+                        <i class="fas fa-plus"></i> Add Exercise
+                    </button>
+                </div>
+                <div id="template-exercises" class="template-exercises-list">
+                    <!-- Populated by renderTemplateExercises() -->
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeTemplateEditor()">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-success" onclick="saveCurrentTemplate()">
+                    <i class="fas fa-save"></i> Save Template
+                </button>
+            </div>
+        </form>
+    `;
+
     templateEditor.classList.remove('hidden');
-    
-    // Populate form with current template data
-    const nameInput = document.getElementById('template-name');
-    const categorySelect = document.getElementById('template-category');
-    
-    if (nameInput) nameInput.value = currentEditingTemplate.name;
-    if (categorySelect) categorySelect.value = currentEditingTemplate.category;
-    
+
+    // Render the exercises list
     renderTemplateExercises();
 }
 
 export function closeTemplateEditor() {
-    const templateEditor = document.getElementById('template-editor');
+    const templateEditor = document.getElementById('template-editor-modal');
     if (templateEditor) {
         templateEditor.classList.add('hidden');
     }
@@ -265,27 +312,61 @@ export function removeTemplateExercise(index) {
 export async function openExerciseLibrary(mode = 'template') {
     const modal = document.getElementById('exercise-library-modal');
     if (!modal) return;
-    
+
+    // Increase z-index to appear above template editor modal
+    modal.style.zIndex = '1100';
     modal.classList.remove('hidden');
-    
+
     // Load exercise library
     exerciseLibrary = await workoutManager.getExerciseLibrary();
     filteredExercises = [...exerciseLibrary];
-    
+
     renderExerciseLibrary();
+
+    // Set up event listeners for search and filters
+    setupExerciseLibraryListeners();
+}
+
+function setupExerciseLibraryListeners() {
+    const searchInput = document.getElementById('exercise-library-search');
+    const bodyPartFilter = document.getElementById('body-part-filter');
+    const equipmentFilter = document.getElementById('equipment-filter');
+
+    // Remove any existing listeners to prevent duplicates
+    if (searchInput) {
+        const newSearchInput = searchInput.cloneNode(true);
+        searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+        newSearchInput.addEventListener('input', filterExerciseLibrary);
+    }
+
+    if (bodyPartFilter) {
+        const newBodyPartFilter = bodyPartFilter.cloneNode(true);
+        bodyPartFilter.parentNode.replaceChild(newBodyPartFilter, bodyPartFilter);
+        newBodyPartFilter.addEventListener('change', filterExerciseLibrary);
+    }
+
+    if (equipmentFilter) {
+        const newEquipmentFilter = equipmentFilter.cloneNode(true);
+        equipmentFilter.parentNode.replaceChild(newEquipmentFilter, equipmentFilter);
+        newEquipmentFilter.addEventListener('change', filterExerciseLibrary);
+    }
+
+    console.log('✅ Exercise library search and filter listeners set up');
 }
 
 export function closeExerciseLibrary() {
     const modal = document.getElementById('exercise-library-modal');
     if (modal) {
         modal.classList.add('hidden');
+        // Reset z-index
+        modal.style.zIndex = '';
     }
-    
+
     // Clear search
     const searchInput = document.getElementById('exercise-library-search');
     const bodyPartFilter = document.getElementById('body-part-filter');
     const equipmentFilter = document.getElementById('equipment-filter');
-    
+
     if (searchInput) searchInput.value = '';
     if (bodyPartFilter) bodyPartFilter.value = '';
     if (equipmentFilter) equipmentFilter.value = '';
@@ -489,7 +570,7 @@ function showWorkoutSelectorSafe(appState, fromNavigation = false) {
 }
 
 // Clean navigation function
-function navigateToWorkoutSelector(fromNavigation, appState) {
+async function navigateToWorkoutSelector(fromNavigation, appState) {
     const workoutSelector = document.getElementById('workout-selector');
     const activeWorkout = document.getElementById('active-workout');
     const workoutManagement = document.getElementById('workout-management');
@@ -512,7 +593,75 @@ function navigateToWorkoutSelector(fromNavigation, appState) {
     }
     
     // Show in-progress workout prompt if returning with active workout
-    if (fromNavigation && appState.currentWorkout && appState.savedData.workoutType) {
-        showInProgressWorkoutPrompt(appState);
+    await checkForInProgressWorkout(appState);
+}
+
+async function checkForInProgressWorkout(appState) {
+    // Skip if already showing prompt
+    if (window.showingProgressPrompt) return;
+    
+    console.log('🔍 Checking for in-progress workout...');
+    
+    try {
+        const { loadTodaysWorkout } = await import('./data-manager.js');
+        const todaysData = await loadTodaysWorkout(appState);
+        
+        // Check if there's an incomplete workout from today
+        if (todaysData && !todaysData.completedAt && !todaysData.cancelledAt) {
+            console.log('📋 Found in-progress workout:', todaysData.workoutType);
+            
+            // Validate workout plan exists
+            const workoutPlan = appState.workoutPlans.find(plan => 
+                plan.day === todaysData.workoutType || 
+                plan.name === todaysData.workoutType ||
+                plan.id === todaysData.workoutType
+            );
+            
+            if (!workoutPlan) {
+                console.warn('⚠️ Workout plan not found for:', todaysData.workoutType);
+                return;
+            }
+            
+            // Store in-progress workout globally
+            window.inProgressWorkout = {
+                ...todaysData,
+                originalWorkout: workoutPlan
+            };
+            
+            // Show the prompt (uses your existing continueInProgressWorkout function)
+            showInProgressWorkoutPrompt(todaysData);
+        } else {
+            console.log('✅ No in-progress workout found');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error checking for in-progress workout:', error);
     }
+}
+
+/**
+ * Prompt user to continue or discard in-progress workout
+ * Uses your existing continueInProgressWorkout() and discardInProgressWorkout() functions
+ */
+function showInProgressWorkoutPrompt(workoutData) {
+    if (window.showingProgressPrompt) return;
+    window.showingProgressPrompt = true;
+    
+    const workoutDate = new Date(workoutData.date).toLocaleDateString();
+    const message = `You have an in-progress "${workoutData.workoutType}" workout from ${workoutDate}.\n\nWould you like to continue where you left off?`;
+    
+    setTimeout(() => {
+        if (confirm(message)) {
+            // Use your existing continue function
+            import('./workout-core.js').then(module => {
+                module.continueInProgressWorkout();
+            });
+        } else {
+            // Use your existing discard function
+            import('./workout-core.js').then(module => {
+                module.discardInProgressWorkout();
+            });
+        }
+        window.showingProgressPrompt = false;
+    }, 500);
 }

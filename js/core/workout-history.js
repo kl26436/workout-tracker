@@ -208,86 +208,123 @@ export function getWorkoutHistory(appState) {
         },
        
         updateCalendarDisplay() {
-            const monthName = this.currentCalendarDate.toLocaleDateString('en-US', { 
-                month: 'long', 
-                year: 'numeric' 
-            });
-            const monthElement = document.getElementById('currentMonth');
-            if (monthElement) {
-                monthElement.textContent = monthName;
-            }
-            
-            this.generateCalendarGrid();
-        },
+        const monthName = this.currentCalendarDate.toLocaleDateString('en-US', { 
+            month: 'long', 
+            year: 'numeric' 
+        });
+        
+        // Use the correct selector that we confirmed exists
+        const monthElement = document.querySelector('.current-month');
+        if (monthElement) {
+            monthElement.textContent = monthName;
+            console.log('✅ Updated month display:', monthName);
+        } else {
+            console.error('❌ Could not find .current-month element');
+        }
+        
+        this.generateCalendarGrid();
+    },
 
       generateCalendarGrid() {
-            const calendarGrid = document.getElementById('calendarGrid');
-            if (!calendarGrid) return;
+    // Enhanced element finding with fallback creation
+    let calendarGrid = document.getElementById('calendarGrid');
+    
+    // If not found by ID, try other selectors
+    if (!calendarGrid) {
+        calendarGrid = document.querySelector('.calendar-grid') || 
+                      document.querySelector('[class*="calendar-grid"]');
+    }
+    
+    // If still not found, create it
+    if (!calendarGrid) {
+        console.log('📅 Calendar grid not found, creating it...');
+        
+        const container = document.querySelector('.calendar-container') || 
+                         document.querySelector('[class*="calendar"]') ||
+                         document.getElementById('workout-history-section');
+        
+        if (container) {
+            calendarGrid = document.createElement('div');
+            calendarGrid.id = 'calendarGrid';
+            calendarGrid.className = 'calendar-grid';
+            container.appendChild(calendarGrid);
+            console.log('✅ Calendar grid created');
+        } else {
+            console.error('❌ Cannot find calendar container');
+            return;
+        }
+    }
+    
+    const year = this.currentCalendarDate.getFullYear();
+    const month = this.currentCalendarDate.getMonth();
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay()); // Start from Sunday
+    
+    // Get today's date in local timezone for proper comparison
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    
+    let html = '';
+    let currentDate = new Date(startDate);
+    
+    // Generate 6 weeks (42 days) to fill calendar grid
+    for (let i = 0; i < 42; i++) {
+        const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+        const isCurrentMonth = currentDate.getMonth() === month;
+        const isToday = dateStr === todayStr;
+        const isFutureDate = currentDate > today;
+        
+        // Check if this date is before the first workout
+        const isBeforeFirstWorkout = this.firstWorkoutDate ? dateStr < this.firstWorkoutDate : false;
+        
+        const workout = this.calendarWorkouts[dateStr];
+        
+        let dayClass = 'calendar-day';
+        if (!isCurrentMonth) {
+            dayClass += ' other-month empty-day'; // Add empty-day class for styling
+        }
+        if (isToday) dayClass += ' today';
+        
+        // UPDATED: Remove the old onclick and add data attributes instead
+        html += `<div class="${dayClass}" data-date="${dateStr}"`;
+        
+        // Add cursor pointer style if there's a workout
+        if (workout && isCurrentMonth) {
+            html += ` style="cursor: pointer;"`;
+        }
+        
+        html += `>`;
+        
+        // Only show content for current month days
+        if (isCurrentMonth) {
+            html += `<div class="day-number">${currentDate.getDate()}</div>`;
             
-            const year = this.currentCalendarDate.getFullYear();
-            const month = this.currentCalendarDate.getMonth();
-            
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
-            const startDate = new Date(firstDay);
-            startDate.setDate(startDate.getDate() - firstDay.getDay()); // Start from Sunday
-            
-            // Get today's date in local timezone for proper comparison
-            const today = new Date();
-            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-            
-            let html = '';
-            let currentDate = new Date(startDate);
-            
-            // Generate 6 weeks (42 days) to fill calendar grid
-            for (let i = 0; i < 42; i++) {
-                const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
-                const isCurrentMonth = currentDate.getMonth() === month;
-                const isToday = dateStr === todayStr;
-                const isFutureDate = currentDate > today;
-                
-                // Check if this date is before the first workout
-                const isBeforeFirstWorkout = this.firstWorkoutDate ? dateStr < this.firstWorkoutDate : false;
-                
-                const workout = this.calendarWorkouts[dateStr];
-                
-                let dayClass = 'calendar-day';
-                if (!isCurrentMonth) {
-                    dayClass += ' other-month empty-day'; // Add empty-day class for styling
-                }
-                if (isToday) dayClass += ' today';
-                
-                html += `<div class="${dayClass}"`;
-                
-                if (workout && isCurrentMonth) {
-                    html += ` onclick="workoutHistory.showWorkoutDetail('${dateStr}', '${workout.name}')"`;
-                }
-                
-                html += `>`;
-                
-                // Only show content for current month days
-                if (isCurrentMonth) {
-                    html += `<div class="day-number">${currentDate.getDate()}</div>`;
-                    
-                    if (workout) {
-                        html += this.getWorkoutIcon(workout);
-                        html += `<div class="workout-status status-${workout.status}">
-                            ${workout.status === 'completed' ? 'Complete' : workout.progress + '%'}
-                        </div>`;
-                    } else if (isCurrentMonth && !isFutureDate && !isBeforeFirstWorkout && !isToday) {
-                        // Only show red X for past dates that are AFTER the first workout date
-                        html += `<div class="no-workout">
-                            <i class="fas fa-times"></i>
-                        </div>`;
-                    }
-                }
-                // Other month days are completely empty
-                
-                html += '</div>';
-                currentDate.setDate(currentDate.getDate() + 1);
+            if (workout) {
+                html += this.getWorkoutIcon(workout);
+                html += `<div class="workout-status status-${workout.status}">
+                    ${workout.status === 'completed' ? 'Complete' : workout.progress + '%'}
+                </div>`;
+            } else if (isCurrentMonth && !isFutureDate && !isBeforeFirstWorkout && !isToday) {
+                // Only show red X for past dates that are AFTER the first workout date
+                html += `<div class="no-workout">
+                    <i class="fas fa-times"></i>
+                </div>`;
             }
-            
-            calendarGrid.innerHTML = html;
+        }
+        // Other month days are completely empty
+        
+        html += '</div>';
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    calendarGrid.innerHTML = html;
+    console.log('✅ Calendar grid populated with', calendarGrid.children.length, 'days');
+    
+    // ADDED: Setup click events after rendering
+    this.setupCalendarClickEvents();
 },
 
         getWorkoutIcon(workout) {
@@ -460,6 +497,191 @@ export function getWorkoutHistory(appState) {
                 modal.style.display = 'none';
             }
         },
+        // Setup calendar day click events
+setupCalendarClickEvents() {
+    // Wait a bit for the calendar to render, then add click events
+    setTimeout(() => {
+        document.querySelectorAll('.calendar-day').forEach(day => {
+            const hasWorkout = day.querySelector('.workout-icon');
+            if (hasWorkout) {
+                day.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    const dateStr = day.getAttribute('data-date');
+                    const dayNumber = day.querySelector('.day-number');
+                    
+                    if (dayNumber && dateStr) {
+                        console.log('📅 Clicked workout day:', dateStr);
+                        
+                        const calendarWorkout = this.calendarWorkouts[dateStr];
+                        if (calendarWorkout) {
+                            const fullWorkout = this.currentHistory.find(w => w.date === dateStr);
+                            
+                            if (fullWorkout) {
+                                this.showFixedWorkoutModal(fullWorkout);
+                            } else {
+                                this.showFixedBasicModal(dateStr, calendarWorkout);
+                            }
+                        }
+                    }
+                });
+            }
+        });
+        console.log('✅ Calendar click events setup complete');
+    }, 100);
+},
+
+// Enhanced modal with corrected duration calculation
+// TEMPORARY DEBUG FUNCTION - Add this to your workout-history.js to debug:
+
+showFixedWorkoutModal(workout) {
+    // Use the correct modal elements that actually exist
+    const modal = document.getElementById('workout-detail-modal');
+    const content = document.getElementById('workout-detail-content');
+    
+    if (!modal || !content) {
+        console.error('❌ Modal elements not found');
+        return;
+    }
+    
+    // FIX 3: Timezone-safe date display
+    let displayDate;
+    if (workout.date && workout.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const safeDate = new Date(workout.date + 'T12:00:00');
+        displayDate = safeDate.toLocaleDateString('en-US', {
+            month: 'numeric',
+            day: 'numeric',
+            year: 'numeric'
+        });
+    } else {
+        displayDate = 'Unknown Date';
+    }
+    
+    // CORRECTED: Duration calculation - totalDuration is stored in SECONDS
+    let formattedDuration;
+    if (workout.totalDuration && workout.totalDuration > 0) {
+        // totalDuration is in seconds, convert to milliseconds for formatDuration
+        formattedDuration = this.formatDuration(workout.totalDuration * 1000);
+    } else {
+        // Fallback: try to calculate from timestamps
+        const durationMs = this.getWorkoutDuration(workout);
+        formattedDuration = this.formatDuration(durationMs);
+    }
+    
+    // Generate exercises HTML
+    let exerciseHTML = '';
+    if (workout.exercises && workout.originalWorkout?.exercises) {
+        workout.originalWorkout.exercises.forEach((originalExercise, index) => {
+            const exerciseKey = `exercise_${index}`;
+            const exerciseData = workout.exercises[exerciseKey];
+            const exerciseName = workout.exerciseNames?.[exerciseKey] || originalExercise.machine || 'Unknown Exercise';
+            
+            exerciseHTML += `
+                <div class="exercise-detail-item" style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-tertiary); border-radius: 8px;">
+                    <h5 style="margin: 0 0 0.5rem 0; color: var(--text-primary);">${exerciseName}</h5>
+                    ${this.generateSetsHTML(exerciseData?.sets || [])}
+                    ${exerciseData?.notes ? `<p style="margin-top: 0.5rem; font-style: italic; color: var(--text-secondary);">Notes: ${exerciseData.notes}</p>` : ''}
+                </div>
+            `;
+        });
+    } else {
+        exerciseHTML = '<p>No exercise details available</p>';
+    }
+    
+    // Set the modal content
+    content.innerHTML = `
+        <div class="workout-header">
+            <h3>${workout.workoutType} - ${displayDate}</h3>
+        </div>
+        
+        <div class="workout-detail-summary" style="margin-bottom: 2rem;">
+            <div class="workout-meta" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                <div><strong>Status:</strong> ${workout.status || this.getWorkoutStatus(workout)}</div>
+                <div><strong>Duration:</strong> ${formattedDuration}</div>
+                <div><strong>Progress:</strong> ${this.calculateProgress(workout)}%</div>
+            </div>
+        </div>
+        
+        <div class="workout-exercises">
+            <h3>Exercises & Sets</h3>
+            ${exerciseHTML}
+        </div>
+        
+        <div class="modal-actions" style="margin-top: 2rem; text-align: right;">
+            <button class="btn btn-secondary" onclick="closeWorkoutDetailModal()">Close</button>
+        </div>
+    `;
+    
+    // Show the modal - remove hidden class and make it visible
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    
+    console.log('✅ Workout modal displayed with correct duration:', formattedDuration);
+},
+
+generateSetsHTML(sets) {
+    if (!sets || sets.length === 0) {
+        return '<p style="color: var(--text-secondary);">No sets recorded</p>';
+    }
+    
+    let html = '<div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">';
+    sets.forEach((set, index) => {
+        if (set && (set.reps || set.weight)) {
+            html += `<span style="background: var(--bg-secondary); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.9rem;">Set ${index + 1}: ${set.reps || 0} × ${set.weight || 0} lbs</span>`;
+        }
+    });
+    html += '</div>';
+    return html;
+},
+
+calculateProgress(workout) {
+    if (!workout.exercises || !workout.originalWorkout?.exercises) return 0;
+    
+    let totalSets = 0;
+    let completedSets = 0;
+    
+    Object.keys(workout.exercises).forEach(key => {
+        const exercise = workout.exercises[key];
+        if (exercise.sets) {
+            totalSets += exercise.sets.length;
+            completedSets += exercise.sets.filter(set => set.reps && set.weight).length;
+        }
+    });
+    
+    return totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
+},
+
+    // Basic modal for calendar workouts without full details
+    showFixedBasicModal(date, calendarWorkout) {
+        const modal = document.getElementById('workoutModal');
+        const content = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        // Fix date display for basic modal too
+        const safeDate = new Date(date + 'T12:00:00');
+        const displayDate = safeDate.toLocaleDateString('en-US', {
+            month: 'numeric',
+            day: 'numeric', 
+            year: 'numeric'
+        });
+        
+        if (modalTitle) {
+            modalTitle.textContent = `${calendarWorkout.name} - ${displayDate}`;
+        }
+        
+        content.innerHTML = `
+            <div style="margin-bottom: 1.5rem;">
+                <div style="display: grid; grid-template-columns: auto 1fr; gap: 1rem;">
+                    <strong style="color: var(--text-secondary);">Status:</strong>
+                    <span style="color: var(--success);">${calendarWorkout.status}</span>
+                    <strong style="color: var(--text-secondary);">Category:</strong>
+                    <span style="color: var(--text-primary);">${calendarWorkout.category}</span>
+                </div>
+            </div>
+            <p style="color: var(--text-secondary); font-style: italic;">Limited workout details available. This workout may have been logged manually or sync data is incomplete.</p>
+        `;
+        
+        modal.style.display = 'flex';
+    },
 
         // Search functionality adapted for calendar
         filterHistory(searchTerm) {

@@ -479,6 +479,34 @@ body {
     transform: scale(1.02);
 }
 
+.exercise-unit-toggle-mini {
+    display: flex;
+    gap: 2px;
+    margin-top: 0.5rem;
+}
+
+.unit-btn-mini {
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.unit-btn-mini.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.unit-btn-mini:hover {
+    background: var(--primary-hover);
+    color: white;
+}
+
 .exercise-header {
     display: flex;
     justify-content: space-between;
@@ -587,7 +615,7 @@ body {
     padding: 1rem;
     margin-bottom: 1rem;
     text-align: center;
-    color: var(--bg-primary);
+    color: #000000; /* Change this from var(--bg-primary) to black */
 }
 
 .modal-rest-content {
@@ -600,11 +628,13 @@ body {
 .modal-rest-exercise {
     font-weight: 600;
     font-size: 0.875rem;
+    color: #000000; /* Make sure the exercise label is black */
 }
 
 .modal-rest-display {
     font-size: 1.5rem;
     font-weight: bold;
+    color: #000000; /* Make sure the timer display is black */
 }
 
 .modal-rest-controls {
@@ -3532,7 +3562,7 @@ body {
 }
 
 .exercise-detail-card h4::before {
-    content: "🏋️";
+    content: "ðŸ‹ï¸";
     font-size: 1.2rem;
 }
 
@@ -4300,3 +4330,193 @@ body {
             transform: translateY(0);
         }
     }
+/* Today Header Improvements */
+.today-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+}
+
+.today-header h2 {
+    margin-bottom: 0.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.today-subtitle {
+    margin-bottom: 1.5rem; /* Add more space before buttons */
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.nav-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Workout Header Improvements */
+.current-workout-header {
+    text-align: center;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.workout-info h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.workout-meta {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1.0rem;
+    font-size: 1.0rem;
+    color: var(--text-secondary);
+}
+
+.workout-progress {
+    margin-bottom: .75rem;
+}
+
+.workout-progress span {
+    font-size: 1.0rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.workout-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: nowrap;
+}
+
+.workout-actions .btn {
+    min-width: 160px; /* Match the width of the top buttons */
+    padding: 0.75rem 1.5rem; /* Match the padding of nav buttons */
+    flex: 0 0 auto; /* Don't grow or shrink, fixed size */
+}
+
+/* Also ensure the nav buttons have consistent styling */
+.nav-buttons .btn {
+    min-width: 160px;
+    padding: 0.75rem 1.5rem;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .workout-actions .btn,
+    .nav-buttons .btn {
+        min-width: 140px; /* Slightly smaller on mobile if needed */
+    }
+
+/* ===================================================================
+   RESUME WORKOUT CARD - Version 1 Style
+   =================================================================== */
+
+.resume-workout-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 0 auto 2rem auto;
+    max-width: 700px;
+    animation: fadeInUp 0.4s ease-out;
+}
+
+.resume-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.resume-card-header i {
+    font-size: 1.5rem;
+    color: var(--primary);
+}
+
+.resume-card-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.resume-card-info {
+    margin-bottom: 1.25rem;
+    padding-left: 2.25rem;
+}
+
+.resume-workout-name {
+    display: block;
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.resume-workout-meta {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.resume-workout-meta i {
+    margin-right: 0.25rem;
+    opacity: 0.7;
+}
+
+.resume-card-actions {
+    display: flex;
+    gap: 0.75rem;
+    padding-left: 2.25rem;
+}
+
+.resume-card-actions .btn {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    justify-content: center;
+}
+
+.resume-card-actions .btn i {
+    margin-right: 0.5rem;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .resume-workout-card {
+        margin: 0 1rem 1.5rem 1rem;
+        padding: 1.25rem;
+    }
+    
+    .resume-card-info {
+        padding-left: 0;
+        margin-top: 1rem;
+    }
+    
+    .resume-workout-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .resume-card-actions {
+        padding-left: 0;
+        flex-direction: column;
+    }
+    
+    .resume-card-actions .btn {
+        width: 100%;
+    }
+}}

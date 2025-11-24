@@ -17,12 +17,19 @@
             <div class="logo-fallback" style="display: none;">BS</div>
         </header>
 
-        <!-- Auth Section -->
+        <!-- Auth Section (Clean New Structure) -->
         <div id="auth-section" class="workout-controls">
-            <button id="google-signin-btn" class="btn btn-primary">
+            <button id="sign-in-btn" class="btn btn-primary">
                 <i class="fab fa-google"></i> Sign In with Google
             </button>
-            <div id="user-info" class="hidden"></div>
+            <div id="user-info" class="hidden">
+                <div class="user-display">
+                    <span id="user-name" class="user-name"></span>
+                    <button id="sign-out-btn" class="btn btn-secondary btn-small">
+                        <i class="fas fa-sign-out-alt"></i> Sign Out
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Today's Date Display -->
@@ -30,670 +37,509 @@
             <h2 id="today-date-display">Today - Loading...</h2>
             <p class="today-subtitle">Choose your workout and start tracking</p>
             
-            <!-- Enhanced Management Buttons -->
-            <div style="margin-top: 1rem;">
-                <button class="btn btn-secondary" onclick="showWorkoutHistory()" style="margin-right: 0.5rem;">
+            <!-- Navigation Buttons -->
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="showWorkoutHistory()">
                     <i class="fas fa-history"></i> Workout History
                 </button>
-                <button class="btn btn-secondary" onclick="showWorkoutManagement()" style="margin-right: 0.5rem;">
+                <button class="btn btn-secondary" onclick="showWorkoutManagement()">
                     <i class="fas fa-cog"></i> Manage Workouts
                 </button>
-                <button class="btn btn-secondary" onclick="showWorkoutSelector()" id="back-to-workouts-btn" style="display: none;">
+                <button class="btn btn-secondary hidden" id="back-to-workouts-btn" onclick="showWorkoutSelector()">
                     <i class="fas fa-arrow-left"></i> Back to Workouts
                 </button>
             </div>
         </div>
 
-        <!-- Enhanced Workout Selector with Template Selection -->
-        <div id="workout-selector">
-            <div class="workout-type-header">
-                <h3>Choose Workout Type</h3>
-                <p>Select a workout category, then choose your specific template</p>
+        <!-- Main Content Area -->
+        <main id="main-content">
+            
+            <!-- Resume Workout Card (hidden by default) -->
+            <div id="resume-workout-banner" class="resume-workout-card hidden">
+                <div class="resume-card-header">
+                    <i class="fas fa-play-circle"></i>
+                    <h3>Continue Your Workout?</h3>
+                </div>
+                <div class="resume-card-info">
+                    <span id="resume-workout-name" class="resume-workout-name">Custom: Thursday - Upper Body Pull</span>
+                    <div class="resume-workout-meta">
+                        <span><i class="fas fa-dumbbell"></i> <span id="resume-sets-completed">0/0</span> sets completed</span>
+                        <span><i class="fas fa-clock"></i> Started <span id="resume-time-ago">just now</span></span>
+                    </div>
+                </div>
+                <div class="resume-card-actions">
+                    <button class="btn btn-primary" onclick="continueInProgressWorkout()">
+                        <i class="fas fa-play"></i> Continue Workout
+                    </button>
+                    <button class="btn btn-secondary" onclick="discardInProgressWorkout()">
+                        <i class="fas fa-trash-alt"></i> Start Fresh
+                    </button>
+                </div>
             </div>
             
-            <div class="workout-grid" id="workout-type-grid">
-                <!-- Workout types will be populated here -->
+            <!-- Workout Selector -->
+            <section id="workout-selector" class="content-section">
+                <div class="section-header">
+                    <h3>Choose Workout Type</h3>
+                    <p>Select a workout category, then choose your specific template</p>
+                </div>
+                             
+                <div class="workout-grid" id="workout-type-grid">
+                <div class="workout-option" onclick="showTemplatesByCategory('push')" data-category="push">
+                    <i class="fas fa-hand-paper"></i>
+                    <span>Push Workouts</span>
+                    <p>Chest, Shoulders, Triceps</p>
+                </div>
+                
+                <div class="workout-option" onclick="showTemplatesByCategory('pull')" data-category="pull">
+                    <i class="fas fa-fist-raised"></i>
+                    <span>Pull Workouts</span>
+                    <p>Back, Biceps, Rear Delts</p>
+                </div>
+                
+                <div class="workout-option" onclick="showTemplatesByCategory('legs')" data-category="legs">
+                    <i class="fas fa-running"></i>
+                    <span>Leg Workouts</span>
+                    <p>Quads, Glutes, Hamstrings, Calves</p>
+                </div>
+                
+                <div class="workout-option" onclick="showTemplatesByCategory('cardio')" data-category="cardio">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>Cardio & Core</span>
+                    <p>Heart Health, Core Strength</p>
+                </div>
+                
+                <div class="workout-option" onclick="showTemplatesByCategory('other')" data-category="other">
+                    <i class="fas fa-dumbbell"></i>
+                    <span>Other Workouts</span>
+                    <p>Full Body, Mixed Training</p>
+                </div>
             </div>
+                </div>
+            </section>
+
+            <!-- Active Workout -->
+            <section id="active-workout" class="content-section hidden">
+                <!-- Workout Header -->
+                <div class="current-workout-header">
+                    <div class="workout-info">
+                        <h2 id="current-workout-name">Current Workout</h2>
+                        <div class="workout-meta">
+                            <span id="workout-start-time">Started now</span>
+                            <span id="workout-duration">0:00</span>
+                        </div>
+                    </div>
+                    
+                    <div class="workout-progress">
+                        <span id="workout-progress-display">0/16 sets</span>
+                    </div>
+                    
+                    <div class="workout-actions">
+                        <button class="btn btn-secondary" onclick="cancelWorkout()">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button class="btn btn-success" onclick="completeWorkout()">
+                            <i class="fas fa-check"></i> Finish
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Exercise List -->
+                <div id="exercise-list" class="exercise-list">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </section>
+
+            <!-- Workout Management -->
+            <section id="workout-management" class="content-section hidden">
+                <div class="section-header">
+                    <h2>Workout Management</h2>
+                    <div class="section-actions">
+                        <button class="btn btn-secondary" onclick="showWorkoutSelector()">
+                            <i class="fas fa-arrow-left"></i> Back to Workouts
+                        </button>
+                        <button class="btn btn-primary" onclick="createNewTemplate()">
+                            <i class="fas fa-plus"></i> New Template
+                        </button>
+                        <button class="btn btn-secondary" onclick="window.open('./exercise-manager.html', '_blank')">
+                            <i class="fas fa-dumbbell"></i> Exercise Library
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Template Categories -->
+                <div class="template-categories">
+                    <div class="category-tabs">
+                        <div id="template-cards-container" class="template-cards-container"></div>
+                        <button class="category-tab active" data-category="default" onclick="switchTemplateCategory('default')">
+                            <i class="fas fa-star"></i> Default Templates
+                        </button>
+                        <button class="category-tab" data-category="custom" onclick="switchTemplateCategory('custom')">
+                            <i class="fas fa-user"></i> My Templates
+                        </button>
+                    </div>
+                    
+                    <div class="category-content">
+                        <div id="default-templates" class="template-grid">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                        <div id="custom-templates" class="template-grid hidden">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Workout History -->
+            <section id="workout-history-section" class="content-section hidden">
+              
+            <!-- Calendar Header -->
+                <div class="calendar-header">
+                    <div class="month-navigation">
+                        <button class="nav-button" onclick="previousMonth()">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <div class="current-month" id="currentMonth"></div>
+                        <button class="nav-button" onclick="nextMonth()">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="calendar-title">
+                        <h1><i class="fas fa-calendar"></i> Workout Calendar</h1>
+                    </div>
+                    
+                    <div class="header-actions">
+                        <button class="btn" onclick="showWorkoutSelector()">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </button>
+                        <button class="btn btn-primary" onclick="addWorkout()")">
+                            <i class="fas fa-plus"></i> Add Workout
+                        </button>
+                    </div>
+                </div>
+                
+                 <!-- Calendar -->
+                <div class="calendar-container">
+                    <div class="calendar-weekdays">
+                        <div class="weekday">Sun</div>
+                        <div class="weekday">Mon</div>
+                        <div class="weekday">Tue</div>
+                        <div class="weekday">Wed</div>
+                        <div class="weekday">Thu</div>
+                        <div class="weekday">Fri</div>
+                        <div class="weekday">Sat</div>
+                    </div>
+                    <div class="calendar-grid" id="calendar-grid">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Modal Containers -->
+        <div id="modal-container">
             
             <!-- Template Selection Modal -->
             <div id="template-selection-modal" class="modal hidden">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h3 id="template-modal-title" class="modal-title">Choose Template</h3>
+                        <h3 id="template-modal-title">Choose Template</h3>
                         <button class="close-btn" onclick="closeTemplateSelection()">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
-                    
-                    <div class="template-selection-grid" id="template-selection-grid">
-                        <!-- Templates will be populated here -->
+                    <div class="modal-body">
+                        <div id="template-selection-grid" class="template-grid">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                        <div class="modal-actions">
+                            <button class="btn btn-primary" onclick="createNewTemplate()">
+                                <i class="fas fa-plus"></i> Create New Template
+                            </button>
+                        </div>
                     </div>
-                    
-                    <div class="template-selection-actions">
-                        <button class="btn btn-primary" onclick="createTemplateForType()">
-                            <i class="fas fa-plus"></i> Create New Template
+                </div>
+            </div>
+
+            <!-- Exercise Library Modal -->
+            <div id="exercise-library-modal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Add Exercise to Workout</h3>
+                        <button class="close-btn" onclick="closeExerciseLibrary()">
+                            <i class="fas fa-times"></i>
                         </button>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Active Workout -->
-        <div id="active-workout" class="hidden">
-            <!-- Global Settings -->
-            <div class="global-settings">
-                <div>
-                    <span style="color: var(--text-secondary); font-size: 0.875rem;">Default Units:</span>
-                    <div class="unit-toggle">
-                        <button class="unit-btn active" data-unit="lbs">lbs</button>
-                        <button class="unit-btn" data-unit="kg">kg</button>
+                    <div class="modal-body" id="exercise-library-content">
+                        <!-- Exercise Library Controls -->
+                        <div class="exercise-library-controls">
+                            <div class="search-container">
+                                <input type="text" 
+                                    id="exercise-library-search"
+                                    class="form-input" 
+                                    placeholder="Search exercises...">
+                            </div>
+                            
+                            <div class="filter-row">
+                                <select id="body-part-filter" class="form-input">
+                                    <option value="">All Body Parts</option>
+                                    <option value="chest">Chest</option>
+                                    <option value="back">Back</option>
+                                    <option value="shoulders">Shoulders</option>
+                                    <option value="arms">Arms</option>
+                                    <option value="legs">Legs</option>
+                                    <option value="core">Core</option>
+                                </select>
+                                
+                                <select id="equipment-filter" class="form-input">
+                                    <option value="">All Equipment</option>
+                                    <option value="machine">Machine</option>
+                                    <option value="dumbbell">Dumbbell</option>
+                                    <option value="barbell">Barbell</option>
+                                    <option value="bodyweight">Bodyweight</option>
+                                    <option value="cable">Cable</option>
+                                </select>
+                            </div>
+                            
+                            <button class="btn btn-primary btn-full" onclick="showCreateExerciseForm()">
+                                <i class="fas fa-plus"></i> Create New Exercise
+                            </button>
+                        </div>
+                        
+                        <!-- Exercise Grid -->
+                        <div id="exercise-library-grid" class="exercise-library-grid">
+                            <!-- Exercises will be populated here by JavaScript -->
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Workout Header -->
-            <div class="workout-header">
-                <div class="workout-info">
-                    <h3 id="current-workout-title">Current Workout</h3>
-                    <div class="workout-meta" id="workout-meta">Started now</div>
-                </div>
-                <div class="workout-actions">
-                    <span id="completed-progress" style="color: var(--text-secondary); margin-right: 1rem;">0/0</span>
-                    <button class="btn" id="change-workout-btn">
-                        <i class="fas fa-exchange-alt"></i> Change
-                    </button>
-                    <button class="btn btn-primary" id="finish-workout-btn">
-                        <i class="fas fa-check"></i> Finish
-                    </button>
-                </div>
-            </div>
-
-            <!-- Exercise List -->
-            <div id="exercise-list" class="exercise-list"></div>
-        </div>
-
-        <!-- Workout Management Section -->
-        <div id="workout-management" class="hidden">
-            <div class="management-header">
-                <h2>Workout Management</h2>
-                <div class="management-actions">
-                    <button class="btn btn-secondary" onclick="showWorkoutSelector(true)">
-                        <i class="fas fa-arrow-left"></i> Back to Workouts
-                    </button>
-                    <button class="btn btn-primary" onclick="showCreateTemplateModal()">
-                        <i class="fas fa-plus"></i> New Template
-                    </button>
-                    <button class="btn btn-secondary" onclick="window.open('./exercise-manager.html', '_blank')">
-                        <i class="fas fa-dumbbell"></i> Manage Exercise Library
-                    </button>
-                </div>
-            </div>
-
-            <!-- Template Categories -->
-            <div class="template-categories">
-                <div class="category-tabs">
-                    <button class="category-tab active" data-category="default" onclick="switchTemplateCategory('default')">
-                        <i class="fas fa-star"></i> Default Templates
-                    </button>
-                    <button class="category-tab" data-category="custom" onclick="switchTemplateCategory('custom')">
-                        <i class="fas fa-user"></i> My Templates
-                    </button>
-                </div>
-                
-                <div class="category-content">
-                    <div id="default-templates" class="template-grid">
-                        <!-- Default templates will be loaded here -->
+            <!-- Workout Details Modal -->
+            <div id="workout-detail-modal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 id="workout-detail-title">Workout Details</h3>
+                        <button class="close-btn" onclick="closeWorkoutDetailModal()">
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>
-                    <div id="custom-templates" class="template-grid hidden">
-                        <!-- Custom templates will be loaded here -->
+                    <div class="modal-body" id="workout-detail-content">
+                        <!-- Populated by JavaScript -->
                     </div>
                 </div>
             </div>
-        </div>
 
-
- 
- <div id="workout-history-section" class="hidden">
-            <!-- Calendar Header -->
-        <div class="calendar-header">
-            <div class="month-navigation">
-                <button class="nav-button" onclick="previousMonth()">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-                <div class="current-month" id="currentMonth"></div>
-                <button class="nav-button" onclick="nextMonth()">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-            </div>
-            
-            <div class="calendar-title">
-                <h1><i class="fas fa-calendar"></i> Workout Calendar</h1>
-            </div>
-            
-            <div class="header-actions">
-                <button class="btn" onclick="showWorkoutSelector(true)">
-                    <i class="fas fa-arrow-left"></i> Back
-                </button>
-                <button class="btn btn-primary" onclick="addWorkout()">
-                    <i class="fas fa-plus"></i> Add Workout
-                </button>
-            </div>
-        </div>
-
-        <!-- Calendar Container -->
-        <div class="calendar-container">
-            <!-- Weekdays Header -->
-            <div class="calendar-weekdays">
-                <div class="weekday">SUN</div>
-                <div class="weekday">MON</div>
-                <div class="weekday">TUE</div>
-                <div class="weekday">WED</div>
-                <div class="weekday">THU</div>
-                <div class="weekday">FRI</div>
-                <div class="weekday">SAT</div>
-            </div>
-
-            <!-- Calendar Grid -->
-            <div class="calendar-grid" id="calendarGrid">
-                <!-- Sample calendar days - September 2025 -->
-                <!-- Week 1 -->
-                <div class="calendar-day">
-                    <div class="day-number">1</div>
-                    <div class="workout-icon"><i class="fas fa-hand"></i></div>
-                    <div class="workout-status status-completed">Complete</div>
-                </div>
-                <div class="calendar-day today">
-                    <div class="day-number">2</div>
-                    <div class="no-workout"><i class="fas fa-times"></i></div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">3</div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">4</div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">5</div>
-                    <div class="workout-icon"><i class="fas fa-walking"></i></div>
-                    <div class="workout-status status-partial">Partial</div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">6</div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">7</div>
-                </div>
-                
-                <!-- Week 2 -->
-                <div class="calendar-day">
-                    <div class="day-number">8</div>
-                    <div class="workout-icon"><i class="fas fa-fist-raised"></i></div>
-                    <div class="workout-status status-completed">Complete</div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">9</div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">10</div>
-                    <div class="no-workout"><i class="fas fa-times"></i></div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">11</div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">12</div>
-                    <div class="workout-icon"><i class="fas fa-heart"></i></div>
-                    <div class="workout-status status-completed">Complete</div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">13</div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">14</div>
-                </div>
-                
-                <!-- Week 3 -->
-                <div class="calendar-day">
-                    <div class="day-number">15</div>
-                    <div class="workout-icon"><i class="fas fa-dumbbell"></i></div>
-                    <div class="workout-status status-missed">Missed</div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">16</div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">17</div>
-                    <div class="workout-icon"><i class="fas fa-walking"></i></div>
-                    <div class="workout-status status-completed">Complete</div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">18</div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">19</div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">20</div>
-                    <div class="multiple-workouts">
-                        <div class="workout-icon"><i class="fas fa-hand"></i></div>
-                        <div class="workout-icon"><i class="fas fa-heart"></i></div>
+            <!-- Manual Workout Modal -->
+            <div id="manual-workout-modal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Add Manual Workout</h3>
+                        <button class="close-btn" onclick="closeAddManualWorkoutModal()">
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>
-                    <div class="workout-status status-completed">Complete</div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">21</div>
-                </div>
-                
-                <!-- Week 4 -->
-                <div class="calendar-day">
-                    <div class="day-number">22</div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">23</div>
-                    <div class="workout-icon"><i class="fas fa-fist-raised"></i></div>
-                    <div class="workout-status status-partial">Partial</div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">24</div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">25</div>
-                    <div class="workout-icon"><i class="fas fa-walking"></i></div>
-                    <div class="workout-status status-completed">Complete</div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">26</div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">27</div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">28</div>
-                    <div class="no-workout"><i class="fas fa-times"></i></div>
-                </div>
-                
-                <!-- Week 5 -->
-                <div class="calendar-day">
-                    <div class="day-number">29</div>
-                    <div class="workout-icon"><i class="fas fa-dumbbell"></i></div>
-                    <div class="workout-status status-completed">Complete</div>
-                </div>
-                <div class="calendar-day">
-                    <div class="day-number">30</div>
+                    <div class="modal-body" id="manual-workout-content">
+                        <!-- Populated by JavaScript -->
+                    </div>
                 </div>
             </div>
-        </div>
- </div>
- 
-            <!-- End Calendar Container -->
 
-
-
-        <!-- Workout Detail Modal -->
-        <div class="workout-detail-modal" id="workoutModal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title" id="modalTitle">Workout Details</h3>
-                    <button class="close-btn" onclick="closeWorkoutDetailModal()">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body" id="modalBody">
-                    <!-- Workout details will be loaded here -->
+            <!-- Template Editor Modal -->
+            <div id="template-editor-modal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 id="template-editor-title">Create Template</h3>
+                        <button class="close-btn" onclick="closeTemplateEditor()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body" id="template-editor-content">
+                        <!-- Populated by JavaScript -->
+                    </div>
                 </div>
             </div>
+
         </div>
 
-    <!-- Exercise Focus Modal with Video Support -->
-    <div id="exercise-modal" class="exercise-modal">
-        <div class="exercise-modal-content">
-            <div class="modal-header">
-                <h3 id="modal-exercise-title">Exercise</h3>
-                <button class="close-btn" id="close-exercise-modal">
-                    <i class="fas fa-times"></i>
+        <!-- Notifications -->
+        <div id="notifications-container" class="notifications-container"></div>
+
+        <!-- Rest Timer (if needed) -->
+        <div id="rest-timer" class="rest-timer hidden">
+            <div class="timer-display">
+                <span id="timer-countdown">0:00</span>
+            </div>
+            <div class="timer-controls">
+                <button id="pause-rest-btn" class="btn btn-secondary" onclick="toggleRestTimer()">
+                    <i class="fas fa-pause"></i>
+                </button>
+                <button id="skip-rest-btn" class="btn btn-primary" onclick="skipRestTimer()">
+                    <i class="fas fa-forward"></i> Skip
                 </button>
             </div>
-            
-            <!-- Exercise Video Section -->
-            <div id="exercise-video-section" class="exercise-video-section hidden">
-                <div class="video-container">
-                    <iframe id="exercise-video-iframe" width="100%" height="315" frameborder="0" allowfullscreen></iframe>
-                </div>
-                <button class="btn btn-secondary btn-small" onclick="hideExerciseVideo()">
-                    <i class="fas fa-eye-slash"></i> Hide Video
-                </button>
-            </div>
-            
-            <div class="exercise-unit-toggle">
-                <div class="unit-toggle">
-                    <button class="unit-btn active" data-unit="lbs">lbs</button>
-                    <button class="unit-btn" data-unit="kg">kg</button>
-                </div>
-            </div>
-            
-            <div id="modal-exercise-content"></div>
         </div>
     </div>
 
     <!-- Add Manual Workout Modal -->
-    <div id="add-manual-workout-modal" class="modal hidden">
-        <div class="modal-content manual-workout-modal">
-            <div class="modal-header">
-                <h3 class="modal-title">Add Past Workout</h3>
-                <button class="close-btn" onclick="closeAddManualWorkoutModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <!-- Step 1: Basic Workout Info -->
-            <div id="manual-step-1" class="manual-step">
-                <form id="manual-workout-basic-form">
-                    <div class="form-group">
-                        <label for="manual-workout-date">Workout Date *</label>
-                        <input type="date" id="manual-workout-date" class="form-input" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="manual-workout-category">Workout Category *</label>
-                        <select id="manual-workout-category" class="form-input" required>
-                            <option value="">Select a category...</option>
-                            <option value="Push">Push (Chest, Shoulders, Triceps)</option>
-                            <option value="Pull">Pull (Back, Biceps)</option>
-                            <option value="Legs">Legs (Quads, Glutes, Hamstrings)</option>
-                            <option value="Cardio">Cardio & Core</option>
-                            <option value="Other">Other/Mixed</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="manual-workout-name">Workout Name</label>
-                        <input type="text" id="manual-workout-name" class="form-input" 
-                               placeholder="e.g., Chest & Triceps, Upper Body, etc.">
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="manual-workout-duration">Duration (minutes)</label>
-                            <input type="number" id="manual-workout-duration" class="form-input" 
-                                   placeholder="45" min="1" max="300">
-                        </div>
-                        <div class="form-group">
-                            <label for="manual-workout-status">Status</label>
-                            <select id="manual-workout-status" class="form-input">
-                                <option value="completed">Completed</option>
-                                <option value="cancelled">Cancelled</option>
-                                <option value="partial">Partially Completed</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="manual-workout-notes">Workout Notes</label>
-                        <textarea id="manual-workout-notes" class="form-input" rows="3" 
-                                  placeholder="How did the workout go? Any notes about performance, feeling, etc."></textarea>
-                    </div>
-
-                    <div class="step-actions">
-                        <button type="button" class="btn btn-secondary" onclick="closeAddManualWorkoutModal()">
-                            Cancel
-                        </button>
-                        <button type="button" class="btn btn-primary" onclick="proceedToExerciseSelection()">
-                            Next: Add Exercises <i class="fas fa-arrow-right"></i>
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Step 2: Exercise Selection and Data Entry -->
-            <div id="manual-step-2" class="manual-step hidden">
-                <div class="step-header">
-                    <button class="btn btn-secondary btn-small" onclick="backToBasicInfo()">
-                        <i class="fas fa-arrow-left"></i> Back
-                    </button>
-                    <div class="step-info">
-                        <h4 id="manual-workout-title-display">Your Workout</h4>
-                        <p id="manual-workout-date-display">Date</p>
-                    </div>
-                    <button class="btn btn-success" onclick="finishManualWorkout()">
-                        <i class="fas fa-check"></i> Save Workout
-                    </button>
-                </div>
-
-                <!-- Exercise Management -->
-                <div class="manual-exercise-management">
-                    <div class="exercise-management-header">
-                        <h4>
-                            <i class="fas fa-dumbbell"></i> 
-                            Exercises (<span id="manual-exercise-count">0</span>)
-                        </h4>
-                        <button class="btn btn-primary btn-small" onclick="addExerciseToManualWorkout()">
-                            <i class="fas fa-plus"></i> Add Exercise
-                        </button>
-                    </div>
-
-                    <!-- Exercise List -->
-                    <div id="manual-exercises-container" class="manual-exercises-container">
-                        <div class="no-exercises-state">
-                            <i class="fas fa-plus-circle"></i>
-                            <h5>No Exercises Added</h5>
-                            <p>Click "Add Exercise" to start building your workout</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Manual Exercise Entry Modal -->
-    <div id="manual-exercise-entry-modal" class="exercise-modal">
-        <div class="exercise-modal-content">
-            <div class="modal-header">
-                <h3 id="manual-exercise-title">Exercise</h3>
-                <button class="close-btn" onclick="closeManualExerciseEntry()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div class="exercise-unit-toggle">
-                <div class="unit-toggle">
-                    <button class="unit-btn active" data-unit="lbs">lbs</button>
-                    <button class="unit-btn" data-unit="kg">kg</button>
-                </div>
-            </div>
-            
-            <div id="manual-exercise-content">
-                <!-- Exercise table will be populated here -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Exercise Library Modal -->
-    <div id="exercise-library-modal" class="modal hidden">
-    <div class="modal-content exercise-library-content">
+<div id="add-manual-workout-modal" class="modal hidden">
+    <div class="modal-content manual-workout-modal">
         <div class="modal-header">
-            <h3 class="modal-title">Exercise Library</h3>
-            <!-- FIX: Add onclick handler to close button -->
-            <button class="close-btn" onclick="closeExerciseLibrary()">
+            <h3 class="modal-title">Add Past Workout</h3>
+            <button class="close-btn" onclick="closeAddManualWorkoutModal()">
                 <i class="fas fa-times"></i>
             </button>
         </div>
         
-        <!-- Search and Filters -->
-        <div class="library-filters">
-            <div class="filter-row">
-                <input type="text" id="exercise-library-search" class="search-input" 
-                       placeholder="Search exercises...">
-            </div>
-            <div class="filter-row">
-                <select id="body-part-filter" class="form-input">
-                    <option value="">All Body Parts</option>
-                    <option value="Chest">Chest</option>
-                    <option value="Back">Back</option>
-                    <option value="Shoulders">Shoulders</option>
-                    <option value="Arms">Arms</option>
-                    <option value="Legs">Legs</option>
-                    <option value="Core">Core</option>
-                </select>
-                <select id="equipment-filter" class="form-input">
-                    <option value="">All Equipment</option>
-                    <option value="Machine">Machine</option>
-                    <option value="Cable">Cable</option>
-                    <option value="Dumbbell">Dumbbell</option>
-                    <option value="Barbell">Barbell</option>
-                    <option value="Bodyweight">Bodyweight</option>
-                </select>
-                <button class="btn btn-primary" onclick="showCreateExerciseForm()">
-                    <i class="fas fa-plus"></i> Create New
+        <!-- Step 1: Basic Workout Info -->
+        <div id="manual-step-1" class="manual-step">
+            <form id="manual-workout-basic-form">
+                <div class="form-group">
+                    <label for="manual-workout-date">Workout Date *</label>
+                    <input type="date" id="manual-workout-date" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="manual-workout-category">Workout Category *</label>
+                    <select id="manual-workout-category" class="form-input" required>
+                        <option value="">Select a category...</option>
+                        <option value="Push">Push (Chest, Shoulders, Triceps)</option>
+                        <option value="Pull">Pull (Back, Biceps)</option>
+                        <option value="Legs">Legs (Quads, Glutes, Hamstrings)</option>
+                        <option value="Cardio">Cardio & Core</option>
+                        <option value="Other">Other/Mixed</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="manual-workout-name">Workout Name</label>
+                    <input type="text" id="manual-workout-name" class="form-input" 
+                           placeholder="e.g., Chest & Triceps, Upper Body, etc.">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="manual-workout-duration">Duration (minutes)</label>
+                        <input type="number" id="manual-workout-duration" class="form-input" 
+                               placeholder="45" min="1" max="300">
+                    </div>
+                    <div class="form-group">
+                        <label for="manual-workout-status">Status</label>
+                        <select id="manual-workout-status" class="form-input">
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="partial">Partially Completed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="manual-workout-notes">Workout Notes</label>
+                    <textarea id="manual-workout-notes" class="form-input" rows="3" 
+                              placeholder="How did the workout go? Any notes about performance, feeling, etc."></textarea>
+                </div>
+
+                <div class="step-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddManualWorkoutModal()">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="proceedToExerciseSelection()">
+                        Next: Add Exercises <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Step 2: Exercise Selection and Data Entry -->
+        <div id="manual-step-2" class="manual-step hidden">
+            <div class="step-header">
+                <button class="btn btn-secondary btn-small" onclick="backToBasicInfo()">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+                <div class="step-info">
+                    <h4 id="manual-workout-title-display">Your Workout</h4>
+                    <p id="manual-workout-date-display">Date</p>
+                </div>
+                <button class="btn btn-success" onclick="finishManualWorkout()">
+                    <i class="fas fa-check"></i> Save Workout
                 </button>
             </div>
-        </div>
-        
-        <!-- Exercise Grid -->
-        <div id="exercise-library-grid" class="exercise-library-grid">
-            <!-- Exercises will be loaded here -->
+
+            <!-- Exercise Management -->
+            <div class="manual-exercise-management">
+                <div class="exercise-management-header">
+                    <h4>
+                        <i class="fas fa-dumbbell"></i> 
+                        Exercises (<span id="manual-exercise-count">0</span>)
+                    </h4>
+                    <button class="btn btn-primary btn-small" onclick="addExerciseToManualWorkout()">
+                        <i class="fas fa-plus"></i> Add Exercise
+                    </button>
+                </div>
+
+                <!-- Exercise List -->
+                <div id="manual-exercises-container" class="manual-exercises-container">
+                    <div class="no-exercises-state">
+                        <i class="fas fa-plus-circle"></i>
+                        <h5>No Exercises Added</h5>
+                        <p>Click "Add Exercise" to start building your workout</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-    <!-- Create Template Modal -->
-    <div id="create-template-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Create New Template</h3>
-                <button class="close-btn" onclick="closeCreateTemplateModal()">
-                    <i class="fas fa-times"></i>
-                </button>
+<!-- Exercise Modal -->
+<div id="exercise-modal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-exercise-title">Exercise</h3>
+            <button class="close-btn" onclick="closeExerciseModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+         <!-- Exercise video section -->
+          <div id="exercise-video-section" class="video-section hidden">
+            <div class="video-container">
+                <iframe id="exercise-video-iframe" width="100%" height="315" frameborder="0" allowfullscreen></iframe>
             </div>
-            
-            <form id="create-template-form" onsubmit="createTemplate(event)">
-                <div class="form-group">
-                    <label for="template-name">Template Name *</label>
-                    <input type="text" id="template-name" class="form-input" 
-                           placeholder="e.g., My Chest & Triceps Workout" required>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="template-category">Category</label>
-                        <select id="template-category" class="form-input">
-                            <option value="Push">Push (Chest, Shoulders, Triceps)</option>
-                            <option value="Pull">Pull (Back, Biceps)</option>
-                            <option value="Legs">Legs (Quads, Glutes, Hamstrings)</option>
-                            <option value="Cardio">Cardio & Core</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="template-type">Template Type</label>
-                        <select id="template-type" class="form-input">
-                            <option value="custom">My Custom Template</option>
-                            <option value="default">New Default Template</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="template-description">Description (optional)</label>
-                    <textarea id="template-description" class="form-input" rows="3" 
-                              placeholder="Brief description of this workout..."></textarea>
-                </div>
-                
-                <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeCreateTemplateModal()">
-                        Cancel
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Create & Edit
-                    </button>
-                </div>
-            </form>
+                <button class="btn btn-secondary" onclick="hideExerciseVideo()">
+                   <i class="fas fa-eye-slash"></i> Hide Video
+                </button>
+            </div>                
+        <div id="exercise-content">
+            <!-- Exercise table will be populated here -->
         </div>
     </div>
+</div>
 
-    <!-- Create Exercise Modal -->
-    <div id="create-exercise-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Create New Exercise</h3>
-                <button class="close-btn" onclick="closeCreateExerciseModal()">
-                    <i class="fas fa-times"></i>
-                </button>
+<!-- Manual Exercise Entry Modal -->
+<div id="manual-exercise-entry-modal" class="exercise-modal">
+    <div class="exercise-modal-content">
+        <div class="modal-header">
+            <h3 id="manual-exercise-title">Exercise</h3>
+            <button class="close-btn" onclick="closeManualExerciseEntry()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="exercise-unit-toggle">
+            <div class="unit-toggle">
+                <button class="unit-btn active" data-unit="lbs">lbs</button>
+                <button class="unit-btn" data-unit="kg">kg</button>
             </div>
-            
-            <form id="create-exercise-form" onsubmit="createNewExercise(event)">
-                <div class="form-group">
-                    <label for="new-exercise-name">Exercise Name *</label>
-                    <input type="text" id="new-exercise-name" class="form-input" 
-                           placeholder="e.g., Incline Dumbbell Press" required>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="new-exercise-body-part">Body Part</label>
-                        <select id="new-exercise-body-part" class="form-input">
-                            <option value="Chest">Chest</option>
-                            <option value="Back">Back</option>
-                            <option value="Shoulders">Shoulders</option>
-                            <option value="Arms">Arms</option>
-                            <option value="Legs">Legs</option>
-                            <option value="Core">Core</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="new-exercise-equipment">Equipment</label>
-                        <select id="new-exercise-equipment" class="form-input">
-                            <option value="Machine">Machine</option>
-                            <option value="Cable">Cable</option>
-                            <option value="Dumbbell">Dumbbell</option>
-                            <option value="Barbell">Barbell</option>
-                            <option value="Bodyweight">Bodyweight</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="new-exercise-sets">Default Sets</label>
-                        <input type="number" id="new-exercise-sets" class="form-input" 
-                               value="3" min="1" max="10">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="new-exercise-reps">Default Reps</label>
-                        <input type="number" id="new-exercise-reps" class="form-input" 
-                               value="10" min="1" max="50">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="new-exercise-weight">Starting Weight (lbs)</label>
-                        <input type="number" id="new-exercise-weight" class="form-input" 
-                               value="50" min="0" step="5">
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="new-exercise-video">Form Video URL (optional)</label>
-                    <input type="url" id="new-exercise-video" class="form-input" 
-                           placeholder="https://www.youtube.com/watch?v=...">
-                    <small style="color: var(--text-secondary); font-size: 0.875rem;">
-                        YouTube URLs will be automatically converted to embeddable format
-                    </small>
-                </div>
-                
-                <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeCreateExerciseModal()">
-                        Cancel
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Create Exercise
-                    </button>
-                </div>
-            </form>
+        </div>
+        
+        <div id="manual-exercise-content">
+            <!-- Exercise table will be populated here -->
         </div>
     </div>
+</div>
 
+    <!-- Application Entry Point -->
     <script type="module" src="js/main.js"></script>
 </body>
 </html>
