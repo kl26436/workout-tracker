@@ -14,7 +14,7 @@ export async function showWorkoutHistory() {
         return;
     }
 
-    console.log('📅 Opening workout history with calendar view...');
+    console.log(' Opening workout history with calendar view...');
 
     // Hide other sections
     const workoutSelector = document.getElementById('workout-selector');
@@ -36,11 +36,11 @@ export async function showWorkoutHistory() {
 // ===================================================================
 
 async function initializeCalendarView() {
-    console.log('📅 Initializing calendar view...');
+    console.log(' Initializing calendar view...');
     
     // Make sure workoutHistory is available
     if (!window.workoutHistory) {
-        console.error('❌ workoutHistory not available');
+        console.error(' workoutHistory not available');
         showNotification('Workout history not available', 'error');
         return;
     }
@@ -49,10 +49,10 @@ async function initializeCalendarView() {
         // Initialize the calendar with current month
         await window.workoutHistory.initializeCalendar();
         
-        console.log('✅ Calendar view initialized successfully');
+        console.log(' Calendar view initialized successfully');
         
     } catch (error) {
-        console.error('❌ Error initializing calendar:', error);
+        console.error(' Error initializing calendar:', error);
         showNotification('Error loading calendar view', 'error');
     }
 }
@@ -62,10 +62,10 @@ async function initializeCalendarView() {
 // ===================================================================
 
 export function previousMonth() {
-    console.log('⬅️ Previous month clicked');
+    console.log(' Previous month clicked');
     
     if (!window.workoutHistory) {
-        console.error('❌ workoutHistory not available');
+        console.error(' workoutHistory not available');
         return;
     }
     
@@ -73,10 +73,10 @@ export function previousMonth() {
 }
 
 export function nextMonth() {
-    console.log('➡️ Next month clicked');
+    console.log(' Next month clicked');
     
     if (!window.workoutHistory) {
-        console.error('❌ workoutHistory not available');
+        console.error(' workoutHistory not available');
         return;
     }
     
@@ -89,7 +89,7 @@ export function nextMonth() {
 
 export function viewWorkout(workoutId) {
     if (!window.workoutHistory) {
-        console.error('❌ workoutHistory not available');
+        console.error(' workoutHistory not available');
         return;
     }
     
@@ -126,7 +126,7 @@ export function resumeWorkout(workoutId) {
     // Confirm and resume
     const confirmMessage = `Resume "${workout.workoutType}" from ${new Date(workout.date).toLocaleDateString()}?`;
     if (confirm(confirmMessage)) {
-        console.log('▶️ Resuming workout:', workoutId);
+        console.log(' Resuming workout:', workoutId);
         // TODO: Implement actual resume functionality
         showNotification('Resume functionality coming soon', 'info');
     }
@@ -143,7 +143,7 @@ export function repeatWorkout(workoutId) {
     
     const confirmMessage = `Start a new workout based on "${workout.workoutType}"?`;
     if (confirm(confirmMessage)) {
-        console.log('🔄 Repeating workout:', workoutId);
+        console.log(' Repeating workout:', workoutId);
         // TODO: Implement actual repeat functionality
         showNotification('Repeat functionality coming soon', 'info');
     }
@@ -161,7 +161,7 @@ export function deleteWorkout(workoutId) {
     const confirmMessage = `Are you sure you want to delete "${workout.workoutType}" from ${new Date(workout.date).toLocaleDateString()}?\n\nThis action cannot be undone.`;
     
     if (confirm(confirmMessage)) {
-        console.log('🗑️ Deleting workout:', workoutId);
+        console.log(' Deleting workout:', workoutId);
         // TODO: Implement actual delete functionality
         showNotification('Delete functionality coming soon', 'info');
     }
@@ -176,7 +176,7 @@ export function retryWorkout(workoutId) {
         return;
     }
     
-    console.log('🔄 Retrying workout:', workoutId);
+    console.log(' Retrying workout:', workoutId);
     // TODO: Implement actual retry functionality
     showNotification('Retry functionality coming soon', 'info');
 }
@@ -191,7 +191,7 @@ function showWorkoutDetailModal(workout) {
     const content = document.getElementById('workout-detail-content');
     
     if (!modal || !title || !content) {
-        console.error('❌ Workout detail modal elements not found');
+        console.error(' Workout detail modal elements not found');
         return;
     }
     
@@ -272,33 +272,33 @@ export function closeWorkoutDetailModal() {
 // ===================================================================
 
 export function clearAllHistoryFilters() {
-    console.log('🧹 Clearing all history filters');
+    console.log(' Clearing all history filters');
     // TODO: Implement filter clearing
     showNotification('Filter clearing coming soon', 'info');
 }
 
 export function setupHistoryFilters() {
-    console.log('🔧 Setting up history filters');
+    console.log(' Setting up history filters');
     // TODO: Implement history filters
 }
 
 export function applyHistoryFilters() {
-    console.log('🔧 Applying history filters');
+    console.log(' Applying history filters');
     // TODO: Implement filter application
 }
 
 export function enhanceWorkoutData() {
-    console.log('🔧 Enhancing workout data');
+    console.log(' Enhancing workout data');
     // TODO: Implement data enhancement
 }
 
 export function formatWorkoutForDisplay() {
-    console.log('🔧 Formatting workout for display');
+    console.log(' Formatting workout for display');
     // TODO: Implement display formatting
 }
 
 export function getWorkoutActionButton() {
-    console.log('🔧 Getting workout action button');
+    console.log(' Getting workout action button');
     // TODO: Implement action button logic
 }
 
@@ -307,7 +307,7 @@ export function getWorkoutActionButton() {
 // ===================================================================
 
 export function setupWorkoutHistoryEventListeners() {
-    console.log('🔧 Setting up workout history event listeners...');
+    console.log(' Setting up workout history event listeners...');
     
     // Set up modal close handlers
     const modal = document.getElementById('workout-detail-modal');
@@ -330,7 +330,7 @@ export function setupWorkoutHistoryEventListeners() {
         }
     });
     
-    console.log('✅ Workout history event listeners setup complete');
+    console.log(' Workout history event listeners setup complete');
 }
 
 // ===================================================================
@@ -340,4 +340,4 @@ export function setupWorkoutHistoryEventListeners() {
 // Auto-setup event listeners when module loads
 setupWorkoutHistoryEventListeners();
 
-console.log('✅ Workout History UI module loaded with calendar support');
+console.log(' Workout History UI module loaded with calendar support');

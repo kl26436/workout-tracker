@@ -8,10 +8,11 @@
 import { AppState } from './core/app-state.js';
 import { startApplication } from './core/app-initialization.js';
 
-// Authentication functions  
+// Authentication functions
 import {
     signIn, signOutUser, showUserInfo, hideUserInfo,
-    setupEventListeners, setupKeyboardShortcuts
+    setupEventListeners, setupKeyboardShortcuts,
+    showLoadingScreen, updateLoadingMessage, showSignInPrompt, hideLoadingScreen
 } from './core/app-initialization.js';
 
 // Workout core functionality
@@ -87,30 +88,30 @@ import { FirebaseWorkoutManager } from './core/firebase-workout-manager.js';
 
 // Calendar navigation
 window.previousMonth = function() {
-    console.log('⬅️ Previous Month clicked');
+    console.log(' Previous Month clicked');
     if (window.workoutHistory && typeof window.workoutHistory.previousMonth === 'function') {
         window.workoutHistory.previousMonth();
     } else {
-        console.warn('⚠️ workoutHistory.previousMonth not available');
+        console.warn(' workoutHistory.previousMonth not available');
     }
 };
 
 window.nextMonth = function() {
-    console.log('➡️ Next Month clicked');
+    console.log(' Next Month clicked');
     if (window.workoutHistory && typeof window.workoutHistory.nextMonth === 'function') {
         window.workoutHistory.nextMonth();
     } else {
-        console.warn('⚠️ workoutHistory.nextMonth not available');
+        console.warn(' workoutHistory.nextMonth not available');
     }
 };
 
 // Workout detail functions
 window.viewWorkout = function(workoutId) {
-    console.log('👁️ View Workout:', workoutId);
+    console.log(' View Workout:', workoutId);
     if (window.workoutHistory && typeof window.workoutHistory.showWorkoutDetail === 'function') {
         window.workoutHistory.showWorkoutDetail(workoutId);
     } else {
-        console.warn('⚠️ workoutHistory.showWorkoutDetail not available');
+        console.warn(' workoutHistory.showWorkoutDetail not available');
     }
 };
 
@@ -118,16 +119,16 @@ window.viewWorkout = function(workoutId) {
 
 // Add workout function
 window.addWorkout = function() {
-    console.log('➕ Add Workout clicked');
+    console.log(' Add Workout clicked');
     if (typeof window.showAddManualWorkoutModal === 'function') {
         window.showAddManualWorkoutModal();
     } else {
-        console.warn('⚠️ showAddManualWorkoutModal not available');
+        console.warn(' showAddManualWorkoutModal not available');
         alert('Add workout functionality coming soon');
     }
 };
 
-console.log('✅ Calendar navigation functions added to window');
+console.log(' Calendar navigation functions added to window');
 
 // ===================================================================
 // ASSIGN ALL FUNCTIONS TO WINDOW (your existing assignments)
@@ -354,6 +355,12 @@ window.returnToWorkoutsFromManagement = returnToWorkoutsFromManagement;
 window.signIn = signIn;
 window.signOutUser = signOutUser;
 
+// Loading Screen Functions
+window.showLoadingScreen = showLoadingScreen;
+window.updateLoadingMessage = updateLoadingMessage;
+window.showSignInPrompt = showSignInPrompt;
+window.hideLoadingScreen = hideLoadingScreen;
+
 // Debug Functions
 window.debugManualWorkoutDate = debugManualWorkoutDate;
 window.debugFirebaseWorkoutDates = debugFirebaseWorkoutDates;
@@ -374,16 +381,16 @@ window.FirebaseWorkoutManager = FirebaseWorkoutManager;
 // ===================================================================
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 Starting Big Surf Workout Tracker...');
+    console.log(' Starting Big Surf Workout Tracker...');
     
     try {
         // Call your existing startApplication function - that's it!
         await startApplication();
         
-        console.log('✅ Application started successfully');
+        console.log(' Application started successfully');
         
     } catch (error) {
-        console.error('❌ Application startup failed:', error);
+        console.error(' Application startup failed:', error);
         
         // Show error to user
         const errorDiv = document.createElement('div');
@@ -397,4 +404,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-console.log('✅ Main.js loaded - ready to start app');
+console.log(' Main.js loaded - ready to start app');

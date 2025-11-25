@@ -37,6 +37,24 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <img src="BigSurf.png" alt="Big Surf Logo" class="loading-logo">
+            <h1 class="loading-title">Big Surf</h1>
+            <div class="loading-spinner"></div>
+            <p id="loading-message" class="loading-message">Initializing...</p>
+
+            <!-- Sign-in prompt (shown if not authenticated) -->
+            <div id="loading-signin-prompt" class="loading-signin-prompt hidden">
+                <p>Sign in to access your workouts</p>
+                <button id="loading-signin-btn" class="btn btn-primary">
+                    <i class="fab fa-google"></i> Sign In with Google
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="app-container">
         <!-- Header -->
         <header class="header">

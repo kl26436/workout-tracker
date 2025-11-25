@@ -1,7 +1,7 @@
 // App Initialization Module - core/app-initialization.js
 // Handles application startup, authentication, and global setup
 
-import { auth, provider, onAuthStateChanged, signInWithPopup, signOut, db } from './firebase-config.js';
+import { auth, provider, onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, db } from './firebase-config.js';
 import { AppState } from './app-state.js';
 import { showNotification, setTodayDisplay } from './ui-helpers.js';
 import { loadWorkoutPlans } from './data-manager.js'; // ADD loadWorkoutData here
@@ -11,21 +11,86 @@ import { initializeWorkoutManagement } from '../core/workout/workout-management-
 import { initializeErrorHandler, startConnectionMonitoring } from './error-handler.js';
 
 // ===================================================================
+// LOADING SCREEN MANAGEMENT
+// ===================================================================
+
+export function showLoadingScreen(message = 'Initializing...') {
+    const loadingScreen = document.getElementById('loading-screen');
+    const loadingMessage = document.getElementById('loading-message');
+
+    if (loadingScreen) {
+        loadingScreen.classList.remove('hidden');
+        loadingScreen.style.opacity = '1';
+    }
+
+    if (loadingMessage && message) {
+        loadingMessage.textContent = message;
+    }
+}
+
+export function updateLoadingMessage(message) {
+    const loadingMessage = document.getElementById('loading-message');
+    if (loadingMessage) {
+        loadingMessage.textContent = message;
+    }
+}
+
+export function showSignInPrompt() {
+    const signInPrompt = document.getElementById('loading-signin-prompt');
+    const loadingSpinner = document.querySelector('.loading-spinner');
+    const loadingMessage = document.getElementById('loading-message');
+
+    // Hide spinner and message
+    if (loadingSpinner) loadingSpinner.style.display = 'none';
+    if (loadingMessage) loadingMessage.style.display = 'none';
+
+    // Show sign-in prompt
+    if (signInPrompt) {
+        signInPrompt.classList.remove('hidden');
+    }
+
+    // Set up sign-in button in loading screen
+    const loadingSignInBtn = document.getElementById('loading-signin-btn');
+    if (loadingSignInBtn) {
+        loadingSignInBtn.onclick = () => {
+            signIn();
+        };
+    }
+}
+
+export function hideLoadingScreen() {
+    const loadingScreen = document.getElementById('loading-screen');
+    if (loadingScreen) {
+        loadingScreen.style.opacity = '0';
+        setTimeout(() => {
+            loadingScreen.classList.add('hidden');
+        }, 300); // Match CSS transition time
+    }
+}
+
+// ===================================================================
 // MAIN APP INITIALIZATION
 // ===================================================================
 
 export function initializeWorkoutApp() {
-    console.log('🚀 Initializing Big Surf Workout Tracker...');
+    console.log(' Initializing Big Surf Workout Tracker...');
+
+    // Show loading screen immediately
+    showLoadingScreen('Initializing...');
 
     // Initialize global error handling FIRST
     initializeErrorHandler();
 
     try {
+        updateLoadingMessage('Loading exercise library...');
+
         // Initialize exercise library BEFORE auth (so it's always available)
         const exerciseLibrary = getExerciseLibrary(AppState);
         exerciseLibrary.initialize();
         window.exerciseLibrary = exerciseLibrary;
-        
+
+        updateLoadingMessage('Initializing workout history...');
+
         // Initialize workout history
         const workoutHistory = getWorkoutHistory(AppState);
         workoutHistory.initialize();
@@ -34,21 +99,21 @@ export function initializeWorkoutApp() {
         // Start connection monitoring
         startConnectionMonitoring(db);
 
-        console.log('âœ… Core modules initialized successfully');
+        console.log(' Core modules initialized successfully');
         
     } catch (error) {
-        console.error('âŒ Error initializing modules:', error);
+        console.error(' Error initializing modules:', error);
         showNotification('Error initializing app modules', 'error');
     }
-    
-    // Set up authentication listener
+
+    // Set up authentication listener first (this will handle redirect result)
     setupAuthenticationListener();
-    
-    console.log('âœ… App initialization completed');
+
+    console.log(' App initialization completed');
 }
 
 export function initializeEnhancedWorkoutSelector() {
-    console.log('ðŸŽ¯ Initializing enhanced workout selector...');
+    console.log(' Initializing enhanced workout selector...');
     
     // Set up workout category filters
     setupWorkoutFilters();
@@ -61,7 +126,7 @@ export function initializeEnhancedWorkoutSelector() {
         renderInitialWorkouts();
     }
     
-    console.log('âœ… Enhanced workout selector initialized');
+    console.log(' Enhanced workout selector initialized');
 }
 
 // ===================================================================
@@ -70,16 +135,29 @@ export function initializeEnhancedWorkoutSelector() {
 
 export async function signIn() {
     try {
-        console.log('ðŸ” Attempting Google sign-in...');
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-        
-        console.log('âœ… Sign-in successful:', user.displayName);
-        showNotification(`Welcome, ${user.displayName}! ðŸ‘‹`, 'success');
-        
+        console.log('Attempting Google sign-in...');
+
+        // Use popup for localhost/development, redirect for production/mobile
+        const isLocalhost = window.location.hostname === 'localhost' ||
+                           window.location.hostname === '127.0.0.1' ||
+                           window.location.hostname.includes('local');
+
+        if (isLocalhost) {
+            // Popup works better for localhost development
+            console.log('Using popup sign-in for localhost');
+            const result = await signInWithPopup(auth, provider);
+            console.log('Sign-in successful:', result.user.displayName);
+            showNotification(`Welcome, ${result.user.displayName}!`, 'success');
+        } else {
+            // Redirect works better for mobile/production
+            console.log('Using redirect sign-in for production');
+            await signInWithRedirect(auth, provider);
+            // User will be redirected away and back
+        }
+
     } catch (error) {
-        console.error('âŒ Sign-in error:', error);
-        
+        console.error('Sign-in error:', error);
+
         if (error.code === 'auth/popup-closed-by-user') {
             showNotification('Sign-in cancelled', 'info');
         } else if (error.code === 'auth/popup-blocked') {
@@ -93,10 +171,10 @@ export async function signIn() {
 export async function signOutUser() {
     try {
         await signOut(auth);
-        console.log('âœ… Sign-out successful');
+        console.log(' Sign-out successful');
         showNotification('Signed out successfully', 'info');
     } catch (error) {
-        console.error('âŒ Sign-out error:', error);
+        console.error(' Sign-out error:', error);
         showNotification('Error signing out', 'error');
     }
 }
@@ -113,7 +191,7 @@ export function showUserInfo(user) {
     if (userAvatar) userAvatar.src = user.photoURL || '/default-avatar.png';
     if (userName) userName.textContent = user.displayName || user.email;
     
-    console.log('âœ… User info displayed for:', user.displayName);
+    console.log(' User info displayed for:', user.displayName);
 }
 
 export function hideUserInfo() {
@@ -123,35 +201,61 @@ export function hideUserInfo() {
     if (userInfo) userInfo.classList.add('hidden');
     if (signInBtn) signInBtn.classList.remove('hidden');
     
-    console.log('âœ… User info hidden');
+    console.log(' User info hidden');
 }
 
 export function setupAuthenticationListener() {
-    console.log('ðŸ” Setting up authentication listener...');
-    
+    console.log(' Setting up authentication listener...');
+
+    // Check for redirect result when the listener is set up
+    getRedirectResult(auth).then((result) => {
+        if (result) {
+            // User just completed sign-in via redirect
+            console.log('Sign-in successful:', result.user.displayName);
+            showNotification(`Welcome back, ${result.user.displayName}!`, 'success');
+        }
+    }).catch((error) => {
+        console.error('Redirect result error:', error);
+        if (error.code !== 'auth/invalid-api-key' && error.code !== 'auth/network-request-failed') {
+            showNotification('Sign-in failed. Please try again.', 'error');
+        }
+    });
+
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            console.log('ðŸ” User signed in:', user.displayName || user.email);
+            console.log(' User signed in:', user.displayName || user.email);
             AppState.currentUser = user;
-            
+
             // Update UI
             showUserInfo(user);
-            
+
+            // Update loading message
+            updateLoadingMessage('Loading your workouts...');
+
             // Load ALL data FIRST (loadWorkoutPlans loads both plans AND exercises)
             await loadWorkoutPlans(AppState);
-            console.log('âœ… Data loaded - Plans:', AppState.workoutPlans.length, 'Exercises:', AppState.exerciseDatabase.length);
-            
+            console.log(' Data loaded - Plans:', AppState.workoutPlans.length, 'Exercises:', AppState.exerciseDatabase.length);
+
             // Validate and refresh user data
             await validateUserData();
-            
+
             // THEN check for in-progress workouts (now plans will be loaded!)
             await checkForInProgressWorkoutEnhanced();
-            
+
+            // Hide loading screen - data is ready!
+            setTimeout(() => {
+                hideLoadingScreen();
+            }, 500);
+
         } else {
-            console.log('ðŸ” User signed out');
+            console.log(' User signed out');
             AppState.currentUser = null;
-            
+
             // Update UI
+
+            // Show sign-in prompt in loading screen
+            showSignInPrompt();
+
             hideUserInfo();
         }
     });
@@ -164,7 +268,7 @@ export function setupAuthenticationListener() {
 export async function validateUserData() {
     if (!AppState.currentUser) return;
     
-    console.log('ðŸ” Validating user data...');
+    console.log(' Validating user data...');
     
     try {
         // Refresh exercise database during validation
@@ -178,21 +282,20 @@ export async function validateUserData() {
         // Check custom exercises
         const customExercises = AppState.exerciseDatabase.filter(ex => ex.isCustom);
         
-        console.log(`âœ… User data validation:
+        console.log(` User data validation:
         - Templates: ${templates.length}
         - Custom exercises: ${customExercises.length}  
         - Total exercises: ${AppState.exerciseDatabase.length}`);
         
-        showNotification(`Data loaded: ${templates.length} templates, ${customExercises.length} custom exercises`, 'success');
         
     } catch (error) {
-        console.error('âŒ Error validating user data:', error);
+        console.error(' Error validating user data:', error);
         showNotification('Error loading user data', 'warning');
     }
 }
 
 export async function refreshExerciseDatabase() {
-    console.log('ðŸ”„ Refreshing exercise database...');
+    console.log(' Refreshing exercise database...');
     
     try {
         if (AppState.currentUser) {
@@ -208,10 +311,10 @@ export async function refreshExerciseDatabase() {
             }
         }
         
-        console.log(`âœ… Exercise database refreshed: ${AppState.exerciseDatabase.length} exercises`);
+        console.log(` Exercise database refreshed: ${AppState.exerciseDatabase.length} exercises`);
         
     } catch (error) {
-        console.error('âŒ Error refreshing exercise database:', error);
+        console.error(' Error refreshing exercise database:', error);
     }
 }
 
@@ -229,7 +332,7 @@ export function fillTemplateValues() {
         });
     }
     
-    console.log('âœ… Template values filled with defaults');
+    console.log(' Template values filled with defaults');
 }
 
 // ===================================================================
@@ -237,14 +340,14 @@ export function fillTemplateValues() {
 // ===================================================================
 
 async function checkForInProgressWorkoutEnhanced() {
-    console.log('ðŸ” Checking for in-progress workout...');
+    console.log(' Checking for in-progress workout...');
     
     try {
         const { loadTodaysWorkout } = await import('./data-manager.js');
         const todaysData = await loadTodaysWorkout(AppState);
         
         if (todaysData && !todaysData.completedAt && !todaysData.cancelledAt) {
-            console.log('ðŸ“‹ Found in-progress workout:', todaysData.workoutType);
+            console.log(' Found in-progress workout:', todaysData.workoutType);
             
             // NOW workout plans will be available!
             console.log('Available workout plans:', AppState.workoutPlans.length);
@@ -257,7 +360,7 @@ async function checkForInProgressWorkoutEnhanced() {
             );
             
             if (!workoutPlan) {
-                console.warn('âš ï¸ Workout plan not found for:', todaysData.workoutType);
+                console.warn(' Workout plan not found for:', todaysData.workoutType);
                 console.log('Available plans:', AppState.workoutPlans.map(p => p.day || p.name));
                 return;
             }
@@ -272,11 +375,11 @@ async function checkForInProgressWorkoutEnhanced() {
             showInProgressWorkoutPrompt(todaysData);
             
         } else {
-            console.log('âœ… No in-progress workout found');
+            console.log(' No in-progress workout found');
         }
         
     } catch (error) {
-        console.error('âŒ Error checking for in-progress workout:', error);
+        console.error(' Error checking for in-progress workout:', error);
     }
 }
 
@@ -284,7 +387,7 @@ function showInProgressWorkoutPrompt(workoutData) {
     if (window.showingProgressPrompt) return;
     window.showingProgressPrompt = true;
     
-    console.log('📢 Showing resume workout card for:', workoutData.workoutType);
+    console.log(' Showing resume workout card for:', workoutData.workoutType);
     
     // Update card elements
     const card = document.getElementById('resume-workout-banner');
@@ -361,7 +464,7 @@ function showInProgressWorkoutPrompt(workoutData) {
 // ===================================================================
 
 export function setupEventListeners() {
-    console.log('ðŸŽ¯ Setting up global event listeners...');
+    console.log(' Setting up global event listeners...');
     
     // Wait a bit for DOM to be fully ready
     setTimeout(() => {
@@ -373,11 +476,11 @@ export function setupEventListeners() {
 }
 
 function setupSignInListeners() {
-    console.log('ðŸ” Setting up sign-in listeners...');
+    console.log(' Setting up sign-in listeners...');
     
     // Debug: Log all potential sign-in buttons
     const allSignInElements = document.querySelectorAll('#sign-in-btn, .sign-in-btn, .signin-btn, [onclick*="signIn"], button[class*="sign"]');
-    console.log('ðŸ” Found potential sign-in elements:', allSignInElements.length);
+    console.log(' Found potential sign-in elements:', allSignInElements.length);
     allSignInElements.forEach((el, i) => {
         console.log(`  ${i + 1}. ID: "${el.id}", Class: "${el.className}", Text: "${el.textContent?.trim()}"${el.onclick ? ', Has onclick' : ''}`);
     });
@@ -402,13 +505,13 @@ function setupSignInListeners() {
         }
         
         if (signInBtn) {
-            console.log(`âœ… Found sign-in button with selector: ${selector}`);
+            console.log(` Found sign-in button with selector: ${selector}`);
             break;
         }
     }
     
     if (signInBtn) {
-        console.log('âœ… Sign-in button found, adding event listener');
+        console.log(' Sign-in button found, adding event listener');
         console.log('Button details:', {
             id: signInBtn.id,
             className: signInBtn.className,
@@ -424,33 +527,33 @@ function setupSignInListeners() {
         signInBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('ðŸ” Sign-in button clicked - calling signIn()');
+            console.log(' Sign-in button clicked - calling signIn()');
             
             // Make sure function exists
             if (typeof window.signIn === 'function') {
                 window.signIn();
             } else {
-                console.error('âŒ window.signIn is not a function:', typeof window.signIn);
+                console.error(' window.signIn is not a function:', typeof window.signIn);
             }
         });
         
         // Also add onclick as backup
         signInBtn.onclick = (e) => {
             e.preventDefault();
-            console.log('ðŸ” Sign-in button onclick triggered');
+            console.log(' Sign-in button onclick triggered');
             if (typeof window.signIn === 'function') {
                 window.signIn();
             }
         };
         
     } else {
-        console.warn('âš ï¸ No sign-in button found with any selector');
+        console.warn(' No sign-in button found with any selector');
         
         // Last resort: add click listener to document for any sign-in related clicks
         document.addEventListener('click', (e) => {
             const target = e.target.closest('button');
             if (target && target.textContent?.includes('Sign In')) {
-                console.log('ðŸ” Detected sign-in button click via document listener');
+                console.log(' Detected sign-in button click via document listener');
                 e.preventDefault();
                 if (typeof window.signIn === 'function') {
                     window.signIn();
@@ -462,17 +565,17 @@ function setupSignInListeners() {
     // Sign-out button
     const signOutBtn = document.getElementById('sign-out-btn');
     if (signOutBtn) {
-        console.log('âœ… Sign-out button found, adding event listener');
+        console.log(' Sign-out button found, adding event listener');
         signOutBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            console.log('ðŸ” Sign-out button clicked');
+            console.log(' Sign-out button clicked');
             signOutUser();
         });
     }
     
     // Debug: Check user info elements
     const userInfo = document.getElementById('user-info');
-    console.log('ðŸ” User info element:', {
+    console.log(' User info element:', {
         found: !!userInfo,
         hidden: userInfo?.classList.contains('hidden'),
         display: userInfo ? window.getComputedStyle(userInfo).display : 'N/A'
@@ -526,11 +629,11 @@ function setupOtherEventListeners() {
         }
     });
 
-    console.log('âœ… Other event listeners setup complete');
+    console.log(' Other event listeners setup complete');
 }
 
 export function setupKeyboardShortcuts() {
-    console.log('âŒ¨ï¸ Setting up keyboard shortcuts...');
+    console.log(' Setting up keyboard shortcuts...');
     
     document.addEventListener('keydown', (e) => {
         // Don't trigger shortcuts when typing in inputs
@@ -564,7 +667,7 @@ export function setupKeyboardShortcuts() {
         }
     });
     
-    console.log('âœ… Keyboard shortcuts setup complete');
+    console.log(' Keyboard shortcuts setup complete');
 }
 
 // ===================================================================
@@ -628,7 +731,7 @@ export function setupGlobalVariables() {
     window.showingProgressPrompt = false;
     window.historyListenersSetup = false;
     
-    console.log('âœ… Global variables initialized');
+    console.log(' Global variables initialized');
 }
 
 export function initializeModules() {
@@ -639,10 +742,10 @@ export function initializeModules() {
         // Set up date display
         setTodayDisplay();
         
-        console.log('âœ… All modules initialized successfully');
+        console.log(' All modules initialized successfully');
         
     } catch (error) {
-        console.error('âŒ Error initializing modules:', error);
+        console.error(' Error initializing modules:', error);
         showNotification('Some features may not work properly', 'warning');
     }
 }
@@ -652,7 +755,7 @@ export function initializeModules() {
 // ===================================================================
 
 export function startApplication() {
-    console.log('ðŸš€ Starting Big Surf Workout Tracker application...');
+    console.log(' Starting Big Surf Workout Tracker application...');
 
     // Register service worker for PWA functionality
     registerServiceWorker();
@@ -673,7 +776,7 @@ export function startApplication() {
     // Initialize enhanced workout selector
     initializeEnhancedWorkoutSelector();
 
-    console.log('âœ… Application started successfully!');
+    console.log(' Application started successfully!');
 }
 
 // ===================================================================
@@ -685,12 +788,12 @@ function registerServiceWorker() {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('/service-worker.js')
                 .then((registration) => {
-                    console.log('✅ Service Worker registered:', registration.scope);
+                    console.log(' Service Worker registered:', registration.scope);
 
                     // Check for updates
                     registration.addEventListener('updatefound', () => {
                         const newWorker = registration.installing;
-                        console.log('🔄 Service Worker update found');
+                        console.log(' Service Worker update found');
 
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
@@ -701,10 +804,10 @@ function registerServiceWorker() {
                     });
                 })
                 .catch((error) => {
-                    console.log('❌ Service Worker registration failed:', error);
+                    console.log(' Service Worker registration failed:', error);
                 });
         });
     } else {
-        console.log('⚠️ Service Workers not supported in this browser');
+        console.log(' Service Workers not supported in this browser');
     }
 }

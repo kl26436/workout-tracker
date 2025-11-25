@@ -120,7 +120,12 @@ export async function checkFirebaseConnection(db) {
         await getDocs(testQuery);
         return true;
     } catch (error) {
-        console.error('❌ Firebase connectivity check failed:', error);
+        // Permission denied is expected when not signed in
+        if (error.code === 'permission-denied') {
+            console.log('Firebase connection check: Not authenticated (expected before sign-in)');
+            return false;
+        }
+        console.error('Firebase connectivity check failed:', error);
         return false;
     }
 }
