@@ -354,7 +354,7 @@ export async function debugNetworkConnectivity() {
         
         // Test Firebase hosting connectivity
         try {
-            const firebaseTest = await fetch('./exercises.json');
+            const firebaseTest = await fetch('./data/exercises.json');
             if (firebaseTest.ok) {
                 console.log('✅ Firebase hosting connectivity: OK');
             } else {

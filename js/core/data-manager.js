@@ -165,7 +165,7 @@ export async function loadWorkoutPlans(state) {
         
         // Fallback to JSON files if Firebase fails
         try {
-            const workoutResponse = await fetch('./workouts.json');
+            const workoutResponse = await fetch('./data/workouts.json');
             if (workoutResponse.ok) {
                 state.workoutPlans = await workoutResponse.json();
                 console.log(' Fallback workout plans loaded:', state.workoutPlans.length);
@@ -173,7 +173,7 @@ export async function loadWorkoutPlans(state) {
                 state.workoutPlans = getDefaultWorkouts();
             }
             
-            const exerciseResponse = await fetch('./exercises.json');
+            const exerciseResponse = await fetch('./data/exercises.json');
             if (exerciseResponse.ok) {
                 state.exerciseDatabase = await exerciseResponse.json();
                 console.log(' Fallback exercise database loaded:', state.exerciseDatabase.length);

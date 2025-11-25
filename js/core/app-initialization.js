@@ -272,7 +272,7 @@ export async function refreshExerciseDatabase() {
             AppState.exerciseDatabase = await workoutManager.getExerciseLibrary();
         } else {
             // Load default exercises only
-            const exerciseResponse = await fetch('./exercises.json');
+            const exerciseResponse = await fetch('./data/exercises.json');
             if (exerciseResponse.ok) {
                 AppState.exerciseDatabase = await exerciseResponse.json();
             }

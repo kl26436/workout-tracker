@@ -474,7 +474,7 @@ export class FirebaseWorkoutManager {
     async getDefaultExercisesOnly() {
         // Fallback to JSON or hardcoded defaults
         try {
-            const response = await fetch('./exercises.json');
+            const response = await fetch('./data/exercises.json');
             if (response.ok) {
                 const exercises = await response.json();
                 return exercises.map(ex => ({ 

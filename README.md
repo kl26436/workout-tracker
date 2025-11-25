@@ -86,10 +86,14 @@ A modern, client-side workout tracking web application with Firebase backend. Tr
 ```
 BigSurf-B/
 ├── index.html                      # Main application page
-├── exercise-manager.html           # Exercise library management
 ├── style.css                       # Global styles
-├── exercises.json                  # Default exercise database
-├── workouts.json                   # Default workout templates
+├── CLAUDE.md                       # Development guidelines for AI assistants
+├── data/                           # Default data files
+│   ├── exercises.json              # Default exercise database
+│   └── workouts.json               # Default workout templates
+├── docs/                           # Documentation
+│   ├── DEPLOYMENT.md               # Firebase deployment guide
+│   └── MOBILE_TESTING.md           # Mobile & PWA testing guide
 ├── js/
 │   ├── main.js                     # Entry point & window exports
 │   └── core/
@@ -99,7 +103,8 @@ BigSurf-B/
 │       ├── data-manager.js         # Firestore operations
 │       ├── firebase-workout-manager.js # Advanced Firebase ops
 │       ├── firebase-config.js      # Firebase SDK initialization
-│       ├── exercise-library.js     # Exercise library UI
+│       ├── exercise-library.js     # Exercise database management
+│       ├── exercise-manager-ui.js  # Exercise library manager modal
 │       ├── template-selection.js   # Workout template picker
 │       ├── workout-history-ui.js   # History & calendar view
 │       ├── manual-workout.js       # Manual workout entry
@@ -108,7 +113,8 @@ BigSurf-B/
 │       ├── debug-utilities.js      # Debugging tools
 │       └── workout/
 │           └── workout-management-ui.js  # Template editor
-└── CLAUDE.md                       # Development guidelines
+└── legacy/                         # Deprecated files (not used in production)
+    └── exercise-manager.html       # Old popup-based exercise manager
 ```
 
 ## 🎯 Usage
