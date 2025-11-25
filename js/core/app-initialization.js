@@ -191,20 +191,6 @@ export function hideUserInfo() {
 export function setupAuthenticationListener() {
     console.log(' Setting up authentication listener...');
 
-    // Check for redirect result when the listener is set up
-    getRedirectResult(auth).then((result) => {
-        if (result) {
-            // User just completed sign-in via redirect
-            console.log('Sign-in successful:', result.user.displayName);
-            showNotification(`Welcome back, ${result.user.displayName}!`, 'success');
-        }
-    }).catch((error) => {
-        console.error('Redirect result error:', error);
-        if (error.code !== 'auth/invalid-api-key' && error.code !== 'auth/network-request-failed') {
-            showNotification('Sign-in failed. Please try again.', 'error');
-        }
-    });
-
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             console.log(' User signed in:', user.displayName || user.email);
@@ -770,7 +756,7 @@ export function startApplication() {
 function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/service-worker.js')
+            navigator.serviceWorker.register('./service-worker.js')
                 .then((registration) => {
                     console.log(' Service Worker registered:', registration.scope);
 
