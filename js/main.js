@@ -50,7 +50,7 @@ import {
 
 // Workout management UI
 import {
-    initializeWorkoutManagement, showWorkoutManagement, hideWorkoutManagement,
+    initializeWorkoutManagement, showWorkoutManagement, closeWorkoutManagement, hideWorkoutManagement,
     createNewTemplate, closeTemplateEditor, saveCurrentTemplate,
     addExerciseToTemplate, editTemplateExercise, removeTemplateExercise,
     openExerciseLibrary, closeExerciseLibrary,
@@ -335,6 +335,7 @@ window.closeWorkoutDetailModal = function() {
 
 // Workout Management Functions
 window.showWorkoutManagement = showWorkoutManagement;
+window.closeWorkoutManagement = closeWorkoutManagement;
 window.hideWorkoutManagement = hideWorkoutManagement;
 window.createNewTemplate = createNewTemplate;
 window.closeTemplateEditor = closeTemplateEditor;

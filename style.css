@@ -304,6 +304,19 @@ body {
     min-height: 400px;
 }
 
+.template-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .template-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* Global Settings */
 .global-settings {
     background: var(--bg-secondary);
@@ -807,6 +820,18 @@ body {
     max-height: 80vh;
     overflow-y: auto;
     border: 1px solid var(--border);
+}
+
+.modal-content.modal-large {
+    max-width: 900px;
+    max-height: 85vh;
+}
+
+.modal-actions-top {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
 }
 
 .modal-header {

@@ -518,7 +518,14 @@ function setupOtherEventListeners() {
             }
         }
     });
-    
+
+    // Click outside modal to close (backdrop click)
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal')) {
+            e.target.classList.add('hidden');
+        }
+    });
+
     console.log('âœ… Other event listeners setup complete');
 }
 

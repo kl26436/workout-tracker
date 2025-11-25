@@ -13,34 +13,32 @@ export function initializeWorkoutManagement(appState) {
 
 // Main navigation functions
 export async function showWorkoutManagement() {
-    console.log('🔧 Fixed showWorkoutManagement - preserving active workout state');
-    
-    // ONLY hide sections when actually entering workout management mode
-    const workoutSelector = document.getElementById('workout-selector');
-    const workoutManagement = document.getElementById('workout-management');
-    const historySection = document.getElementById('workout-history-section');
-    const templateEditor = document.getElementById('template-editor-section');
-    
-    // Critical: Hide history section but DON'T touch active-workout
-    if (historySection) {
-        historySection.classList.add('hidden');
-        console.log('✅ Workout history section hidden');
+    console.log('🔧 Opening Workout Management modal');
+
+    const modal = document.getElementById('workout-management-modal');
+    if (!modal) {
+        console.error('❌ Workout management modal not found');
+        return;
     }
-    
-    // Hide other management sections
-    if (workoutSelector) workoutSelector.classList.add('hidden');
-    if (templateEditor) templateEditor.classList.add('hidden');
-    
-    // Show workout management
-    if (workoutManagement) {
-        workoutManagement.classList.remove('hidden');
-        console.log('✅ Workout management section shown');
-    }
-    
+
+    // Show modal as overlay
+    modal.classList.remove('hidden');
+    console.log('✅ Workout management modal opened');
+
     // Initialize with default templates category
     setTimeout(() => {
         switchTemplateCategory('default');
     }, 100);
+}
+
+export function closeWorkoutManagement() {
+    console.log('🔧 Closing Workout Management modal');
+
+    const modal = document.getElementById('workout-management-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        console.log('✅ Workout management modal closed');
+    }
 }
 
 export function hideWorkoutManagement() {

@@ -96,25 +96,50 @@ export function showWorkoutSelector() {
 export function switchTemplateCategory(category) {
     console.log(`🔄 Switching template category to: ${category}`);
     currentTemplateCategory = category;
-    
-    // Update active tab
-    document.querySelectorAll('.template-category-tab').forEach(tab => {
+
+    // Update active tab (supports both .template-category-tab and .category-tab)
+    document.querySelectorAll('.template-category-tab, .category-tab').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.category === category);
     });
-    
+
+    // Show/hide category content divs
+    const defaultTemplates = document.getElementById('default-templates');
+    const customTemplates = document.getElementById('custom-templates');
+
+    if (defaultTemplates && customTemplates) {
+        if (category === 'default') {
+            defaultTemplates.classList.remove('hidden');
+            customTemplates.classList.add('hidden');
+        } else if (category === 'custom') {
+            defaultTemplates.classList.add('hidden');
+            customTemplates.classList.remove('hidden');
+        }
+    }
+
     // Load templates for category
     loadTemplatesByCategory();
 }
 
 export async function loadTemplatesByCategory() {
-    const container = document.getElementById('template-cards-container');
+    // Determine which container to use
+    let container = document.getElementById('template-cards-container');
+
+    // If we're in the modal, use the appropriate grid
+    if (!container) {
+        if (currentTemplateCategory === 'default') {
+            container = document.getElementById('default-templates');
+        } else if (currentTemplateCategory === 'custom') {
+            container = document.getElementById('custom-templates');
+        }
+    }
+
     if (!container) return;
-    
+
     container.innerHTML = '<div class="loading"><div class="spinner"></div><span>Loading templates...</span></div>';
-    
+
     try {
         let templates = [];
-        
+
         if (currentTemplateCategory === 'default') {
             // Load default/global templates
             templates = AppState.workoutPlans || [];
@@ -128,13 +153,13 @@ export async function loadTemplatesByCategory() {
             }
         } else {
             // Filter by specific category
-            templates = AppState.workoutPlans.filter(plan => 
+            templates = AppState.workoutPlans.filter(plan =>
                 getWorkoutCategory(plan.day || plan.name) === currentTemplateCategory
             );
         }
-        
-        renderTemplateCards(templates);
-        
+
+        renderTemplateCards(templates, container);
+
     } catch (error) {
         console.error('Error loading templates:', error);
         container.innerHTML = `
@@ -252,25 +277,25 @@ export async function deleteCustomTemplate(templateId) {
 // TEMPLATE RENDERING FOR SELECTION
 // ===================================================================
 
-export function renderTemplateCards(templates) {
-    const container = document.getElementById('template-cards-container');
+export function renderTemplateCards(templates, targetContainer = null) {
+    const container = targetContainer || document.getElementById('template-cards-container');
     if (!container) return;
-    
+
     if (templates.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-clipboard-list"></i>
                 <h3>No Templates Found</h3>
-                <p>${currentTemplateCategory === 'custom' ? 
-                    'Create your first custom template in Workout Management.' : 
+                <p>${currentTemplateCategory === 'custom' ?
+                    'Create your first custom template in Workout Management.' :
                     'No templates available in this category.'}</p>
             </div>
         `;
         return;
     }
-    
+
     container.innerHTML = '';
-    
+
     templates.forEach(template => {
         const card = createTemplateCard(template, currentTemplateCategory === 'default');
         container.appendChild(card);
