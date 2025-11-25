@@ -2,6 +2,61 @@
 
 All notable changes and improvements to BigSurf-B.
 
+## [2.1.0] - 2025-01-25
+
+### 🎨 UI/UX Improvements
+
+#### Exercise Manager Redesign
+- **Integrated Modal**: Converted exercise manager from popup window to integrated modal
+- **Consistent Theming**: Updated all styles to match main app's dark theme with turquoise accents
+- **Better Mobile Experience**: No more context switching between windows on mobile
+- **Visual Badges**: Added custom/override/default badges for exercise types
+- **Search & Filter**: Real-time search with body part and equipment filters
+- **Exercise Cards**: Redesigned with stats display (sets, reps, weight)
+
+### 🏗️ Architecture Improvements
+
+#### New Module
+- Created `exercise-manager-ui.js` - Complete exercise library management
+  - CRUD operations for exercises
+  - Search and filter functionality
+  - Modal-based UI (no popup windows)
+  - Integrated with AppState
+
+#### Project Reorganization
+- Created `docs/` folder for documentation
+- Created `data/` folder for default JSON files
+- Created `legacy/` folder for deprecated files
+- Moved DEPLOYMENT.md and MOBILE_TESTING.md to docs/
+- Moved exercises.json and workouts.json to data/
+- Updated all file path references in code
+
+### 📚 Documentation
+
+- Updated CLAUDE.md with exercise-manager-ui.js module
+- Updated README.md project structure to reflect new folders
+- Added notes about modal-based architecture
+- Documented that JSON files are essential fallback data (not legacy)
+
+### 🛠️ Development Tools
+
+- Updated .gitignore to exclude auto-generated files
+- Added .firebaserc to repository (needed for deployment)
+- Excluded Python utility scripts from repo
+
+### 🐛 Bug Fixes
+
+- Fixed emoji encoding in exercise library UI
+- Fixed emoji encoding in workout history UI
+
+### 📝 Notes
+
+**Why JSON Files Are Kept:**
+- Provide default exercise library and workout templates
+- Fallback data when Firebase is unavailable
+- Enable offline functionality
+- Progressive enhancement pattern (app works without Firebase)
+
 ## [2.0.0] - 2025-01-24
 
 ### 🎉 Major Refactoring & Improvements
