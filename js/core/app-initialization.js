@@ -1,7 +1,7 @@
 // App Initialization Module - core/app-initialization.js
 // Handles application startup, authentication, and global setup
 
-import { auth, provider, onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, db } from './firebase-config.js';
+import { auth, provider, onAuthStateChanged, signInWithPopup, signOut, db } from './firebase-config.js';
 import { AppState } from './app-state.js';
 import { showNotification, setTodayDisplay } from './ui-helpers.js';
 import { loadWorkoutPlans } from './data-manager.js'; // ADD loadWorkoutData here
