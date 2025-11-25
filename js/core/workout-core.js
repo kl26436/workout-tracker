@@ -66,7 +66,7 @@ export async function startWorkout(workoutType) {
     // Save initial state
     await saveWorkoutData(AppState);
     
-    showNotification(`Started "${workoutType}" workout! ðŸ’ª`, 'success');
+    showNotification(`Started "${workoutType}" workout!`, 'success');
 }
 
 export function pauseWorkout() {
@@ -95,7 +95,7 @@ export async function completeWorkout() {
     // Save final data
     await saveWorkoutData(AppState);
 
-    showNotification('Workout completed! Great job! ðŸ’ª', 'success');
+    showNotification('Workout completed! Great job!', 'success');
     showWorkoutSelector();
     
     // Reset state
@@ -148,14 +148,21 @@ export function continueInProgressWorkout() {
     AppState.currentWorkout = window.inProgressWorkout.originalWorkout;
     AppState.savedData = window.inProgressWorkout;
     AppState.exerciseUnits = window.inProgressWorkout.exerciseUnits || {};
-    
+
+    // CRITICAL: Restore start time from saved data
+    if (window.inProgressWorkout.startedAt) {
+        AppState.workoutStartTime = new Date(window.inProgressWorkout.startedAt);
+    } else {
+        AppState.workoutStartTime = new Date();
+    }
+
     // Show active workout
     const workoutSelector = document.getElementById('workout-selector');
     const activeWorkout = document.getElementById('active-workout');
-    
+
     if (workoutSelector) workoutSelector.classList.add('hidden');
     if (activeWorkout) activeWorkout.classList.remove('hidden');
-    
+
     // Resume timer
     startWorkoutTimer();
     
@@ -167,7 +174,7 @@ export function continueInProgressWorkout() {
     // It will be cleared when workout is completed or cancelled
     // window.inProgressWorkout = null;
     
-    showNotification('Resumed workout! ðŸ’ª', 'success');
+    showNotification('Resumed workout!', 'success');
 }
 
 export async function discardInProgressWorkout() {
@@ -499,8 +506,8 @@ export function generateExerciseTable(exercise, exerciseIndex, unit) {
             </tbody>
         </table>
         
-        <textarea class="notes-area" placeholder="Exercise notes..." 
-                  onchange="updateNotes(${exerciseIndex}, this.value)">${savedNotes}</textarea>
+        <textarea id="exercise-notes-${exerciseIndex}" class="notes-area" placeholder="Exercise notes..."
+                  onchange="saveExerciseNotes(${exerciseIndex})">${savedNotes}</textarea>
         
         <div class="exercise-complete-section" style="margin-top: 1rem; text-align: center;">
             <button class="btn btn-success" onclick="markExerciseComplete(${exerciseIndex})">
@@ -814,7 +821,7 @@ export function confirmExerciseSwap(oldExerciseName, newExerciseData) {
     // Reset swapping state
     AppState.swappingExerciseIndex = null;
     
-    showNotification(`Swapped "${oldExercise.machine}" â†’ "${newExercise.name || newExercise.machine}"`, 'success');
+    showNotification(`Swapped "${oldExercise.machine}" → "${newExercise.name || newExercise.machine}"`, 'success');
 }
 
 export function closeExerciseModal() {
@@ -862,9 +869,9 @@ export function updateFormCompletion() {
         completedSets += sets.filter(set => set && set.reps && set.weight).length;
     });
     
-    const progressEl = document.getElementById('workout-progress');
+    const progressEl = document.getElementById('workout-progress-display');
     if (progressEl) {
-        progressEl.textContent = `${completedSets}/${totalSets} sets completed`;
+        progressEl.textContent = `${completedSets}/${totalSets} sets`;
     }
 }
 
@@ -900,7 +907,7 @@ export function startRestTimer(duration = 90) {
             clearInterval(AppState.globalRestTimer.interval);
             AppState.globalRestTimer = null;
             timerSection.classList.add('hidden');
-            showNotification('Rest time over! ðŸ’ª', 'success');
+            showNotification('Rest time over!', 'success');
         }
         
         timeLeft--;
@@ -995,12 +1002,12 @@ function startModalRestTimer(exerciseIndex, duration = 90) {
             
             if ('Notification' in window && Notification.permission === 'granted') {
                 new Notification('Rest complete!', {
-                    body: 'Time for your next set ðŸ’ª',
+                    body: 'Time for your next set',
                     icon: '/BigSurf.png'
                 });
             }
-            
-            showNotification('Rest period complete! ðŸ’ª', 'success');
+
+            showNotification('Rest period complete!', 'success');
             
             // *** REMOVED AUTO-HIDE - Timer stays visible until manually dismissed ***
             return;
@@ -1123,12 +1130,12 @@ function restoreModalRestTimer(exerciseIndex, timerState) {
             
             if ('Notification' in window && Notification.permission === 'granted') {
                 new Notification('Rest complete!', {
-                    body: 'Time for your next set ðŸ’ª',
+                    body: 'Time for your next set',
                     icon: '/BigSurf.png'
                 });
             }
-            
-            showNotification('Rest period complete! ðŸ’ª', 'success');
+
+            showNotification('Rest period complete!', 'success');
             
             // *** REMOVED AUTO-HIDE - Timer stays visible ***
             return;

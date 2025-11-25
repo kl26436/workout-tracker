@@ -75,8 +75,8 @@ export function updateProgress(state) {
         completedSets += exerciseCompletedSets;
     });
     
-    const progressEl = document.getElementById('completed-progress');
+    const progressEl = document.getElementById('workout-progress-display');
     if (progressEl) {
-        progressEl.textContent = `${completedSets}/${totalSets}`;
+        progressEl.textContent = `${completedSets}/${totalSets} sets`;
     }
 }
