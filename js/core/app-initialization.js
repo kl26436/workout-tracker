@@ -1,7 +1,7 @@
 // App Initialization Module - core/app-initialization.js
 // Handles application startup, authentication, and global setup
 
-import { auth, provider, onAuthStateChanged, signInWithPopup, signOut, db } from './firebase-config.js';
+import { auth, provider, onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, db } from './firebase-config.js';
 import { AppState } from './app-state.js';
 import { showNotification, setTodayDisplay } from './ui-helpers.js';
 import { loadWorkoutPlans } from './data-manager.js'; // ADD loadWorkoutData here
@@ -135,17 +135,32 @@ export function initializeEnhancedWorkoutSelector() {
 
 export async function signIn() {
     try {
-        console.log('Attempting Google sign-in...');
-        const result = await signInWithPopup(auth, provider);
-        console.log('Sign-in successful:', result.user.displayName);
-        showNotification(`Welcome, ${result.user.displayName}!`, 'success');
+        console.log('🔐 Attempting Google sign-in...');
+
+        // Use redirect on production (Firebase Hosting), popup on localhost
+        const isProduction = window.location.hostname.includes('web.app') ||
+                            window.location.hostname.includes('firebaseapp.com');
+
+        if (isProduction) {
+            console.log('📱 Using redirect auth (production mode)');
+            await signInWithRedirect(auth, provider);
+            // Redirect happens - user will return to app after auth
+        } else {
+            console.log('💻 Using popup auth (development mode)');
+            const result = await signInWithPopup(auth, provider);
+            console.log('✅ Sign-in successful:', result.user.displayName);
+            showNotification(`Welcome, ${result.user.displayName}!`, 'success');
+        }
     } catch (error) {
-        console.error('Sign-in error:', error);
+        console.error('❌ Sign-in error:', error);
 
         if (error.code === 'auth/popup-closed-by-user') {
             showNotification('Sign-in cancelled', 'info');
         } else if (error.code === 'auth/popup-blocked') {
-            showNotification('Please allow popups for sign-in', 'warning');
+            showNotification('Popup blocked - please allow popups or try again', 'warning');
+        } else if (error.code === 'auth/cancelled-popup-request') {
+            // User opened multiple popups, ignore
+            console.log('ℹ️ Duplicate popup request cancelled');
         } else {
             showNotification('Sign-in failed. Please try again.', 'error');
         }
@@ -190,6 +205,24 @@ export function hideUserInfo() {
 
 export function setupAuthenticationListener() {
     console.log('🔐 Setting up authentication listener...');
+
+    // Check for redirect result first (for production sign-in)
+    getRedirectResult(auth)
+        .then((result) => {
+            if (result && result.user) {
+                console.log('✅ Sign-in redirect successful:', result.user.displayName);
+                showNotification(`Welcome, ${result.user.displayName}!`, 'success');
+            }
+        })
+        .catch((error) => {
+            if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+                // Ignore - user cancelled
+                console.log('ℹ️ Redirect sign-in cancelled');
+            } else {
+                console.error('❌ Redirect sign-in error:', error);
+                showNotification('Sign-in failed. Please try again.', 'error');
+            }
+        });
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
