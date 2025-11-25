@@ -277,30 +277,8 @@ export function clearAllHistoryFilters() {
     showNotification('Filter clearing coming soon', 'info');
 }
 
-export function setupHistoryFilters() {
-    console.log(' Setting up history filters');
-    // TODO: Implement history filters
-}
-
-export function applyHistoryFilters() {
-    console.log(' Applying history filters');
-    // TODO: Implement filter application
-}
-
-export function enhanceWorkoutData() {
-    console.log(' Enhancing workout data');
-    // TODO: Implement data enhancement
-}
-
-export function formatWorkoutForDisplay() {
-    console.log(' Formatting workout for display');
-    // TODO: Implement display formatting
-}
-
-export function getWorkoutActionButton() {
-    console.log(' Getting workout action button');
-    // TODO: Implement action button logic
-}
+// REMOVED: setupHistoryFilters(), applyHistoryFilters(), enhanceWorkoutData(),
+// formatWorkoutForDisplay(), getWorkoutActionButton() - Never implemented TODO stubs
 
 // ===================================================================
 // EVENT LISTENER SETUP

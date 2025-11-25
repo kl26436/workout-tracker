@@ -766,65 +766,7 @@ export function confirmExerciseAddToWorkout(exerciseData) {
     showNotification(`Added "${newExercise.machine}" to workout!`, 'success');
 }
 
-export function swapExercise(exerciseIndex) {
-    if (!AppState.currentWorkout || !AppState.currentUser) {
-        showNotification('Please sign in to swap exercises', 'warning');
-        return;
-    }
-    
-    // Open exercise library for swapping
-    if (window.exerciseLibrary && window.exerciseLibrary.openForSwap) {
-        window.exerciseLibrary.openForSwap(exerciseIndex);
-    } else {
-        console.log('📚 Using fallback method to open exercise library');
-        showNotification('Exercise library opened - select exercises manually', 'info');
-    }
-}
-
-export function confirmExerciseSwap(oldExerciseName, newExerciseData) {
-    const exerciseIndex = AppState.swappingExerciseIndex;
-    if (exerciseIndex === null || exerciseIndex === undefined) return;
-    
-    const oldExercise = AppState.currentWorkout.exercises[exerciseIndex];
-    
-    let newExercise;
-    try {
-        newExercise = typeof newExerciseData === 'string' ? JSON.parse(newExerciseData) : newExerciseData;
-    } catch (e) {
-        console.error('Error parsing exercise data:', e);
-        return;
-    }
-    
-    // Update the workout
-    AppState.currentWorkout.exercises[exerciseIndex] = {
-        machine: newExercise.name || newExercise.machine,
-        sets: newExercise.sets || 3,
-        reps: newExercise.reps || 10,
-        weight: newExercise.weight || 50,
-        video: newExercise.video || ''
-    };
-    
-    // Clear existing data for this exercise since it's different now
-    if (AppState.savedData.exercises && AppState.savedData.exercises[`exercise_${exerciseIndex}`]) {
-        AppState.savedData.exercises[`exercise_${exerciseIndex}`] = { sets: [], notes: '' };
-    }
-    
-    // Save the change
-    saveWorkoutData(AppState);
-    
-    // Update UI
-    renderExercises();
-    
-    // Close exercise library
-    if (window.exerciseLibrary && window.exerciseLibrary.close) {
-        window.exerciseLibrary.close();
-    }
-    
-    // Reset swapping state
-    AppState.swappingExerciseIndex = null;
-    
-    showNotification(`Swapped "${oldExercise.machine}" → "${newExercise.name || newExercise.machine}"`, 'success');
-}
+// REMOVED: swapExercise() and confirmExerciseSwap() - Replaced by delete + add workflow
 
 export function closeExerciseModal() {
     const modal = document.getElementById('exercise-modal');
@@ -850,92 +792,13 @@ export function closeExerciseModal() {
 // PROGRESS AND STATE MANAGEMENT
 // ===================================================================
 
-export function updateExerciseProgress() {
-    updateProgress(AppState);
-}
-
-export function validateSetInput(input) {
-    const value = parseFloat(input);
-    return !isNaN(value) && value > 0;
-}
-
-export function updateFormCompletion() {
-    if (!AppState.currentWorkout) return;
-    
-    let totalSets = 0;
-    let completedSets = 0;
-    
-    AppState.currentWorkout.exercises.forEach((exercise, index) => {
-        totalSets += exercise.sets || 3;
-        const sets = AppState.savedData.exercises?.[`exercise_${index}`]?.sets || [];
-        completedSets += sets.filter(set => set && set.reps && set.weight).length;
-    });
-    
-    const progressEl = document.getElementById('workout-progress-display');
-    if (progressEl) {
-        progressEl.textContent = `${completedSets}/${totalSets} sets`;
-    }
-}
-
-export function handleUnknownWorkout() {
-    showNotification('Unknown workout type', 'error');
-    showWorkoutSelector();
-}
+// REMOVED: updateExerciseProgress(), validateSetInput(), updateFormCompletion(), handleUnknownWorkout() - Never used
 
 // ===================================================================
 // TIMER FUNCTIONS
 // ===================================================================
 
-export function startRestTimer(duration = 90) {
-    const timerDisplay = document.getElementById('rest-timer-display');
-    const timerSection = document.getElementById('rest-timer-section');
-    
-    if (!timerDisplay || !timerSection) return;
-    
-    // Stop any existing timer
-    if (AppState.globalRestTimer) {
-        clearInterval(AppState.globalRestTimer.interval);
-    }
-    
-    let timeLeft = duration;
-    timerSection.classList.remove('hidden');
-    
-    const updateDisplay = () => {
-        const minutes = Math.floor(timeLeft / 60);
-        const seconds = timeLeft % 60;
-        timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        
-        if (timeLeft <= 0) {
-            clearInterval(AppState.globalRestTimer.interval);
-            AppState.globalRestTimer = null;
-            timerSection.classList.add('hidden');
-            showNotification('Rest time over!', 'success');
-        }
-        
-        timeLeft--;
-    };
-    
-    updateDisplay();
-    AppState.globalRestTimer = {
-        interval: setInterval(updateDisplay, 1000),
-        duration: duration,
-        startTime: Date.now()
-    };
-}
-
-export function stopRestTimer() {
-    if (AppState.globalRestTimer) {
-        clearInterval(AppState.globalRestTimer.interval);
-        AppState.globalRestTimer = null;
-        
-        const timerSection = document.getElementById('rest-timer-section');
-        if (timerSection) {
-            timerSection.classList.add('hidden');
-        }
-        
-        showNotification('Rest timer stopped', 'info');
-    }
-}
+// REMOVED: startRestTimer() and stopRestTimer() - Replaced by modal rest timer system
 
 export function toggleModalRestTimer(exerciseIndex) {
     const modalTimer = document.getElementById(`modal-rest-timer-${exerciseIndex}`);
@@ -1512,23 +1375,4 @@ function showInProgressWorkoutPrompt(workoutData) {
 // EXERCISE HISTORY INTEGRATION
 // ===================================================================
 
-export async function loadExerciseHistoryForModal(exerciseName, exerciseIndex) {
-    try {
-        await loadExerciseHistory(exerciseName, exerciseIndex, AppState);
-        
-        // Show the history display element
-        const historyDisplay = document.getElementById(`exercise-history-${exerciseIndex}`);
-        if (historyDisplay) {
-            historyDisplay.classList.remove('hidden');
-            
-            // You might need to populate the history display with actual data here
-            // Check what loadExerciseHistory returns and display it appropriately
-            historyDisplay.innerHTML = '<p>Exercise history loaded - check console for data</p>';
-        }
-        
-        showNotification('Exercise history loaded', 'success');
-    } catch (error) {
-        console.error('Error loading exercise history:', error);
-        showNotification('Could not load exercise history', 'warning');
-    }
-}
+// REMOVED: loadExerciseHistoryForModal() - loadExerciseHistory() is called directly instead

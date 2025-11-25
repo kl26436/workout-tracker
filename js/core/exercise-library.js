@@ -3,7 +3,7 @@ import { showNotification } from './ui-helpers.js';
 
 export function getExerciseLibrary(appState) {
     let isOpen = false;
-    let currentContext = null; // 'swap', 'template', 'workout-add', 'manual-workout'
+    let currentContext = null; // 'template', 'workout-add', 'manual-workout'
     let currentExercises = [];
     let filteredExercises = [];
 
@@ -12,25 +12,7 @@ export function getExerciseLibrary(appState) {
             console.log('📚 Exercise Library initialized');
         },
 
-        async openForSwap(exerciseIndex) {
-            if (!appState.currentUser) {
-                showNotification('Please sign in to swap exercises', 'warning');
-                return;
-            }
-
-            currentContext = 'swap';
-            appState.swappingExerciseIndex = exerciseIndex;
-            
-            const modal = document.getElementById('exercise-library-modal');
-            const modalTitle = document.querySelector('#exercise-library-modal .modal-title');
-            
-            if (modalTitle) {
-                const exerciseName = appState.currentWorkout?.exercises[exerciseIndex]?.machine || 'Exercise';
-                modalTitle.textContent = `Swap: ${exerciseName}`;
-            }
-
-            await this.loadAndShow();
-        },
+        // REMOVED: openForSwap() - Replaced by delete + add workflow
 
         // ADD THE MISSING openForManualWorkout FUNCTION
         async openForManualWorkout() {
@@ -157,14 +139,8 @@ export function getExerciseLibrary(appState) {
             const exerciseJson = JSON.stringify(exercise).replace(/"/g, '&quot;');
             
             switch (currentContext) {
-                case 'swap':
-                    actionButton = `
-                        <button class="btn btn-primary btn-small" onclick="confirmExerciseSwap('${exercise.name || exercise.machine}', '${exerciseJson}')">
-                            <i class="fas fa-exchange-alt"></i> Swap
-                        </button>
-                    `;
-                    break;
-                    
+                // REMOVED: 'swap' case - Replaced by delete + add workflow
+
                 case 'manual-workout':
                     console.log(' Using manual-workout case');
                     actionButton = `

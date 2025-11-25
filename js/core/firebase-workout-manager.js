@@ -832,25 +832,7 @@ async getGlobalDefaultTemplates() {
         return filtered;
     }
 
-    async swapExercise(exerciseIndex, newExercise) {
-        if (!this.appState.currentWorkout) return false;
-
-        const oldExercise = this.appState.currentWorkout.exercises[exerciseIndex];
-
-        // Update the workout
-        this.appState.currentWorkout.exercises[exerciseIndex] = {
-            machine: newExercise.name || newExercise.machine,
-            sets: newExercise.sets || oldExercise.sets || 3,
-            reps: newExercise.reps || oldExercise.reps || 10,
-            weight: newExercise.weight || oldExercise.weight || 50,
-            video: newExercise.video || ''
-        };
-
-        console.log(` Swapped exercise: ${oldExercise.machine} ${newExercise.name}`);
-        showNotification(`Swapped to ${newExercise.name}`, 'success');
-
-        return true;
-    }
+    // REMOVED: swapExercise() method - Replaced by delete + add workflow
 }
 
 // For backward compatibility

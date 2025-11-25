@@ -22,13 +22,11 @@ import {
     renderExercises, createExerciseCard, focusExercise,
     updateSet, addSet, deleteSet, saveExerciseNotes, markExerciseComplete,
     deleteExerciseFromWorkout, addExerciseToActiveWorkout, confirmExerciseAddToWorkout,
-    swapExercise, confirmExerciseSwap,
-    startRestTimer, stopRestTimer, toggleModalRestTimer, skipModalRestTimer,
+    toggleModalRestTimer, skipModalRestTimer,
     updateWorkoutDuration, startWorkoutTimer,
     showExerciseVideo, hideExerciseVideo, convertYouTubeUrl,
     setGlobalUnit, setExerciseUnit,
-    updateExerciseProgress, validateSetInput, updateFormCompletion,
-    handleUnknownWorkout, loadExerciseHistoryForModal, closeExerciseModal,loadExerciseHistory, autoStartRestTimer
+    closeExerciseModal, loadExerciseHistory, autoStartRestTimer
 } from './core/workout-core.js';
 
 // Template selection functionality
@@ -43,10 +41,7 @@ import {
 // Workout history UI functionality
 import {
     showWorkoutHistory, viewWorkout, resumeWorkout, repeatWorkout,
-    deleteWorkout, retryWorkout, clearAllHistoryFilters,
-    setupHistoryFilters, applyHistoryFilters,
-    enhanceWorkoutData, formatWorkoutForDisplay, getWorkoutActionButton,
-    
+    deleteWorkout, retryWorkout, clearAllHistoryFilters
 } from './core/workout-history-ui.js';
 
 // Workout management UI
