@@ -26,7 +26,7 @@ import {
     updateWorkoutDuration, startWorkoutTimer,
     showExerciseVideo, hideExerciseVideo, convertYouTubeUrl,
     setGlobalUnit, setExerciseUnit,
-    closeExerciseModal, loadExerciseHistory, autoStartRestTimer
+    closeExerciseModal, loadExerciseHistory, loadLastWorkoutHint, autoStartRestTimer
 } from './core/workout-core.js';
 
 // Template selection functionality

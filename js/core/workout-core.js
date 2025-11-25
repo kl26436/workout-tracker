@@ -425,14 +425,22 @@ export function generateExerciseTable(exercise, exerciseIndex, unit) {
         savedSets.push({ reps: '', weight: '' });
     }
 
+    // Auto-fetch last workout data after render
+    setTimeout(() => {
+        loadLastWorkoutHint(exercise.machine, exerciseIndex);
+    }, 100);
+
     let html = `
         <!-- Exercise History Reference -->
         <div class="exercise-history-section">
-            <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem;">
+            <div id="last-workout-hint-${exerciseIndex}" style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.75rem; padding: 0.5rem; background: var(--bg-tertiary); border-radius: 6px; border-left: 3px solid var(--primary);">
+                <i class="fas fa-spinner fa-spin"></i> Loading previous workout...
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;">
                 <button class="btn btn-secondary btn-small" onclick="loadExerciseHistory('${exercise.machine}', ${exerciseIndex})">
-                    <i class="fas fa-history"></i> Show Last Workout
+                    <i class="fas fa-history"></i> Show Full History
                 </button>
-                ${exercise.video ? 
+                ${exercise.video ?
                     `<button class="btn btn-primary btn-small" onclick="showExerciseVideo('${exercise.video}', '${exercise.machine}')">
                         <i class="fas fa-play"></i> Form Video
                     </button>` : ''
@@ -1376,3 +1384,64 @@ function showInProgressWorkoutPrompt(workoutData) {
 // ===================================================================
 
 // REMOVED: loadExerciseHistoryForModal() - loadExerciseHistory() is called directly instead
+
+// Load last workout hint - shows quick summary without full history
+export async function loadLastWorkoutHint(exerciseName, exerciseIndex) {
+    const hintDiv = document.getElementById(`last-workout-hint-${exerciseIndex}`);
+    if (!hintDiv || !AppState.currentUser) {
+        if (hintDiv) hintDiv.remove();
+        return;
+    }
+
+    try {
+        const { collection, query, orderBy, limit, getDocs } = await import('./firebase-config.js');
+        const { db } = await import('./firebase-config.js');
+
+        const workoutsRef = collection(db, "users", AppState.currentUser.uid, "workouts");
+        const q = query(workoutsRef, orderBy("lastUpdated", "desc"), limit(10));
+        const querySnapshot = await getDocs(q);
+
+        const today = AppState.getTodayDateString();
+        let lastWorkoutData = null;
+
+        querySnapshot.forEach((doc) => {
+            if (lastWorkoutData) return; // Already found
+
+            const data = doc.data();
+            if (data.date === today) return; // Skip today
+
+            // Search for this exercise
+            if (data.exerciseNames) {
+                for (const [key, name] of Object.entries(data.exerciseNames)) {
+                    if (name === exerciseName && data.exercises?.[key]?.sets?.length > 0) {
+                        const sets = data.exercises[key].sets;
+                        const completedSets = sets.filter(s => s && (s.reps || s.weight));
+                        if (completedSets.length > 0) {
+                            lastWorkoutData = {
+                                date: data.date,
+                                sets: completedSets
+                            };
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+
+        if (lastWorkoutData) {
+            const avgReps = Math.round(lastWorkoutData.sets.reduce((sum, s) => sum + (s.reps || 0), 0) / lastWorkoutData.sets.length);
+            const avgWeight = Math.round(lastWorkoutData.sets.reduce((sum, s) => sum + (s.weight || 0), 0) / lastWorkoutData.sets.length);
+
+            hintDiv.innerHTML = `
+                <i class="fas fa-history"></i>
+                <strong>Last:</strong> ${lastWorkoutData.sets.length} sets × ${avgReps} reps × ${avgWeight} lbs
+                <span style="color: var(--text-secondary); margin-left: 0.5rem;">(${new Date(lastWorkoutData.date).toLocaleDateString()})</span>
+            `;
+        } else {
+            hintDiv.innerHTML = `<i class="fas fa-info-circle"></i> No previous workout found for this exercise`;
+        }
+    } catch (error) {
+        console.error('Error loading last workout hint:', error);
+        hintDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Could not load previous workout`;
+    }
+}

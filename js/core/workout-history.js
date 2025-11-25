@@ -175,12 +175,17 @@ export function getWorkoutHistory(appState) {
                 Object.keys(workout.exercises).forEach(exerciseKey => {
                     const exerciseData = workout.exercises[exerciseKey];
                     const exerciseName = workout.exerciseNames[exerciseKey] || exerciseKey;
-                    
+
+                    // Get video from original workout template
+                    const exerciseIndex = exerciseKey.replace('exercise_', '');
+                    const video = workout.originalWorkout?.exercises?.[exerciseIndex]?.video || '';
+
                     if (exerciseData && exerciseData.sets) {
                         exercises.push({
                             name: exerciseName,
                             sets: exerciseData.sets.filter(set => set && (set.reps || set.weight)),
-                            notes: exerciseData.notes || ''
+                            notes: exerciseData.notes || '',
+                            video: video
                         });
                     }
                 });
@@ -415,7 +420,7 @@ export function getWorkoutHistory(appState) {
                 }
                 
                 exerciseHTML += `</tbody></table>`;
-                
+
                 if (exercise.notes) {
                     exerciseHTML += `
                         <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 6px; margin-top: 1rem; border-left: 3px solid var(--primary);">
@@ -423,7 +428,16 @@ export function getWorkoutHistory(appState) {
                             <span style="color: var(--text-primary);">${exercise.notes}</span>
                         </div>`;
                 }
-                
+
+                if (exercise.video) {
+                    exerciseHTML += `
+                        <div style="margin-top: 1rem;">
+                            <button class="btn btn-primary btn-small" onclick="showExerciseVideo('${exercise.video}', '${exercise.name}')">
+                                <i class="fas fa-play"></i> Watch Form Video
+                            </button>
+                        </div>`;
+                }
+
                 exerciseHTML += `</div>`;
             });
         } else {
@@ -470,20 +484,54 @@ export function getWorkoutHistory(appState) {
             `;
         }
         
+        // Format workout times
+        const rawData = workout.rawData || {};
+        const startTime = rawData.startedAt ? new Date(rawData.startedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : null;
+        const endTime = rawData.completedAt ? new Date(rawData.completedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : null;
+        const totalDuration = rawData.totalDuration ? this.formatDuration(rawData.totalDuration) : workout.duration;
+
         return `
             <div style="margin-bottom: 1.5rem;">
-                <div style="display: grid; grid-template-columns: auto 1fr; gap: 1rem;">
+                <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.75rem 1rem; align-items: center;">
                     <strong style="color: var(--text-secondary);">Status:</strong>
-                    <span style="color: var(--success);">${workout.status.charAt(0).toUpperCase() + workout.status.slice(1)}</span>
+                    <span style="color: ${workout.status === 'completed' ? 'var(--success)' : workout.status === 'cancelled' ? 'var(--danger)' : 'var(--warning)'};">
+                        <i class="fas fa-${workout.status === 'completed' ? 'check-circle' : workout.status === 'cancelled' ? 'times-circle' : 'exclamation-circle'}"></i>
+                        ${workout.status.charAt(0).toUpperCase() + workout.status.slice(1)}
+                    </span>
+
+                    ${startTime ? `
+                        <strong style="color: var(--text-secondary);">Started:</strong>
+                        <span style="color: var(--text-primary);">
+                            <i class="fas fa-clock"></i> ${startTime}
+                        </span>
+                    ` : ''}
+
+                    ${endTime ? `
+                        <strong style="color: var(--text-secondary);">Finished:</strong>
+                        <span style="color: var(--text-primary);">
+                            <i class="fas fa-flag-checkered"></i> ${endTime}
+                        </span>
+                    ` : ''}
+
                     <strong style="color: var(--text-secondary);">Duration:</strong>
-                    <span style="color: var(--text-primary);">${workout.duration || 'Unknown'}m</span>
+                    <span style="color: var(--primary); font-weight: 600;">
+                        <i class="fas fa-stopwatch"></i> ${totalDuration || 'Unknown'}
+                    </span>
+
                     <strong style="color: var(--text-secondary);">Progress:</strong>
-                    <span style="color: var(--text-primary);">${workout.progress || 0}%</span>
+                    <span style="color: var(--text-primary);">
+                        ${workout.progress || 0}%
+                        <div style="background: var(--bg-tertiary); height: 6px; border-radius: 3px; overflow: hidden; margin-top: 4px;">
+                            <div style="background: var(--primary); height: 100%; width: ${workout.progress || 0}%; transition: width 0.3s ease;"></div>
+                        </div>
+                    </span>
                 </div>
             </div>
             ${notesSection}
             <div style="margin-bottom: 1rem;">
-                <h3 style="color: var(--text-primary); margin-bottom: 1rem;">Exercises & Sets</h3>
+                <h3 style="color: var(--text-primary); margin-bottom: 1rem;">
+                    <i class="fas fa-dumbbell"></i> Exercises & Sets
+                </h3>
                 ${exerciseHTML}
             </div>
             ${actionButtons}
