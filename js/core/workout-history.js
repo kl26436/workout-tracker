@@ -622,7 +622,7 @@ showFixedWorkoutModal(workout) {
             const exerciseKey = `exercise_${index}`;
             const exerciseData = workout.exercises[exerciseKey];
             const exerciseName = workout.exerciseNames?.[exerciseKey] || originalExercise.machine || 'Unknown Exercise';
-            
+
             exerciseHTML += `
                 <div class="exercise-detail-item" style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-tertiary); border-radius: 8px;">
                     <h5 style="margin: 0 0 0.5rem 0; color: var(--text-primary);">${exerciseName}</h5>
@@ -634,27 +634,49 @@ showFixedWorkoutModal(workout) {
     } else {
         exerciseHTML = '<p>No exercise details available</p>';
     }
-    
+
+    // Create action buttons based on workout status
+    const workoutStatus = workout.status || this.getWorkoutStatus(workout);
+    let actionButtons = '';
+    if (workoutStatus === 'cancelled' || workoutStatus === 'partial') {
+        actionButtons = `
+            <button class="btn btn-danger" onclick="deleteWorkoutFromCalendar('${workout.date}')">
+                <i class="fas fa-trash"></i> Delete This Workout
+            </button>
+            <button class="btn btn-secondary" onclick="workoutHistory.repeatWorkout('${workout.date}')">
+                <i class="fas fa-redo"></i> Repeat Workout
+            </button>`;
+    } else {
+        actionButtons = `
+            <button class="btn btn-secondary" onclick="workoutHistory.repeatWorkout('${workout.date}')">
+                <i class="fas fa-redo"></i> Repeat Workout
+            </button>
+            <button class="btn btn-danger" onclick="deleteWorkoutFromCalendar('${workout.date}')">
+                <i class="fas fa-trash"></i> Delete
+            </button>`;
+    }
+
     // Set the modal content
     content.innerHTML = `
         <div class="workout-header">
             <h3>${workout.workoutType} - ${displayDate}</h3>
         </div>
-        
+
         <div class="workout-detail-summary" style="margin-bottom: 2rem;">
             <div class="workout-meta" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
-                <div><strong>Status:</strong> ${workout.status || this.getWorkoutStatus(workout)}</div>
+                <div><strong>Status:</strong> ${workoutStatus}</div>
                 <div><strong>Duration:</strong> ${formattedDuration}</div>
                 <div><strong>Progress:</strong> ${this.calculateProgress(workout)}%</div>
             </div>
         </div>
-        
+
         <div class="workout-exercises">
             <h3>Exercises & Sets</h3>
             ${exerciseHTML}
         </div>
-        
-        <div class="modal-actions" style="margin-top: 2rem; text-align: right;">
+
+        <div class="modal-actions" style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            ${actionButtons}
             <button class="btn btn-secondary" onclick="closeWorkoutDetailModal()">Close</button>
         </div>
     `;
