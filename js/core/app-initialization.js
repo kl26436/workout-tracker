@@ -1,13 +1,14 @@
 // App Initialization Module - core/app-initialization.js
 // Handles application startup, authentication, and global setup
 
-import { auth, provider, onAuthStateChanged, signInWithPopup, signOut } from './firebase-config.js';
+import { auth, provider, onAuthStateChanged, signInWithPopup, signOut, db } from './firebase-config.js';
 import { AppState } from './app-state.js';
 import { showNotification, setTodayDisplay } from './ui-helpers.js';
 import { loadWorkoutPlans } from './data-manager.js'; // ADD loadWorkoutData here
 import { getExerciseLibrary } from './exercise-library.js';
 import { getWorkoutHistory } from './workout-history.js';
 import { initializeWorkoutManagement } from '../core/workout/workout-management-ui.js';
+import { initializeErrorHandler, startConnectionMonitoring } from './error-handler.js';
 
 // ===================================================================
 // MAIN APP INITIALIZATION
@@ -15,7 +16,10 @@ import { initializeWorkoutManagement } from '../core/workout/workout-management-
 
 export function initializeWorkoutApp() {
     console.log('ðŸš€ Initializing Big Surf Workout Tracker...');
-    
+
+    // Initialize global error handling FIRST
+    initializeErrorHandler();
+
     try {
         // Initialize exercise library BEFORE auth (so it's always available)
         const exerciseLibrary = getExerciseLibrary(AppState);
@@ -26,7 +30,10 @@ export function initializeWorkoutApp() {
         const workoutHistory = getWorkoutHistory(AppState);
         workoutHistory.initialize();
         window.workoutHistory = workoutHistory;
-        
+
+        // Start connection monitoring
+        startConnectionMonitoring(db);
+
         console.log('âœ… Core modules initialized successfully');
         
     } catch (error) {
