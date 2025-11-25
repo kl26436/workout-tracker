@@ -15,7 +15,7 @@ import { initializeErrorHandler, startConnectionMonitoring } from './error-handl
 // ===================================================================
 
 export function initializeWorkoutApp() {
-    console.log('ðŸš€ Initializing Big Surf Workout Tracker...');
+    console.log('🚀 Initializing Big Surf Workout Tracker...');
 
     // Initialize global error handling FIRST
     initializeErrorHandler();
