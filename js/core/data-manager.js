@@ -13,7 +13,7 @@ export async function saveWorkoutData(state) {
         // If it's an ISO string, extract just the date part
         if (saveDate.includes('T')) {
             saveDate = saveDate.split('T')[0];
-            console.log('🔧 BUG-031: Cleaned ISO date string:', saveDate);
+            console.log(' BUG-031: Cleaned ISO date string:', saveDate);
         }
         
         // Validate YYYY-MM-DD format
@@ -27,7 +27,7 @@ export async function saveWorkoutData(state) {
         saveDate = state.getTodayDateString();
     }
     
-    console.log('🔧 BUG-031 DEBUG: Final save date:', saveDate);
+    console.log(' BUG-031 DEBUG: Final save date:', saveDate);
     
     state.savedData.date = saveDate;
     state.savedData.exerciseUnits = state.exerciseUnits;
@@ -83,7 +83,7 @@ export async function saveWorkoutData(state) {
             version: '2.0'
         });
         
-        console.log('💾 Enhanced workout data saved for', saveDate);
+        console.log(' Enhanced workout data saved for', saveDate);
         return true;
     } catch (error) {
         console.error('❌ Error saving workout data:', error);
@@ -108,7 +108,7 @@ export async function loadTodaysWorkout(state) {
                 data.date === today && 
                 !data.completedAt &&
                 !data.cancelledAt) {
-                console.log('📅 Loading today\'s in-progress workout:', data.workoutType);
+                console.log(' Loading today\'s in-progress workout:', data.workoutType);
                 
                 // Validate that the workout plan still exists
                 const workoutPlan = state.workoutPlans?.find(w => 
@@ -127,9 +127,9 @@ export async function loadTodaysWorkout(state) {
                 return data; // Return data to be handled by workout manager
             } else {
                 if (data.completedAt) {
-                    console.log('✅ Previous workout was completed, starting fresh');
+                    console.log(' Previous workout was completed, starting fresh');
                 } else if (data.cancelledAt) {
-                    console.log('❌ Previous workout was cancelled, starting fresh');
+                    console.log(' Previous workout was cancelled, starting fresh');
                 }
                 return null; // No valid workout to load
             }
@@ -145,7 +145,7 @@ import { FirebaseWorkoutManager } from './firebase-workout-manager.js';
 
 export async function loadWorkoutPlans(state) {
     try {
-        console.log('📥 Loading workout data from Firebase...');
+        console.log(' Loading workout data from Firebase...');
         
         // Import the Firebase workout manager
         const { FirebaseWorkoutManager } = await import('./firebase-workout-manager.js');
@@ -153,11 +153,11 @@ export async function loadWorkoutPlans(state) {
         
         // Load workout templates from Firebase
         state.workoutPlans = await workoutManager.getWorkoutTemplates();
-        console.log('✅ Workout plans loaded from Firebase:', state.workoutPlans.length);
+        console.log(' Workout plans loaded from Firebase:', state.workoutPlans.length);
         
         // Load exercise database from Firebase
         state.exerciseDatabase = await workoutManager.getExerciseLibrary();
-        console.log('✅ Exercise database loaded from Firebase:', state.exerciseDatabase.length);
+        console.log(' Exercise database loaded from Firebase:', state.exerciseDatabase.length);
         
     } catch (error) {
         console.error('❌ Error loading data from Firebase:', error);
@@ -168,7 +168,7 @@ export async function loadWorkoutPlans(state) {
             const workoutResponse = await fetch('./workouts.json');
             if (workoutResponse.ok) {
                 state.workoutPlans = await workoutResponse.json();
-                console.log('✅ Fallback workout plans loaded:', state.workoutPlans.length);
+                console.log(' Fallback workout plans loaded:', state.workoutPlans.length);
             } else {
                 state.workoutPlans = getDefaultWorkouts();
             }
@@ -176,7 +176,7 @@ export async function loadWorkoutPlans(state) {
             const exerciseResponse = await fetch('./exercises.json');
             if (exerciseResponse.ok) {
                 state.exerciseDatabase = await exerciseResponse.json();
-                console.log('✅ Fallback exercise database loaded:', state.exerciseDatabase.length);
+                console.log(' Fallback exercise database loaded:', state.exerciseDatabase.length);
             } else {
                 state.exerciseDatabase = getDefaultExercises();
             }
@@ -282,7 +282,7 @@ export async function loadExerciseHistory(exerciseName, exerciseIndex, state) {
                         date: data.date
                     });
                     
-                    console.log(`✅ Found exercise history for "${exerciseName}" in workout from ${data.date}`);
+                    console.log(` Found exercise history for "${exerciseName}" in workout from ${data.date}`);
                 }
             }
         });
@@ -296,7 +296,7 @@ export async function loadExerciseHistory(exerciseName, exerciseIndex, state) {
             lastExerciseData = mostRecent.exerciseData;
             workoutDate = mostRecent.date;
             
-            console.log(`🎯 Using most recent match from ${workoutDate}`);
+            console.log(` Using most recent match from ${workoutDate}`);
             console.log('Exercise data:', lastExerciseData);
         }
         
@@ -445,7 +445,7 @@ export async function loadWorkoutHistory(state, limitCount = 50) {
             workouts.push(workout);
         });
         
-        console.log(`📊 Loaded ${workouts.length} workout history entries`);
+        console.log(` Loaded ${workouts.length} workout history entries`);
         return workouts;
         
     } catch (error) {
@@ -458,7 +458,7 @@ export async function loadWorkoutHistory(state, limitCount = 50) {
 export async function migrateWorkoutData(state) {
     if (!state.currentUser) return;
     
-    console.log('🔄 Checking for workout data migration...');
+    console.log(' Checking for workout data migration...');
     
     try {
         const workoutsRef = collection(db, "users", state.currentUser.uid, "workouts");
@@ -472,7 +472,7 @@ export async function migrateWorkoutData(state) {
             
             // Check if this is old format (no version or version 1.0)
             if (!data.version || data.version === '1.0') {
-                console.log('🔄 Migrating workout:', data.date, data.workoutType);
+                console.log(' Migrating workout:', data.date, data.workoutType);
                 
                 // Find the original workout plan
                 const workoutPlan = state.workoutPlans?.find(w => w.day === data.workoutType);
@@ -502,7 +502,7 @@ export async function migrateWorkoutData(state) {
         }
         
         if (migrationCount > 0) {
-            console.log(`✅ Migrated ${migrationCount} workout entries to new format`);
+            console.log(` Migrated ${migrationCount} workout entries to new format`);
             showNotification(`Updated ${migrationCount} workout entries`, 'info');
         }
         
@@ -555,7 +555,7 @@ function getDefaultExercises() {
 async function recoverCorruptedWeights(state) {
     if (!state.currentUser) return;
     
-    console.log('🔧 Starting weight corruption recovery...');
+    console.log(' Starting weight corruption recovery...');
     
     let fixedCount = 0;
     
@@ -574,7 +574,7 @@ async function recoverCorruptedWeights(state) {
                     exerciseData.sets.forEach(set => {
                         // Check if weight is corrupted (unreasonably high)
                         if (set.weight && set.weight > 500 && set.originalWeights) {
-                            console.log(`🔧 Fixing corrupted weight: ${set.weight} -> using originalWeights`);
+                            console.log(` Fixing corrupted weight: ${set.weight} -> using originalWeights`);
                             
                             // Use the original kg value if available
                             if (set.originalWeights.kg && set.originalUnit === 'kg') {
@@ -595,10 +595,10 @@ async function recoverCorruptedWeights(state) {
         // Update the document if we made changes
         if (needsUpdate) {
             await setDoc(doc(db, "users", state.currentUser.uid, "workouts", docSnapshot.id), data);
-            console.log(`✅ Fixed corrupted weights in workout ${docSnapshot.id}`);
+            console.log(` Fixed corrupted weights in workout ${docSnapshot.id}`);
         }
     }
     
-    console.log(`🎉 Recovery complete! Fixed ${fixedCount} corrupted weight entries.`);
+    console.log(` Recovery complete! Fixed ${fixedCount} corrupted weight entries.`);
     showNotification(`Recovered ${fixedCount} corrupted weights!`, 'success');
 }

@@ -9,7 +9,7 @@ export function getExerciseLibrary(appState) {
 
     return {
         initialize() {
-            console.log('📚 Exercise Library initialized');
+            console.log(' Exercise Library initialized');
         },
 
         async openForSwap(exerciseIndex) {
@@ -40,7 +40,7 @@ export function getExerciseLibrary(appState) {
             }
 
             currentContext = 'manual-workout';
-            console.log('🔧 Context set to:', currentContext);
+            console.log(' Context set to:', currentContext);
             
             const modal = document.getElementById('exercise-library-modal');
             const modalTitle = document.querySelector('#exercise-library-modal .modal-title');
@@ -89,7 +89,7 @@ export function getExerciseLibrary(appState) {
             const modal = document.getElementById('exercise-library-modal');
             if (!modal) return;
 
-            console.log('🔧 loadAndShow called with context:', currentContext);
+            console.log(' loadAndShow called with context:', currentContext);
 
             modal.classList.remove('hidden');
             isOpen = true;
@@ -98,7 +98,7 @@ export function getExerciseLibrary(appState) {
                 await this.loadExercises();
                 this.renderExercises();
                 this.setupEventHandlers(); // ← ADD THIS LINE
-                console.log(`📚 Loaded ${filteredExercises.length} exercises for context: ${currentContext}`);
+                console.log(` Loaded ${filteredExercises.length} exercises for context: ${currentContext}`);
             } catch (error) {
                 console.error('Error loading exercises:', error);
                 currentExercises = appState.exerciseDatabase || [];
@@ -114,7 +114,7 @@ export function getExerciseLibrary(appState) {
                 currentExercises = await workoutManager.getExerciseLibrary();
                 filteredExercises = [...currentExercises];
                 
-                console.log(`📚 Loaded ${currentExercises.length} exercises for context: ${currentContext}`);
+                console.log(` Loaded ${currentExercises.length} exercises for context: ${currentContext}`);
             } catch (error) {
                 console.error('Error loading exercises:', error);
                 currentExercises = appState.exerciseDatabase || [];
@@ -150,8 +150,8 @@ export function getExerciseLibrary(appState) {
             card.className = 'library-exercise-card';
             
             // Debug logging
-            console.log('🔍 Creating exercise card with context:', currentContext);
-            console.log('🔍 Exercise name:', exercise.name || exercise.machine);
+            console.log(' Creating exercise card with context:', currentContext);
+            console.log(' Exercise name:', exercise.name || exercise.machine);
             
             let actionButton = '';
             const exerciseJson = JSON.stringify(exercise).replace(/"/g, '&quot;');
@@ -166,7 +166,7 @@ export function getExerciseLibrary(appState) {
                     break;
                     
                 case 'manual-workout':
-                    console.log('✅ Using manual-workout case');
+                    console.log(' Using manual-workout case');
                     actionButton = `
                         <button class="btn btn-primary btn-small" onclick="addToManualWorkoutFromLibrary(${exerciseJson})">
                             <i class="fas fa-plus"></i> Add Exercise
@@ -191,7 +191,7 @@ export function getExerciseLibrary(appState) {
                     break;
                     
                 default:
-                    console.log('⚠️ Using default case, currentContext is:', currentContext);
+                    console.log(' Using default case, currentContext is:', currentContext);
                     actionButton = `
                         <button class="btn btn-secondary btn-small" onclick="selectExerciseGeneric('${exercise.name || exercise.machine}', '${exerciseJson}')">
                             <i class="fas fa-check"></i> Select
@@ -329,7 +329,7 @@ function selectExerciseGeneric(exerciseDataOrName, exerciseJson) {
             throw new Error('Invalid parameters');
         }
         
-        console.log('🎯 Generic exercise selection:', exercise);
+        console.log(' Generic exercise selection:', exercise);
         
         // Close the library modal
         const modal = document.getElementById('exercise-library-modal');

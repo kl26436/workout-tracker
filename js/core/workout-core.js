@@ -10,7 +10,7 @@ import { saveWorkoutData, loadExerciseHistory } from './data-manager.js';
 // ===================================================================
 
 export async function startWorkout(workoutType) {
-    console.log(`ðŸš€ Starting workout: ${workoutType}`);
+    console.log(`Starting workout: ${workoutType}`);
     
     if (!AppState.currentUser) {
         showNotification('Please sign in to start a workout', 'warning');
@@ -135,7 +135,7 @@ export function cancelCurrentWorkout() {
 
 export function continueInProgressWorkout() {
     
-    console.log('▶️ Resuming workout:', window.inProgressWorkout.workoutType);
+    console.log(' Resuming workout:', window.inProgressWorkout.workoutType);
     
     // Hide the resume banner
     const banner = document.getElementById('resume-workout-banner');
@@ -180,7 +180,7 @@ export function continueInProgressWorkout() {
 }
 
 export async function discardInProgressWorkout() {
-    console.log('ðŸ—® Starting discard process...', window.inProgressWorkout);
+    console.log('Starting discard process...', window.inProgressWorkout);
     
     
     // Hide the resume banner
@@ -188,7 +188,7 @@ export async function discardInProgressWorkout() {
     if (banner) banner.classList.add('hidden');
     window.showingProgressPrompt = false;
     if (!window.inProgressWorkout) {
-        console.log('âŒ No in-progress workout to discard');
+        console.log(' No in-progress workout to discard');
         return;
     }
     
@@ -198,7 +198,7 @@ export async function discardInProgressWorkout() {
     );
     
     if (!confirmDiscard) {
-        console.log('âŒ User cancelled discard');
+        console.log(' User cancelled discard');
         return;
     }
     
@@ -210,21 +210,21 @@ export async function discardInProgressWorkout() {
             userId: AppState.currentUser?.uid
         };
         
-        console.log('ðŸ“‹ Workout to delete:', workoutToDelete);
+        console.log('Workout to delete:', workoutToDelete);
         
         // DELETE the workout from Firebase FIRST
         try {
             if (workoutToDelete.userId && workoutToDelete.date) {
-                console.log('ðŸ”¥ Attempting Firebase deletion...');
+                console.log('Attempting Firebase deletion...');
                 
                 const { deleteDoc, doc, db } = await import('./firebase-config.js');
                 
                 const workoutRef = doc(db, "users", workoutToDelete.userId, "workouts", workoutToDelete.date);
                 await deleteDoc(workoutRef);
                 
-                console.log('âœ… SUCCESS: Workout deleted from Firebase:', workoutToDelete.date);
+                console.log(' SUCCESS: Workout deleted from Firebase:', workoutToDelete.date);
             } else {
-                console.log('âŒ Missing userId or date for Firebase deletion:', workoutToDelete);
+                console.log(' Missing userId or date for Firebase deletion:', workoutToDelete);
             }
         } catch (firebaseError) {
             console.error('âŒ ERROR deleting workout from Firebase:', firebaseError);
@@ -240,7 +240,7 @@ export async function discardInProgressWorkout() {
         showWorkoutSelector();
         
         showNotification('In-progress workout discarded', 'info');
-        console.log('âœ… Discard process completed successfully');
+        console.log(' Discard process completed successfully');
         
     } catch (error) {
         console.error('âŒ Error during discard process:', error);
@@ -528,7 +528,7 @@ export { loadExerciseHistory };
 // ===================================================================
 
 export function updateSet(exerciseIndex, setIndex, field, value) {
-    console.log('ðŸ”§ updateSet called:', exerciseIndex, setIndex, field, value);
+    console.log('updateSet called:', exerciseIndex, setIndex, field, value);
     
     if (!AppState.currentWorkout || !AppState.savedData.exercises) {
         AppState.savedData.exercises = {};
@@ -565,14 +565,14 @@ export function updateSet(exerciseIndex, setIndex, field, value) {
                 kg: currentUnit === 'kg' ? numValue : Math.round(weightInLbs * 0.453592)
             };
             
-            console.log(`âœ… Weight stored in lbs: ${weightInLbs} (entered as ${numValue} ${currentUnit})`);
+            console.log(` Weight stored in lbs: ${weightInLbs} (entered as ${numValue} ${currentUnit})`);
         } else {
             AppState.savedData.exercises[exerciseKey].sets[setIndex][field] = numValue;
-            console.log('âœ… Set field updated:', field, '=', numValue);
+            console.log(' Set field updated:', field, '=', numValue);
         }
     } else {
         AppState.savedData.exercises[exerciseKey].sets[setIndex][field] = null;
-        console.log('âŒ Invalid value, set to null');
+        console.log(' Invalid value, set to null');
     }
     
     // Save to Firebase
@@ -583,10 +583,10 @@ export function updateSet(exerciseIndex, setIndex, field, value) {
     renderExercises();
 
     const setData = AppState.savedData.exercises[exerciseKey].sets[setIndex];
-    console.log('ðŸŽ¯ Checking set data:', setData);
+    console.log('Checking set data:', setData);
     
     if (setData.reps && setData.weight) {
-        console.log('ðŸš€ Starting timer for set completion');
+        console.log('Starting timer for set completion');
         autoStartRestTimer(exerciseIndex, setIndex);
         showNotification(`Set ${setIndex + 1} recorded! Rest timer started.`, 'success');
     }
@@ -722,7 +722,7 @@ export function addExerciseToActiveWorkout() {
     if (window.exerciseLibrary && window.exerciseLibrary.openForWorkoutAdd) {
         window.exerciseLibrary.openForWorkoutAdd();
     } else {
-        console.log('ðŸ“š Using fallback method to open exercise library');
+        console.log('Using fallback method to open exercise library');
         showNotification('Exercise library opened - select exercises manually', 'info');
     }
 }
@@ -776,7 +776,7 @@ export function swapExercise(exerciseIndex) {
     if (window.exerciseLibrary && window.exerciseLibrary.openForSwap) {
         window.exerciseLibrary.openForSwap(exerciseIndex);
     } else {
-        console.log('ðŸ“š Using fallback method to open exercise library');
+        console.log('Using fallback method to open exercise library');
         showNotification('Exercise library opened - select exercises manually', 'info');
     }
 }
@@ -1243,22 +1243,22 @@ export function updateWorkoutDuration() {
 }
 
 export function autoStartRestTimer(exerciseIndex, setIndex) {
-    console.log('ðŸš€ autoStartRestTimer called for exercise', exerciseIndex, 'set', setIndex);
+    console.log('autoStartRestTimer called for exercise', exerciseIndex, 'set', setIndex);
     
     const modal = document.getElementById('exercise-modal');
     const modalHidden = modal?.classList.contains('hidden');
     const focusedMatch = AppState.focusedExerciseIndex === exerciseIndex;
     
-    console.log('ðŸ“± Modal exists:', !!modal);
-    console.log('ðŸ“± Modal hidden:', modalHidden);
-    console.log('ðŸŽ¯ Focused exercise:', AppState.focusedExerciseIndex, 'Target:', exerciseIndex);
-    console.log('ðŸŽ¯ Match:', focusedMatch);
+    console.log('Modal exists:', !!modal);
+    console.log('Modal hidden:', modalHidden);
+    console.log('Focused exercise:', AppState.focusedExerciseIndex, 'Target:', exerciseIndex);
+    console.log('Match:', focusedMatch);
     
     if (modal && !modalHidden && focusedMatch) {
-        console.log('âœ… All conditions met, starting timer');
+        console.log(' All conditions met, starting timer');
         startModalRestTimer(exerciseIndex, 90);
     } else {
-        console.log('âŒ Conditions not met for timer start');
+        console.log(' Conditions not met for timer start');
     }
 }
 
@@ -1452,7 +1452,7 @@ async function checkForInProgressWorkout() {
         return;
     }
 
-    console.log('ðŸ” Checking for in-progress workout...');
+    console.log('Checking for in-progress workout...');
     
     try {
         const { loadTodaysWorkout } = await import('./data-manager.js');
@@ -1460,7 +1460,7 @@ async function checkForInProgressWorkout() {
         
         // Check if there's an incomplete workout from today
         if (todaysData && !todaysData.completedAt && !todaysData.cancelledAt) {
-            console.log('ðŸ“‹ Found in-progress workout:', todaysData.workoutType);
+            console.log('Found in-progress workout:', todaysData.workoutType);
             
             // Validate workout plan exists
             const workoutPlan = AppState.workoutPlans.find(plan => 
@@ -1483,7 +1483,7 @@ async function checkForInProgressWorkout() {
             // Show the prompt
             showInProgressWorkoutPrompt(todaysData);
         } else {
-            console.log('âœ… No in-progress workout found');
+            console.log(' No in-progress workout found');
         }
         
     } catch (error) {

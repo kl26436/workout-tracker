@@ -252,10 +252,7 @@ export async function validateUserData() {
         // Check custom exercises
         const customExercises = AppState.exerciseDatabase.filter(ex => ex.isCustom);
         
-        console.log(` User data validation:
-        - Templates: ${templates.length}
-        - Custom exercises: ${customExercises.length}  
-        - Total exercises: ${AppState.exerciseDatabase.length}`);
+        console.log(` User data validation: - Templates: ${templates.length} - Custom exercises: ${customExercises.length} - Total exercises: ${AppState.exerciseDatabase.length}`);
         
         
     } catch (error) {
@@ -452,7 +449,7 @@ function setupSignInListeners() {
     const allSignInElements = document.querySelectorAll('#sign-in-btn, .sign-in-btn, .signin-btn, [onclick*="signIn"], button[class*="sign"]');
     console.log(' Found potential sign-in elements:', allSignInElements.length);
     allSignInElements.forEach((el, i) => {
-        console.log(`  ${i + 1}. ID: "${el.id}", Class: "${el.className}", Text: "${el.textContent?.trim()}"${el.onclick ? ', Has onclick' : ''}`);
+        console.log(` ${i + 1}. ID: "${el.id}", Class: "${el.className}", Text: "${el.textContent?.trim()}"${el.onclick ? ', Has onclick' : ''}`);
     });
     
     // Try multiple selectors for sign-in button
@@ -482,10 +479,7 @@ function setupSignInListeners() {
     
     if (signInBtn) {
         console.log(' Sign-in button found, adding event listener');
-        console.log('Button details:', {
-            id: signInBtn.id,
-            className: signInBtn.className,
-            textContent: signInBtn.textContent?.trim(),
+        console.log('Button details:', { id: signInBtn.id, className: signInBtn.className, textContent: signInBtn.textContent?.trim(),
             hidden: signInBtn.classList.contains('hidden'),
             display: window.getComputedStyle(signInBtn).display
         });
@@ -545,9 +539,7 @@ function setupSignInListeners() {
     
     // Debug: Check user info elements
     const userInfo = document.getElementById('user-info');
-    console.log(' User info element:', {
-        found: !!userInfo,
-        hidden: userInfo?.classList.contains('hidden'),
+    console.log(' User info element:', { found: !!userInfo, hidden: userInfo?.classList.contains('hidden'),
         display: userInfo ? window.getComputedStyle(userInfo).display : 'N/A'
     });
 }

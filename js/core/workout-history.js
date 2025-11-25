@@ -18,7 +18,7 @@ export function getWorkoutHistory(appState) {
         firstWorkoutDate,
 
         initialize() {
-            console.log('📊 Workout History initialized with calendar view');
+            console.log(' Workout History initialized with calendar view');
             this.setupEventListeners();
         },
 
@@ -71,11 +71,11 @@ export function getWorkoutHistory(appState) {
                     
                     if (dates.length > 0) {
                         this.firstWorkoutDate = dates[0];
-                        console.log(`📅 First workout date found: ${this.firstWorkoutDate}`);
+                        console.log(` First workout date found: ${this.firstWorkoutDate}`);
                     }
                 }
 
-                console.log(`✅ Loaded ${this.currentHistory.length} workout entries`);
+                console.log(` Loaded ${this.currentHistory.length} workout entries`);
 
             } catch (error) {
                 console.error('❌ Error loading workout history:', error);
@@ -97,7 +97,7 @@ export function getWorkoutHistory(appState) {
                 const year = this.currentCalendarDate.getFullYear();
                 const month = this.currentCalendarDate.getMonth();
                 
-                console.log(`🗓️ Loading workouts for ${year}-${month + 1}`);
+                console.log(` Loading workouts for ${year}-${month + 1}`);
                 
                 // Clear existing calendar workouts
                 this.calendarWorkouts = {};
@@ -135,7 +135,7 @@ export function getWorkoutHistory(appState) {
                     }
                 });
                 
-                console.log(`✅ Loaded ${Object.keys(this.calendarWorkouts).length} workouts for calendar`);
+                console.log(` Loaded ${Object.keys(this.calendarWorkouts).length} workouts for calendar`);
                 console.log('Calendar workouts:', Object.keys(this.calendarWorkouts));
                 
             } catch (error) {
@@ -217,7 +217,7 @@ export function getWorkoutHistory(appState) {
         const monthElement = document.querySelector('.current-month');
         if (monthElement) {
             monthElement.textContent = monthName;
-            console.log('✅ Updated month display:', monthName);
+            console.log(' Updated month display:', monthName);
         } else {
             console.error('❌ Could not find .current-month element');
         }
@@ -237,7 +237,7 @@ export function getWorkoutHistory(appState) {
     
     // If still not found, create it
     if (!calendarGrid) {
-        console.log('📅 Calendar grid not found, creating it...');
+        console.log(' Calendar grid not found, creating it...');
         
         const container = document.querySelector('.calendar-container') || 
                          document.querySelector('[class*="calendar"]') ||
@@ -248,7 +248,7 @@ export function getWorkoutHistory(appState) {
             calendarGrid.id = 'calendarGrid';
             calendarGrid.className = 'calendar-grid';
             container.appendChild(calendarGrid);
-            console.log('✅ Calendar grid created');
+            console.log(' Calendar grid created');
         } else {
             console.error('❌ Cannot find calendar container');
             return;
@@ -321,7 +321,7 @@ export function getWorkoutHistory(appState) {
     }
     
     calendarGrid.innerHTML = html;
-    console.log('✅ Calendar grid populated with', calendarGrid.children.length, 'days');
+    console.log(' Calendar grid populated with', calendarGrid.children.length, 'days');
     
     // ADDED: Setup click events after rendering
     this.setupCalendarClickEvents();
@@ -510,7 +510,7 @@ setupCalendarClickEvents() {
                     const dayNumber = day.querySelector('.day-number');
                     
                     if (dayNumber && dateStr) {
-                        console.log('📅 Clicked workout day:', dateStr);
+                        console.log(' Clicked workout day:', dateStr);
                         
                         const calendarWorkout = this.calendarWorkouts[dateStr];
                         if (calendarWorkout) {
@@ -526,7 +526,7 @@ setupCalendarClickEvents() {
                 });
             }
         });
-        console.log('✅ Calendar click events setup complete');
+        console.log(' Calendar click events setup complete');
     }, 100);
 },
 
@@ -615,7 +615,7 @@ showFixedWorkoutModal(workout) {
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
     
-    console.log('✅ Workout modal displayed with correct duration:', formattedDuration);
+    console.log(' Workout modal displayed with correct duration:', formattedDuration);
 },
 
 generateSetsHTML(sets) {
