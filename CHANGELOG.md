@@ -44,6 +44,15 @@ All notable changes and improvements to BigSurf-B.
 - Added .firebaserc to repository (needed for deployment)
 - Excluded Python utility scripts from repo
 
+### 🧹 Code Cleanup
+
+- **Removed 15 unused legacy functions** (~450 lines of dead code)
+  - Swap exercise functions (replaced by delete + add workflow)
+  - Legacy global rest timer (replaced by modal rest timer)
+  - Unused helper functions and TODO stubs
+- **Simplified main.js imports** - Removed imports for deleted functions
+- **Improved code maintainability** - Less confusion about which functions are actually used
+
 ### 🐛 Bug Fixes
 
 - Fixed emoji encoding in exercise library UI
