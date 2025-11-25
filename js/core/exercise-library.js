@@ -9,7 +9,7 @@ export function getExerciseLibrary(appState) {
 
     return {
         initialize() {
-            console.log(' Exercise Library initialized');
+            console.log('📚 Exercise Library initialized');
         },
 
         async openForSwap(exerciseIndex) {

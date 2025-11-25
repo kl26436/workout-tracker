@@ -45,7 +45,8 @@ The codebase is organized into functional modules under `js/core/`:
 **UI Modules:**
 - [template-selection.js](js/core/template-selection.js) - Workout template selection UI and filtering
 - [workout-history-ui.js](js/core/workout-history-ui.js) - Calendar view and workout history display
-- [workout/workout-management-ui.js](js/core/workout/workout-management-ui.js) - Template editor and workout management
+- [workout/workout-management-ui.js](js/core/workout/workout-management-ui.js) - Template editor and workout management (modal)
+- [exercise-manager-ui.js](js/core/exercise-manager-ui.js) - Exercise library manager UI (integrated modal, search, filter, CRUD operations)
 - [manual-workout.js](js/core/manual-workout.js) - Manual workout entry form for adding past workouts
 - [ui-helpers.js](js/core/ui-helpers.js) - Shared UI utilities (notifications, weight conversions, progress updates)
 
@@ -208,3 +209,5 @@ localStorage.setItem('debug', 'firebase:*');
 - **Authentication required**: Most features require user to be signed in
 - **Local storage not used**: All state in memory or Firebase
 - **Mobile-first**: UI designed for mobile gym use, responsive design
+- **Modal-based UI**: All major features (workout management, exercise library, manual entry) use integrated modals instead of separate pages
+- **No popup windows**: Exercise manager integrated as modal (exercise-manager.html is legacy, not used in production)

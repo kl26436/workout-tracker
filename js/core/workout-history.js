@@ -18,7 +18,7 @@ export function getWorkoutHistory(appState) {
         firstWorkoutDate,
 
         initialize() {
-            console.log(' Workout History initialized with calendar view');
+            console.log('📊 Workout History initialized with calendar view');
             this.setupEventListeners();
         },
 
