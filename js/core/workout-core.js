@@ -96,13 +96,15 @@ export async function completeWorkout() {
     await saveWorkoutData(AppState);
 
     showNotification('Workout completed! Great job!', 'success');
-    showWorkoutSelector();
-    
-    // Reset state
+
+    // Reset state BEFORE showing selector (critical order!)
     AppState.reset();
-    
+
     // Clear in-progress workout since it's now completed
     window.inProgressWorkout = null;
+
+    // Now show workout selector (after state is cleared)
+    showWorkoutSelector();
 }
 
 export function cancelWorkout() {
