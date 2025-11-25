@@ -26,7 +26,6 @@ yarn.lock
 
 # Firebase
 .firebase/
-.firebaserc
 firebase-debug.log
 firestore-debug.log
 ui-debug.log
@@ -62,3 +61,11 @@ temp/
 # Debug files
 debug-*.html
 test-*.html
+
+# Auto-generated files
+file structure.txt
+
+# Python scripts (temporary utilities)
+*.py
+!setup.py
+!deploy.py
