@@ -1,0 +1,46 @@
+{
+  "name": "Big Surf Workout Tracker",
+  "short_name": "Big Surf",
+  "description": "Track your gym workouts with real-time set tracking, exercise library, and workout history",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "BigSurf.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "fitness", "sports"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Start Workout",
+      "short_name": "Start",
+      "description": "Start a new workout session",
+      "url": "/index.html",
+      "icons": [
+        {
+          "src": "BigSurf.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Workout History",
+      "short_name": "History",
+      "description": "View your workout history",
+      "url": "/index.html#history",
+      "icons": [
+        {
+          "src": "BigSurf.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}

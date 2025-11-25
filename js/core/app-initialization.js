@@ -646,22 +646,58 @@ export function initializeModules() {
 
 export function startApplication() {
     console.log('ðŸš€ Starting Big Surf Workout Tracker application...');
-    
+
+    // Register service worker for PWA functionality
+    registerServiceWorker();
+
     // Set up global variables
     setupGlobalVariables();
-    
+
     // Initialize core app
     initializeWorkoutApp();
-    
+
     // Set up event listeners
     setupEventListeners();
     setupKeyboardShortcuts();
-    
+
     // Initialize UI modules
     initializeModules();
-    
+
     // Initialize enhanced workout selector
     initializeEnhancedWorkoutSelector();
-    
+
     console.log('âœ… Application started successfully!');
+}
+
+// ===================================================================
+// SERVICE WORKER REGISTRATION
+// ===================================================================
+
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then((registration) => {
+                    console.log('✅ Service Worker registered:', registration.scope);
+
+                    // Check for updates
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        console.log('🔄 Service Worker update found');
+
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // New service worker available, show update notification
+                                showNotification('App update available! Refresh to update.', 'info');
+                            }
+                        });
+                    });
+                })
+                .catch((error) => {
+                    console.log('❌ Service Worker registration failed:', error);
+                });
+        });
+    } else {
+        console.log('⚠️ Service Workers not supported in this browser');
+    }
 }

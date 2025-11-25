@@ -1,0 +1,131 @@
+// Big Surf Workout Tracker - Service Worker
+// Provides basic offline functionality and faster loading
+
+const CACHE_NAME = 'big-surf-v2.0';
+const STATIC_ASSETS = [
+  '/index.html',
+  '/style.css',
+  '/BigSurf.png',
+  '/js/main.js',
+  '/js/core/app-initialization.js',
+  '/js/core/app-state.js',
+  '/js/core/workout-core.js',
+  '/js/core/ui-helpers.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
+];
+
+// Install event - cache static assets
+self.addEventListener('install', (event) => {
+  console.log('💾 Service Worker: Installing...');
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        console.log('💾 Service Worker: Caching static assets');
+        return cache.addAll(STATIC_ASSETS);
+      })
+      .then(() => {
+        console.log('✅ Service Worker: Installed successfully');
+        return self.skipWaiting();
+      })
+      .catch((error) => {
+        console.error('❌ Service Worker: Installation failed', error);
+      })
+  );
+});
+
+// Activate event - clean up old caches
+self.addEventListener('activate', (event) => {
+  console.log('🔄 Service Worker: Activating...');
+  event.waitUntil(
+    caches.keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames
+            .filter((name) => name !== CACHE_NAME)
+            .map((name) => {
+              console.log('🗑️ Service Worker: Deleting old cache:', name);
+              return caches.delete(name);
+            })
+        );
+      })
+      .then(() => {
+        console.log('✅ Service Worker: Activated successfully');
+        return self.clients.claim();
+      })
+  );
+});
+
+// Fetch event - serve from cache when offline
+self.addEventListener('fetch', (event) => {
+  // Skip cross-origin requests
+  if (!event.request.url.startsWith(self.location.origin) &&
+      !event.request.url.includes('cdnjs.cloudflare.com') &&
+      !event.request.url.includes('gstatic.com')) {
+    return;
+  }
+
+  // Network first for Firebase API calls
+  if (event.request.url.includes('firestore.googleapis.com') ||
+      event.request.url.includes('firebase')) {
+    event.respondWith(
+      fetch(event.request)
+        .catch(() => {
+          // Return offline message for API calls
+          return new Response(
+            JSON.stringify({ error: 'offline', message: 'You are offline' }),
+            { headers: { 'Content-Type': 'application/json' } }
+          );
+        })
+    );
+    return;
+  }
+
+  // Cache first strategy for static assets
+  event.respondWith(
+    caches.match(event.request)
+      .then((cachedResponse) => {
+        if (cachedResponse) {
+          // Return cached version and update cache in background
+          fetch(event.request)
+            .then((networkResponse) => {
+              if (networkResponse && networkResponse.status === 200) {
+                caches.open(CACHE_NAME)
+                  .then((cache) => cache.put(event.request, networkResponse.clone()));
+              }
+            })
+            .catch(() => {}); // Ignore fetch errors in background
+
+          return cachedResponse;
+        }
+
+        // Not in cache, fetch from network
+        return fetch(event.request)
+          .then((networkResponse) => {
+            // Cache successful GET requests
+            if (event.request.method === 'GET' &&
+                networkResponse &&
+                networkResponse.status === 200) {
+              const responseToCache = networkResponse.clone();
+              caches.open(CACHE_NAME)
+                .then((cache) => cache.put(event.request, responseToCache));
+            }
+            return networkResponse;
+          })
+          .catch((error) => {
+            console.error('❌ Fetch failed:', error);
+            // Return offline page for HTML requests
+            if (event.request.headers.get('accept').includes('text/html')) {
+              return caches.match('/index.html');
+            }
+            throw error;
+          });
+      })
+  );
+});
+
+// Handle messages from the app
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
