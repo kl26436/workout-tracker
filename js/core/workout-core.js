@@ -425,20 +425,12 @@ export function generateExerciseTable(exercise, exerciseIndex, unit) {
         savedSets.push({ reps: '', weight: '' });
     }
 
-    // Auto-fetch last workout data after render
-    setTimeout(() => {
-        loadLastWorkoutHint(exercise.machine, exerciseIndex);
-    }, 100);
-
     let html = `
         <!-- Exercise History Reference -->
         <div class="exercise-history-section">
-            <div id="last-workout-hint-${exerciseIndex}" style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.75rem; padding: 0.5rem; background: var(--bg-tertiary); border-radius: 6px; border-left: 3px solid var(--primary);">
-                <i class="fas fa-spinner fa-spin"></i> Loading previous workout...
-            </div>
             <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;">
                 <button class="btn btn-secondary btn-small" onclick="loadExerciseHistory('${exercise.machine}', ${exerciseIndex})">
-                    <i class="fas fa-history"></i> Show Full History
+                    <i class="fas fa-history"></i> Show Last Workout
                 </button>
                 ${exercise.video ?
                     `<button class="btn btn-primary btn-small" onclick="showExerciseVideo('${exercise.video}', '${exercise.machine}')">
