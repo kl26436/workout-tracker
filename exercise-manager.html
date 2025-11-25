@@ -6,6 +6,20 @@
     <title>Universal Exercise Library Manager</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        :root {
+            --primary: #40e0d0;
+            --primary-hover: #36c7b8;
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border: #30363d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --success: #238636;
+            --warning: #d29922;
+            --danger: #da3633;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,10 +27,10 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #1a1f2e 100%);
             min-height: 100vh;
-            color: #333;
+            color: var(--text-primary);
         }
 
         .container {
@@ -27,18 +41,18 @@
 
         /* Header Styles */
         .manager-header {
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--bg-secondary);
             padding: 20px;
             border-radius: 12px;
             margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border);
         }
 
         .manager-header h1 {
-            color: #4a5568;
+            color: var(--text-primary);
             display: flex;
             align-items: center;
             gap: 10px;
@@ -55,29 +69,31 @@
             top: 20px;
             left: 20px;
             padding: 10px 15px;
-            background: rgba(255, 255, 255, 0.9);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
             border-radius: 8px;
             font-size: 14px;
             font-weight: 600;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             z-index: 1000;
         }
 
         .status-indicator.connected {
-            color: #48bb78;
+            color: var(--success);
+            border-color: var(--success);
         }
 
         .status-indicator.disconnected {
-            color: #f56565;
+            color: var(--danger);
+            border-color: var(--danger);
         }
 
         /* Search and Filter Styles */
         .search-filters {
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--bg-secondary);
             padding: 20px;
             border-radius: 12px;
             margin-bottom: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border);
         }
 
         .filter-row {
@@ -96,21 +112,23 @@
             display: block;
             margin-bottom: 5px;
             font-weight: 600;
-            color: #4a5568;
+            color: var(--text-primary);
         }
 
         .form-input {
             width: 100%;
             padding: 10px 12px;
-            border: 2px solid #e2e8f0;
+            border: 1px solid var(--border);
             border-radius: 8px;
             font-size: 14px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
             transition: border-color 0.3s ease;
         }
 
         .form-input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--primary);
         }
 
         /* Button Styles */
@@ -129,40 +147,42 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: var(--primary);
+            color: var(--bg-primary);
+            font-weight: 600;
         }
 
         .btn-primary:hover {
+            background: var(--primary-hover);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
 
         .btn-secondary {
-            background: #e2e8f0;
-            color: #4a5568;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
         }
 
         .btn-secondary:hover {
-            background: #cbd5e0;
+            background: var(--bg-secondary);
         }
 
         .btn-danger {
-            background: #f56565;
+            background: var(--danger);
             color: white;
         }
 
         .btn-danger:hover {
-            background: #e53e3e;
+            background: #c92a2a;
         }
 
         .btn-warning {
-            background: #ed8936;
+            background: var(--warning);
             color: white;
         }
 
         .btn-warning:hover {
-            background: #dd6b20;
+            background: #b87503;
         }
 
         .btn-small {
@@ -178,29 +198,29 @@
         }
 
         .exercise-card {
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
             border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: transform 0.3s ease, border-color 0.3s ease;
             position: relative;
         }
 
         .exercise-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            border-color: var(--primary);
         }
 
         .exercise-card.override {
-            border-left: 4px solid #4299e1;
+            border-left: 4px solid var(--primary);
         }
 
         .exercise-card.custom {
-            border-left: 4px solid #48bb78;
+            border-left: 4px solid var(--success);
         }
 
         .exercise-card h3 {
-            color: #2d3748;
+            color: var(--text-primary);
             margin-bottom: 10px;
             font-size: 18px;
             display: flex;
@@ -216,18 +236,18 @@
         }
 
         .badge-default {
-            background: #e2e8f0;
-            color: #4a5568;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
         }
 
         .badge-custom {
-            background: #c6f6d5;
-            color: #276749;
+            background: rgba(35, 134, 54, 0.2);
+            color: var(--success);
         }
 
         .badge-override {
-            background: #bee3f8;
-            color: #2c5282;
+            background: rgba(64, 224, 208, 0.2);
+            color: var(--primary);
         }
 
         .exercise-meta {
@@ -238,8 +258,8 @@
         }
 
         .meta-tag {
-            background: #edf2f7;
-            color: #4a5568;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 12px;
@@ -255,19 +275,20 @@
 
         .stat {
             text-align: center;
-            background: #f7fafc;
+            background: var(--bg-tertiary);
             padding: 8px;
             border-radius: 6px;
+            border: 1px solid var(--border);
         }
 
         .stat-value {
             font-weight: 600;
-            color: #2d3748;
+            color: var(--text-primary);
         }
 
         .stat-label {
             font-size: 12px;
-            color: #718096;
+            color: var(--text-secondary);
         }
 
         .exercise-actions {
@@ -300,19 +321,19 @@
         }
 
         .modal-content {
-            background: white;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
             border-radius: 12px;
             padding: 0;
             max-width: 500px;
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
 
         .modal-header {
             padding: 20px;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -320,7 +341,7 @@
 
         .modal-title {
             margin: 0;
-            color: #2d3748;
+            color: var(--text-primary);
         }
 
         .modal-close {
@@ -328,12 +349,12 @@
             border: none;
             font-size: 18px;
             cursor: pointer;
-            color: #718096;
+            color: var(--text-secondary);
             padding: 5px;
         }
 
         .modal-close:hover {
-            color: #4a5568;
+            color: var(--text-primary);
         }
 
         .modal form {
@@ -352,7 +373,7 @@
             justify-content: flex-end;
             margin-top: 20px;
             padding-top: 20px;
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid var(--border);
         }
 
         /* Notifications */
@@ -375,19 +396,19 @@
         }
 
         .notification.success {
-            background: #48bb78;
+            background: var(--success);
         }
 
         .notification.error {
-            background: #f56565;
+            background: var(--danger);
         }
 
         .notification.warning {
-            background: #ed8936;
+            background: var(--warning);
         }
 
         .notification.info {
-            background: #4299e1;
+            background: var(--primary);
         }
 
         /* Empty state */
@@ -395,13 +416,14 @@
             grid-column: 1 / -1;
             text-align: center;
             padding: 60px 40px;
-            color: #718096;
+            color: var(--text-secondary);
         }
 
         .empty-state i {
             font-size: 48px;
             margin-bottom: 16px;
             opacity: 0.5;
+            color: var(--text-secondary);
         }
 
         /* Responsive Design */
