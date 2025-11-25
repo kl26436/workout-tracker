@@ -136,25 +136,9 @@ export function initializeEnhancedWorkoutSelector() {
 export async function signIn() {
     try {
         console.log('Attempting Google sign-in...');
-
-        // Use popup for localhost/development, redirect for production/mobile
-        const isLocalhost = window.location.hostname === 'localhost' ||
-                           window.location.hostname === '127.0.0.1' ||
-                           window.location.hostname.includes('local');
-
-        if (isLocalhost) {
-            // Popup works better for localhost development
-            console.log('Using popup sign-in for localhost');
-            const result = await signInWithPopup(auth, provider);
-            console.log('Sign-in successful:', result.user.displayName);
-            showNotification(`Welcome, ${result.user.displayName}!`, 'success');
-        } else {
-            // Redirect works better for mobile/production
-            console.log('Using redirect sign-in for production');
-            await signInWithRedirect(auth, provider);
-            // User will be redirected away and back
-        }
-
+        const result = await signInWithPopup(auth, provider);
+        console.log('Sign-in successful:', result.user.displayName);
+        showNotification(`Welcome, ${result.user.displayName}!`, 'success');
     } catch (error) {
         console.error('Sign-in error:', error);
 
