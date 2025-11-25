@@ -473,12 +473,12 @@ export function getWorkoutHistory(appState) {
             `;
         } else {
             actionButtons = `
-                <div style="display: flex; gap: 1rem; justify-content: center;">
+                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
                     <button class="btn btn-secondary" onclick="workoutHistory.repeatWorkout('${date}')">
                         <i class="fas fa-redo"></i> Repeat Workout
                     </button>
-                    <button class="btn btn-primary">
-                        <i class="fas fa-edit"></i> Edit
+                    <button class="btn btn-danger" onclick="deleteWorkoutFromCalendar('${date}')">
+                        <i class="fas fa-trash"></i> Delete
                     </button>
                 </div>
             `;
