@@ -189,11 +189,11 @@ export function hideUserInfo() {
 }
 
 export function setupAuthenticationListener() {
-    console.log(' Setting up authentication listener...');
+    console.log('🔐 Setting up authentication listener...');
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            console.log(' User signed in:', user.displayName || user.email);
+            console.log('👤 User signed in:', user.displayName || user.email);
             AppState.currentUser = user;
 
             // Update UI
@@ -204,7 +204,7 @@ export function setupAuthenticationListener() {
 
             // Load ALL data FIRST (loadWorkoutPlans loads both plans AND exercises)
             await loadWorkoutPlans(AppState);
-            console.log(' Data loaded - Plans:', AppState.workoutPlans.length, 'Exercises:', AppState.exerciseDatabase.length);
+            console.log('✅ Data loaded - Plans:', AppState.workoutPlans.length, 'Exercises:', AppState.exerciseDatabase.length);
 
             // Validate and refresh user data
             await validateUserData();
@@ -218,7 +218,7 @@ export function setupAuthenticationListener() {
             }, 500);
 
         } else {
-            console.log(' User signed out');
+            console.log('👤 User signed out');
             AppState.currentUser = null;
 
             // Update UI
@@ -238,7 +238,7 @@ export function setupAuthenticationListener() {
 export async function validateUserData() {
     if (!AppState.currentUser) return;
     
-    console.log(' Validating user data...');
+    console.log('🔍 Validating user data...');
     
     try {
         // Refresh exercise database during validation
