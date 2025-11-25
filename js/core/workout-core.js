@@ -298,7 +298,7 @@ function generateQuickSetsHtml(exercise, exerciseIndex, unit) {
             
             html += `
                 <div style="background: var(--success); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 500;">
-                    Set ${setIndex + 1}: ${set.reps} Ã— ${displayWeight} ${unit}
+                    Set ${setIndex + 1}: ${set.reps} × ${displayWeight} ${unit}
                 </div>
             `;
         } else {
