@@ -71,6 +71,14 @@ import {
     renderManualExerciseList, createManualExerciseCard
 } from './core/manual-workout.js';
 
+// Exercise manager functionality
+import {
+    openExerciseManager, closeExerciseManager,
+    filterExerciseLibrary, clearExerciseFilters, refreshExerciseLibrary,
+    showAddExerciseModal, closeAddExerciseModal,
+    editExercise, saveExercise, deleteExercise
+} from './core/exercise-manager-ui.js';
+
 // Debug utilities
 import {
     debugManualWorkoutDate, debugFirebaseWorkoutDates,
@@ -210,6 +218,18 @@ window.updateManualExerciseNotes = updateManualExerciseNotes;
 window.addSetToManualExercise = addSetToManualExercise;
 window.removeSetFromManualExercise = removeSetFromManualExercise;
 window.markManualExerciseComplete = markManualExerciseComplete;
+
+// Exercise Manager Functions
+window.openExerciseManager = openExerciseManager;
+window.closeExerciseManager = closeExerciseManager;
+window.filterExerciseLibrary = filterExerciseLibrary;
+window.clearExerciseFilters = clearExerciseFilters;
+window.refreshExerciseLibrary = refreshExerciseLibrary;
+window.showAddExerciseModal = showAddExerciseModal;
+window.closeAddExerciseModal = closeAddExerciseModal;
+window.editExercise = editExercise;
+window.saveExercise = saveExercise;
+window.deleteExercise = deleteExercise;
 
 // Template Selection Functions
 window.showTemplateSelection = showTemplateSelection;

@@ -382,7 +382,7 @@
                             <button class="btn btn-primary" onclick="createNewTemplate()">
                                 <i class="fas fa-plus"></i> New Template
                             </button>
-                            <button class="btn btn-secondary" onclick="window.open('./exercise-manager.html', '_blank')">
+                            <button class="btn btn-secondary" onclick="openExerciseManager()">
                                 <i class="fas fa-dumbbell"></i> Exercise Library
                             </button>
                         </div>
@@ -585,6 +585,155 @@
         
         <div id="manual-exercise-content">
             <!-- Exercise table will be populated here -->
+        </div>
+    </div>
+</div>
+
+<!-- Exercise Manager Modal -->
+<div id="exercise-manager-modal" class="modal hidden">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3><i class="fas fa-dumbbell"></i> Exercise Library Manager</h3>
+            <button class="close-btn" onclick="closeExerciseManager()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-actions-top">
+                <button class="btn btn-primary" onclick="showAddExerciseModal()">
+                    <i class="fas fa-plus"></i> Add Exercise
+                </button>
+                <button class="btn btn-secondary" onclick="refreshExerciseLibrary()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+
+            <!-- Search and Filters -->
+            <div class="search-filters" style="margin-top: 1rem;">
+                <div class="filter-row">
+                    <div class="form-group">
+                        <label for="exercise-search-input">Search Exercises</label>
+                        <input type="text" id="exercise-search-input" class="input-field"
+                               placeholder="Search by name, body part, or equipment..."
+                               oninput="filterExerciseLibrary()">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="exercise-body-part-filter">Body Part</label>
+                        <select id="exercise-body-part-filter" class="input-field" onchange="filterExerciseLibrary()">
+                            <option value="">All Body Parts</option>
+                            <option value="Chest">Chest</option>
+                            <option value="Back">Back</option>
+                            <option value="Legs">Legs</option>
+                            <option value="Shoulders">Shoulders</option>
+                            <option value="Arms">Arms</option>
+                            <option value="Core">Core</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="exercise-equipment-filter">Equipment</label>
+                        <select id="exercise-equipment-filter" class="input-field" onchange="filterExerciseLibrary()">
+                            <option value="">All Equipment</option>
+                            <option value="Machine">Machine</option>
+                            <option value="Cable">Cable</option>
+                            <option value="Dumbbell">Dumbbell</option>
+                            <option value="Barbell">Barbell</option>
+                            <option value="Bodyweight">Bodyweight</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <button class="btn btn-secondary" onclick="clearExerciseFilters()" style="margin-top: 1.65rem;">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Exercise Grid -->
+            <div id="exercise-manager-grid" class="exercise-grid" style="margin-top: 1.5rem;">
+                <!-- Exercises will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Exercise Modal -->
+<div id="add-exercise-modal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="add-exercise-modal-title">Add New Exercise</h3>
+            <button class="close-btn" onclick="closeAddExerciseModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="add-exercise-form" onsubmit="saveExercise(event)">
+                <div class="form-group">
+                    <label for="new-exercise-name">Exercise Name *</label>
+                    <input type="text" id="new-exercise-name" class="input-field" required
+                           placeholder="e.g., Bench Press">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="new-exercise-body-part">Body Part</label>
+                        <select id="new-exercise-body-part" class="input-field">
+                            <option value="Chest">Chest</option>
+                            <option value="Back">Back</option>
+                            <option value="Legs">Legs</option>
+                            <option value="Shoulders">Shoulders</option>
+                            <option value="Arms">Arms</option>
+                            <option value="Core">Core</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="new-exercise-equipment">Equipment</label>
+                        <select id="new-exercise-equipment" class="input-field">
+                            <option value="Machine">Machine</option>
+                            <option value="Cable">Cable</option>
+                            <option value="Dumbbell">Dumbbell</option>
+                            <option value="Barbell">Barbell</option>
+                            <option value="Bodyweight">Bodyweight</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="new-exercise-sets">Default Sets</label>
+                        <input type="number" id="new-exercise-sets" class="input-field"
+                               value="3" min="1" max="10">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="new-exercise-reps">Default Reps</label>
+                        <input type="number" id="new-exercise-reps" class="input-field"
+                               value="10" min="1" max="50">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="new-exercise-weight">Default Weight (lbs)</label>
+                    <input type="number" id="new-exercise-weight" class="input-field"
+                           value="50" min="0" max="1000">
+                </div>
+
+                <div class="form-group">
+                    <label for="new-exercise-video">Video URL (optional)</label>
+                    <input type="url" id="new-exercise-video" class="input-field"
+                           placeholder="https://youtube.com/watch?v=...">
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddExerciseModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Exercise
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
