@@ -89,4 +89,4 @@ export async function migrateOldWorkoutsToPRs() {
 // Make available in console
 window.migrateOldWorkoutsToPRs = migrateOldWorkoutsToPRs;
 
-export { migrateOldWorkoutsToPRs };
+//export { migrateOldWorkoutsToPRs };
