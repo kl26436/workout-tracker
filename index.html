@@ -111,6 +111,22 @@
                     </a>
                 </li>
             </ul>
+
+            <!-- User Profile Footer -->
+            <div id="sidebar-user-profile" class="sidebar-footer hidden">
+                <div class="sidebar-user-info">
+                    <div class="sidebar-user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="sidebar-user-details">
+                        <span id="sidebar-user-name" class="sidebar-user-name">User</span>
+                        <span class="sidebar-user-email" id="sidebar-user-email"></span>
+                    </div>
+                </div>
+                <button id="sidebar-sign-out-btn" class="sidebar-sign-out-btn" onclick="signOutUser()">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
         </nav>
 
         <!-- Sidebar Overlay -->
@@ -185,7 +201,21 @@
                     </button>
                 </div>
             </div>
-            
+
+            <!-- Dashboard -->
+            <section id="dashboard" class="content-section hidden">
+                <div id="dashboard-content">
+                    <!-- Dashboard content will be dynamically loaded -->
+                </div>
+            </section>
+
+            <!-- Stats & Records -->
+            <section id="stats-section" class="content-section hidden">
+                <div id="stats-content">
+                    <!-- Stats content will be dynamically loaded -->
+                </div>
+            </section>
+
             <!-- Workout Selector -->
             <section id="workout-selector" class="content-section">
                 <div class="section-header">

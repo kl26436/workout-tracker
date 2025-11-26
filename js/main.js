@@ -86,6 +86,19 @@ import {
     openSidebar, closeSidebar, navigateTo
 } from './core/navigation.js';
 
+// Dashboard functionality
+import {
+    showDashboard, repeatLastWorkout
+} from './core/dashboard-ui.js';
+
+// Stats functionality
+import {
+    showStats, filterPRs, clearPRFilters
+} from './core/stats-ui.js';
+
+// PR Migration (one-time utility)
+import { migrateOldWorkoutsToPRs } from './core/pr-migration.js';
+
 // Debug utilities
 import {
     debugManualWorkoutDate, debugFirebaseWorkoutDates,
@@ -250,6 +263,15 @@ window.changeLocation = changeLocation;
 window.openSidebar = openSidebar;
 window.closeSidebar = closeSidebar;
 window.navigateTo = navigateTo;
+
+// Dashboard Functions
+window.showDashboard = showDashboard;
+window.repeatLastWorkout = repeatLastWorkout;
+
+// Stats Functions
+window.showStats = showStats;
+window.filterPRs = filterPRs;
+window.clearPRFilters = clearPRFilters;
 
 // Template Selection Functions
 window.showTemplateSelection = showTemplateSelection;

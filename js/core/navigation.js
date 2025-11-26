@@ -40,13 +40,25 @@ export function navigateTo(view) {
         'active-workout',
         'workout-history-section',
         'workout-management',
-        'dashboard' // Will create this in Phase 2
+        'dashboard',
+        'stats-section'
     ];
 
     sections.forEach(sectionId => {
         const section = document.getElementById(sectionId);
         if (section) section.classList.add('hidden');
     });
+
+    // Show/hide header elements based on view
+    const todayHeader = document.querySelector('.today-header');
+    if (todayHeader) {
+        // Hide header on dashboard and stats, show on other views
+        if (view === 'dashboard' || view === 'stats') {
+            todayHeader.classList.add('hidden');
+        } else {
+            todayHeader.classList.remove('hidden');
+        }
+    }
 
     // Route to appropriate view
     switch (view) {
@@ -88,11 +100,11 @@ export function navigateTo(view) {
 // VIEW FUNCTIONS
 // ===================================================================
 
-function showDashboard() {
-    // Phase 2: Will implement dashboard
-    console.log('📊 Dashboard view (coming in Phase 2)');
-    // For now, show workout selector
-    showWorkoutSelector();
+async function showDashboard() {
+    const { showDashboard: showDash } = await import('./dashboard-ui.js');
+    if (showDash) {
+        showDash();
+    }
 }
 
 function showWorkoutSelector() {
@@ -105,10 +117,11 @@ function showWorkoutSelector() {
     }
 }
 
-function showStats() {
-    // Phase 2: Will implement stats view
-    console.log('📈 Stats view (coming in Phase 2)');
-    alert('Stats & Records view coming soon!');
+async function showStats() {
+    const { showStats: showStatsView } = await import('./stats-ui.js');
+    if (showStatsView) {
+        showStatsView();
+    }
 }
 
 function showHistory() {

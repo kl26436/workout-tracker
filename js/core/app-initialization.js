@@ -179,27 +179,31 @@ export async function signOutUser() {
 }
 
 export function showUserInfo(user) {
-    const userInfo = document.getElementById('user-info');
-    const signInBtn = document.getElementById('sign-in-btn');
-    const userAvatar = document.getElementById('user-avatar');
-    const userName = document.getElementById('user-name');
-    
-    if (userInfo) userInfo.classList.remove('hidden');
-    if (signInBtn) signInBtn.classList.add('hidden');
-    
-    if (userAvatar) userAvatar.src = user.photoURL || '/default-avatar.png';
-    if (userName) userName.textContent = user.displayName || user.email;
-    
+    // Hide main auth section entirely
+    const authSection = document.getElementById('auth-section');
+    if (authSection) authSection.classList.add('hidden');
+
+    // Show and populate sidebar user profile
+    const sidebarProfile = document.getElementById('sidebar-user-profile');
+    const sidebarUserName = document.getElementById('sidebar-user-name');
+    const sidebarUserEmail = document.getElementById('sidebar-user-email');
+
+    if (sidebarProfile) sidebarProfile.classList.remove('hidden');
+    if (sidebarUserName) sidebarUserName.textContent = user.displayName || 'User';
+    if (sidebarUserEmail) sidebarUserEmail.textContent = user.email || '';
+
     console.log(' User info displayed for:', user.displayName);
 }
 
 export function hideUserInfo() {
-    const userInfo = document.getElementById('user-info');
-    const signInBtn = document.getElementById('sign-in-btn');
-    
-    if (userInfo) userInfo.classList.add('hidden');
-    if (signInBtn) signInBtn.classList.remove('hidden');
-    
+    // Show main auth section
+    const authSection = document.getElementById('auth-section');
+    if (authSection) authSection.classList.remove('hidden');
+
+    // Hide sidebar user profile
+    const sidebarProfile = document.getElementById('sidebar-user-profile');
+    if (sidebarProfile) sidebarProfile.classList.add('hidden');
+
     console.log(' User info hidden');
 }
 
@@ -252,6 +256,12 @@ export function setupAuthenticationListener() {
             // Hide loading screen - data is ready!
             setTimeout(() => {
                 hideLoadingScreen();
+
+                // Show dashboard by default
+                const { navigateTo } = window;
+                if (navigateTo) {
+                    navigateTo('dashboard');
+                }
             }, 500);
 
         } else {
