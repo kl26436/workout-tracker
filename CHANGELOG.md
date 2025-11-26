@@ -2,9 +2,32 @@
 
 All notable changes and improvements to BigSurf-B.
 
-## [2.1.0] - 2025-01-25
+## [2.2.0] - 2025-01-25
+
+### ✨ New Features
+
+#### Personal Records (PR) Tracking System
+- **Equipment-Specific PRs**: Track personal records per equipment type (Barbell, Machine, Hammer Strength, etc.)
+- **Location-Aware Tracking**: Manage multiple gym locations with visit tracking
+- **Three PR Types**: Max weight, max reps, and max volume tracking
+- **Real-Time Detection**: Automatic PR detection as you enter set data during workouts
+- **Visual Feedback**: Gold trophy badges appear next to PR sets with pulsing animation
+- **PR Display**: View all PRs in exercise history modal with equipment context
+- **Smart Notifications**: Toast notifications specify PR type achieved
+
+#### Location Management
+- **Location Selector Modal**: Choose gym location before starting workout
+- **Saved Locations**: Quick-select from frequently visited gyms
+- **Visit Tracking**: Automatically tracks visit count and last visit date
+- **Location Suggestions**: Suggests most frequently visited location
 
 ### 🎨 UI/UX Improvements
+
+#### Workout History Enhancements
+- **Delete Completed Workouts**: Added delete button to all workouts in history
+- **Repeat Workout Button**: Quickly restart any past workout
+- **Enhanced Metrics Display**: Shows duration, start/end times, progress bar
+- **Video Buttons**: Watch form videos from workout history detail view
 
 #### Exercise Manager Redesign
 - **Integrated Modal**: Converted exercise manager from popup window to integrated modal
@@ -16,7 +39,16 @@ All notable changes and improvements to BigSurf-B.
 
 ### 🏗️ Architecture Improvements
 
-#### New Module
+#### New Modules
+- Created `pr-tracker.js` - Personal records tracking engine
+  - Equipment and location-aware PR calculation
+  - Firebase storage for PR data
+  - Three PR type detection (max weight, max reps, max volume)
+  - Automatic PR processing after workout completion
+- Created `location-ui.js` - Location selector modal and management
+  - Location selection before workouts
+  - Saved locations with visit statistics
+  - Location change functionality
 - Created `exercise-manager-ui.js` - Complete exercise library management
   - CRUD operations for exercises
   - Search and filter functionality
@@ -33,10 +65,12 @@ All notable changes and improvements to BigSurf-B.
 
 ### 📚 Documentation
 
-- Updated CLAUDE.md with exercise-manager-ui.js module
+- Created `FUTURE_ENHANCEMENTS.md` - Roadmap of potential features with priority ratings
+- Updated CLAUDE.md with new modules (pr-tracker.js, location-ui.js, exercise-manager-ui.js)
 - Updated README.md project structure to reflect new folders
-- Added notes about modal-based architecture
+- Added notes about modal-based architecture and PR tracking system
 - Documented that JSON files are essential fallback data (not legacy)
+- Documented Firebase schema for PR storage
 
 ### 🛠️ Development Tools
 
@@ -55,8 +89,24 @@ All notable changes and improvements to BigSurf-B.
 
 ### 🐛 Bug Fixes
 
+- Fixed missing delete/repeat buttons in workout detail modal
 - Fixed emoji encoding in exercise library UI
 - Fixed emoji encoding in workout history UI
+- Fixed authentication redirect for Firebase Hosting deployment
+
+### 🗄️ Database Changes
+
+**New Firebase Collection:**
+```
+users/{userId}/stats/personalRecords:
+- exercisePRs: { "Exercise Name": { "Equipment": { maxWeight, maxReps, maxVolume } } }
+- locations: { "Gym Name": { visitCount, lastVisit } }
+- currentLocation: string
+```
+
+**Workout Schema Updates:**
+- Added `location` field to workout documents
+- Location stored with each workout for PR context
 
 ### 📝 Notes
 
