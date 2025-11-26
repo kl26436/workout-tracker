@@ -307,12 +307,47 @@ export async function loadExerciseHistory(exerciseName, exerciseIndex, state) {
                 day: 'numeric',
                 year: 'numeric'
             });
-            
+
             const unit = state.exerciseUnits[exerciseIndex] || state.globalUnit;
-            
+
+            // Get PR data for this exercise
+            const { PRTracker } = await import('./pr-tracker.js');
+            const exercise = state.currentWorkout?.exercises?.[exerciseIndex];
+            const equipment = exercise?.equipment || 'Unknown Equipment';
+            const prs = PRTracker.getExercisePRs(exerciseName, equipment);
+
             let historyHTML = `
-                <div class="exercise-history-content" style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
-                    <h5 style="margin: 0 0 0.5rem 0; color: var(--primary);">Last Workout (${displayDate}):</h5>
+                <div class="exercise-history-content" style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; margin-top: 1rem;">`;
+
+            // Show PRs if available
+            if (prs) {
+                historyHTML += `
+                    <div style="margin-bottom: 1rem; padding: 0.75rem; background: rgba(64, 224, 208, 0.1); border-left: 3px solid var(--primary); border-radius: 4px;">
+                        <h5 style="margin: 0 0 0.5rem 0; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-trophy"></i> Personal Records (${equipment})
+                        </h5>
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.875rem;">`;
+
+                if (prs.maxWeight) {
+                    historyHTML += `
+                        <div><strong>Max Weight:</strong> ${prs.maxWeight.weight} lbs × ${prs.maxWeight.reps}</div>`;
+                }
+                if (prs.maxReps) {
+                    historyHTML += `
+                        <div><strong>Max Reps:</strong> ${prs.maxReps.reps} @ ${prs.maxReps.weight} lbs</div>`;
+                }
+                if (prs.maxVolume) {
+                    historyHTML += `
+                        <div><strong>Max Volume:</strong> ${prs.maxVolume.volume} lbs</div>`;
+                }
+
+                historyHTML += `
+                        </div>
+                    </div>`;
+            }
+
+            historyHTML += `
+                    <h5 style="margin: 0 0 0.5rem 0; color: var(--text-secondary);">Last Workout (${displayDate}):</h5>
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
             `;
             

@@ -543,7 +543,7 @@ export { loadExerciseHistory };
 // SET MANAGEMENT
 // ===================================================================
 
-export function updateSet(exerciseIndex, setIndex, field, value) {
+export async function updateSet(exerciseIndex, setIndex, field, value) {
     console.log('🔧 updateSet called:', exerciseIndex, setIndex, field, value);
     
     if (!AppState.currentWorkout || !AppState.savedData.exercises) {
@@ -600,11 +600,65 @@ export function updateSet(exerciseIndex, setIndex, field, value) {
 
     const setData = AppState.savedData.exercises[exerciseKey].sets[setIndex];
     console.log('🎯 Checking set data:', setData);
-    
+
     if (setData.reps && setData.weight) {
         console.log('🚀 Starting timer for set completion');
+
+        // Check for PR
+        await checkSetForPR(exerciseIndex, setIndex);
+
         autoStartRestTimer(exerciseIndex, setIndex);
         showNotification(`Set ${setIndex + 1} recorded! Rest timer started.`, 'success');
+    }
+}
+
+// Check if a set is a PR and show visual feedback
+async function checkSetForPR(exerciseIndex, setIndex) {
+    try {
+        const exercise = AppState.currentWorkout.exercises[exerciseIndex];
+        const exerciseName = exercise.machine;
+        const equipment = exercise.equipment || 'Unknown Equipment';
+
+        const exerciseKey = `exercise_${exerciseIndex}`;
+        const set = AppState.savedData.exercises[exerciseKey].sets[setIndex];
+
+        if (!set || !set.reps || !set.weight) return;
+
+        const { PRTracker } = await import('./pr-tracker.js');
+        const prCheck = PRTracker.checkForNewPR(exerciseName, set.reps, set.weight, equipment);
+
+        if (prCheck.isNewPR) {
+            // Add PR badge to the set row
+            const setRow = document.querySelector(`#exercise-${exerciseIndex} tbody tr:nth-child(${setIndex + 1})`);
+            if (setRow && !setRow.querySelector('.pr-badge')) {
+                const prBadge = document.createElement('span');
+                prBadge.className = 'pr-badge';
+                prBadge.innerHTML = ' <i class="fas fa-trophy" style="color: gold; margin-left: 0.5rem; animation: pulse 1s infinite;"></i>';
+                prBadge.title = `New ${prCheck.prType.replace('max', '').replace(/([A-Z])/g, ' $1').trim()} PR!`;
+
+                const firstCell = setRow.querySelector('td');
+                if (firstCell) {
+                    firstCell.appendChild(prBadge);
+                }
+            }
+
+            // Show notification
+            let prMessage = '🏆 NEW PR! ';
+            if (prCheck.prType === 'maxWeight') {
+                prMessage += `Max Weight: ${set.weight} lbs × ${set.reps}`;
+            } else if (prCheck.prType === 'maxReps') {
+                prMessage += `Max Reps: ${set.reps} @ ${set.weight} lbs`;
+            } else if (prCheck.prType === 'maxVolume') {
+                prMessage += `Max Volume: ${set.reps * set.weight} lbs`;
+            } else if (prCheck.prType === 'first') {
+                prMessage += `First time doing ${exerciseName}!`;
+            }
+
+            showNotification(prMessage, 'success');
+            console.log(`🏆 PR detected for ${exerciseName}:`, prCheck);
+        }
+    } catch (error) {
+        console.error('Error checking for PR:', error);
     }
 }
 
