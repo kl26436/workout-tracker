@@ -604,15 +604,20 @@ export async function updateSet(exerciseIndex, setIndex, field, value) {
     if (setData.reps && setData.weight) {
         console.log('🚀 Starting timer for set completion');
 
-        // Check for PR
-        await checkSetForPR(exerciseIndex, setIndex);
+        // Check for PR (returns true if PR was found)
+        const isPR = await checkSetForPR(exerciseIndex, setIndex);
 
         autoStartRestTimer(exerciseIndex, setIndex);
-        showNotification(`Set ${setIndex + 1} recorded! Rest timer started.`, 'success');
+
+        // Only show generic notification if it's not a PR
+        if (!isPR) {
+            showNotification(`Set ${setIndex + 1} recorded`, 'success');
+        }
     }
 }
 
 // Check if a set is a PR and show visual feedback
+// Returns true if a PR was detected
 async function checkSetForPR(exerciseIndex, setIndex) {
     try {
         const exercise = AppState.currentWorkout.exercises[exerciseIndex];
@@ -622,7 +627,7 @@ async function checkSetForPR(exerciseIndex, setIndex) {
         const exerciseKey = `exercise_${exerciseIndex}`;
         const set = AppState.savedData.exercises[exerciseKey].sets[setIndex];
 
-        if (!set || !set.reps || !set.weight) return;
+        if (!set || !set.reps || !set.weight) return false;
 
         const { PRTracker } = await import('./pr-tracker.js');
         const prCheck = PRTracker.checkForNewPR(exerciseName, set.reps, set.weight, equipment);
@@ -642,7 +647,7 @@ async function checkSetForPR(exerciseIndex, setIndex) {
                 }
             }
 
-            // Show notification
+            // Show PR notification (no mention of rest timer)
             let prMessage = '🏆 NEW PR! ';
             if (prCheck.prType === 'maxWeight') {
                 prMessage += `Max Weight: ${set.weight} lbs × ${set.reps}`;
@@ -656,9 +661,13 @@ async function checkSetForPR(exerciseIndex, setIndex) {
 
             showNotification(prMessage, 'success');
             console.log(`🏆 PR detected for ${exerciseName}:`, prCheck);
+            return true;
         }
+
+        return false;
     } catch (error) {
         console.error('Error checking for PR:', error);
+        return false;
     }
 }
 
