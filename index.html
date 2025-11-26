@@ -738,6 +738,48 @@
     </div>
 </div>
 
+<!-- Location Selector Modal -->
+<div id="location-selector-modal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Select Workout Location</h2>
+            <button class="modal-close" onclick="closeLocationSelector()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">
+                Track PRs per location and equipment. This helps compare progress accurately when using different machines at different gyms.
+            </p>
+
+            <!-- Saved Locations -->
+            <div id="saved-locations-list" class="saved-locations-list">
+                <!-- Populated dynamically -->
+            </div>
+
+            <!-- Add New Location -->
+            <div class="form-group" style="margin-top: 1.5rem;">
+                <label for="new-location-input">Or enter a new location:</label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="new-location-input" class="input-field"
+                           placeholder="e.g., Gym A, Home Gym, 24 Hour Fitness">
+                    <button class="btn btn-primary" onclick="selectNewLocation()">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                </div>
+            </div>
+
+            <!-- Skip Option -->
+            <div style="margin-top: 1.5rem; text-align: center;">
+                <button class="btn btn-secondary btn-small" onclick="skipLocationSelection()">
+                    Skip for now
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
     <!-- Application Entry Point -->
     <script type="module" src="js/main.js"></script>
 </body>

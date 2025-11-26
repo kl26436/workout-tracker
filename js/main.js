@@ -74,6 +74,13 @@ import {
     editExercise, saveExercise, deleteExercise
 } from './core/exercise-manager-ui.js';
 
+// Location selector functionality
+import {
+    showLocationSelector, closeLocationSelector,
+    selectSavedLocation, selectNewLocation, skipLocationSelection,
+    changeLocation
+} from './core/location-ui.js';
+
 // Debug utilities
 import {
     debugManualWorkoutDate, debugFirebaseWorkoutDates,
@@ -225,6 +232,14 @@ window.closeAddExerciseModal = closeAddExerciseModal;
 window.editExercise = editExercise;
 window.saveExercise = saveExercise;
 window.deleteExercise = deleteExercise;
+
+// Location Selector Functions
+window.showLocationSelector = showLocationSelector;
+window.closeLocationSelector = closeLocationSelector;
+window.selectSavedLocation = selectSavedLocation;
+window.selectNewLocation = selectNewLocation;
+window.skipLocationSelection = skipLocationSelection;
+window.changeLocation = changeLocation;
 
 // Template Selection Functions
 window.showTemplateSelection = showTemplateSelection;

@@ -11,22 +11,33 @@ import { saveWorkoutData, loadExerciseHistory } from './data-manager.js';
 
 export async function startWorkout(workoutType) {
     console.log(`🚀 Starting workout: ${workoutType}`);
-    
+
     if (!AppState.currentUser) {
         showNotification('Please sign in to start a workout', 'warning');
         return;
     }
-    
+
+    // Check if location is set, if not, show location selector
+    const { PRTracker } = await import('./pr-tracker.js');
+    const currentLocation = PRTracker.getCurrentLocation();
+
+    if (!currentLocation) {
+        console.log('📍 No location set, showing location selector...');
+        const { showLocationSelector } = await import('./location-ui.js');
+        showLocationSelector(() => startWorkout(workoutType)); // Retry after location is set
+        return;
+    }
+
     // Find the workout plan
-    const workout = AppState.workoutPlans.find(plan => 
+    const workout = AppState.workoutPlans.find(plan =>
         plan.day === workoutType || plan.name === workoutType || plan.id === workoutType
     );
-    
+
     if (!workout) {
         showNotification(`Workout "${workoutType}" not found`, 'error');
         return;
     }
-    
+
     // Set up workout state
     AppState.currentWorkout = { ...workout };
     AppState.workoutStartTime = new Date();
@@ -35,9 +46,10 @@ export async function startWorkout(workoutType) {
         date: AppState.getTodayDateString(),
         startedAt: new Date().toISOString(),
         exercises: {},
-        version: '2.0'
+        version: '2.0',
+        location: currentLocation // Store location with workout
     };
-    
+
     // Initialize exercise units
     AppState.exerciseUnits = {};
 
@@ -91,9 +103,13 @@ export async function completeWorkout() {
     // Update saved data with completion info
     AppState.savedData.completedAt = new Date().toISOString();
     AppState.savedData.totalDuration = Math.floor((new Date() - AppState.workoutStartTime) / 1000);
-    
+
     // Save final data
     await saveWorkoutData(AppState);
+
+    // Process workout for PRs
+    const { PRTracker } = await import('./pr-tracker.js');
+    await PRTracker.processWorkoutForPRs(AppState.savedData);
 
     showNotification('Workout completed! Great job!', 'success');
 

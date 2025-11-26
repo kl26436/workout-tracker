@@ -239,6 +239,10 @@ export function setupAuthenticationListener() {
             await loadWorkoutPlans(AppState);
             console.log('✅ Data loaded - Plans:', AppState.workoutPlans.length, 'Exercises:', AppState.exerciseDatabase.length);
 
+            // Load PR tracking data
+            const { PRTracker } = await import('./pr-tracker.js');
+            await PRTracker.loadPRData();
+
             // Validate and refresh user data
             await validateUserData();
 
