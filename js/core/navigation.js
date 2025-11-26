@@ -1,0 +1,137 @@
+// Navigation Module - core/navigation.js
+// Handles sidebar navigation and view switching
+
+// ===================================================================
+// SIDEBAR CONTROLS
+// ===================================================================
+
+export function openSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+
+    if (sidebar) sidebar.classList.add('open');
+    if (overlay) overlay.classList.add('active');
+}
+
+export function closeSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+
+    if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('active');
+}
+
+// ===================================================================
+// NAVIGATION ROUTING
+// ===================================================================
+
+export function navigateTo(view) {
+    console.log(`📱 Navigating to: ${view}`);
+
+    // Close sidebar after navigation
+    closeSidebar();
+
+    // Hide all sections
+    const sections = [
+        'workout-selector',
+        'active-workout',
+        'workout-history-section',
+        'workout-management',
+        'dashboard' // Will create this in Phase 2
+    ];
+
+    sections.forEach(sectionId => {
+        const section = document.getElementById(sectionId);
+        if (section) section.classList.add('hidden');
+    });
+
+    // Route to appropriate view
+    switch (view) {
+        case 'dashboard':
+            showDashboard();
+            break;
+
+        case 'start-workout':
+            showWorkoutSelector();
+            break;
+
+        case 'stats':
+            showStats();
+            break;
+
+        case 'history':
+            showHistory();
+            break;
+
+        case 'location':
+            showLocationSelector();
+            break;
+
+        case 'exercises':
+            openExerciseManager();
+            break;
+
+        case 'templates':
+            showWorkoutManagement();
+            break;
+
+        default:
+            console.warn(`Unknown view: ${view}`);
+            showWorkoutSelector();
+    }
+}
+
+// ===================================================================
+// VIEW FUNCTIONS
+// ===================================================================
+
+function showDashboard() {
+    // Phase 2: Will implement dashboard
+    console.log('📊 Dashboard view (coming in Phase 2)');
+    // For now, show workout selector
+    showWorkoutSelector();
+}
+
+function showWorkoutSelector() {
+    const { showWorkoutSelector: showSelector } = window;
+    if (showSelector) {
+        showSelector();
+    } else {
+        const section = document.getElementById('workout-selector');
+        if (section) section.classList.remove('hidden');
+    }
+}
+
+function showStats() {
+    // Phase 2: Will implement stats view
+    console.log('📈 Stats view (coming in Phase 2)');
+    alert('Stats & Records view coming soon!');
+}
+
+function showHistory() {
+    const { showWorkoutHistory } = window;
+    if (showWorkoutHistory) {
+        showWorkoutHistory();
+    }
+}
+
+function showLocationSelector() {
+    const { showLocationSelector: showLocation } = window;
+    if (showLocation) {
+        showLocation();
+    }
+}
+
+function openExerciseManager() {
+    const { openExerciseManager: openManager } = window;
+    if (openManager) {
+        openManager();
+    }
+}
+
+function showWorkoutManagement() {
+    const { showWorkoutManagement: showManagement } = window;
+    if (showManagement) {
+        showManagement();
+    }
+}

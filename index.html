@@ -56,9 +56,72 @@
     </div>
 
     <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h2>Big Surf</h2>
+                <button class="sidebar-close" onclick="closeSidebar()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="#" onclick="navigateTo('dashboard'); return false;">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="navigateTo('start-workout'); return false;">
+                        <i class="fas fa-dumbbell"></i>
+                        <span>Start Workout</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="navigateTo('stats'); return false;">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Stats & Records</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="navigateTo('history'); return false;">
+                        <i class="fas fa-history"></i>
+                        <span>Workout History</span>
+                    </a>
+                </li>
+                <li class="sidebar-divider"></li>
+                <li class="sidebar-section-title">Settings</li>
+                <li>
+                    <a href="#" onclick="navigateTo('location'); return false;">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Change Location</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="navigateTo('exercises'); return false;">
+                        <i class="fas fa-list"></i>
+                        <span>Exercise Library</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="navigateTo('templates'); return false;">
+                        <i class="fas fa-cog"></i>
+                        <span>Manage Templates</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Sidebar Overlay -->
+        <div id="sidebar-overlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+
         <!-- Header -->
         <header class="header">
-            <img src="BigSurf.png" alt="Big Surf Logo" class="logo-img" 
+            <button class="menu-toggle" onclick="openSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <img src="BigSurf.png" alt="Big Surf Logo" class="logo-img"
                  onerror="this.style.display='none'; document.querySelector('.logo-fallback').style.display='flex'">
             <div class="logo-fallback" style="display: none;">BS</div>
         </header>

@@ -81,6 +81,11 @@ import {
     changeLocation
 } from './core/location-ui.js';
 
+// Navigation functionality
+import {
+    openSidebar, closeSidebar, navigateTo
+} from './core/navigation.js';
+
 // Debug utilities
 import {
     debugManualWorkoutDate, debugFirebaseWorkoutDates,
@@ -240,6 +245,11 @@ window.selectSavedLocation = selectSavedLocation;
 window.selectNewLocation = selectNewLocation;
 window.skipLocationSelection = skipLocationSelection;
 window.changeLocation = changeLocation;
+
+// Navigation Functions
+window.openSidebar = openSidebar;
+window.closeSidebar = closeSidebar;
+window.navigateTo = navigateTo;
 
 // Template Selection Functions
 window.showTemplateSelection = showTemplateSelection;
