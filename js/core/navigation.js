@@ -1,11 +1,14 @@
 // Navigation Module - core/navigation.js
 // Handles sidebar navigation and view switching
 
+console.log('📱 Navigation module loaded');
+
 // ===================================================================
 // SIDEBAR CONTROLS
 // ===================================================================
 
 export function openSidebar() {
+    console.log('📱 openSidebar called');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
 
